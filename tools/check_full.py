@@ -19,15 +19,20 @@ def flat(d, pre=''):
     if isinstance(v, dict): out.update(flat(v, pre + k + '/'))
     else: out[pre + k] = v
   return out
-want['spells'] = [s['id'] for s in L('data/srd/spells.json') if s['level'] <= 2]
+SPELL_MAX = 3   # สเปลที่แปลแล้วถึงเลเวลนี้ (เพิ่มทีละรอบ)
+SP = L('data/srd/spells.json')
+want['spells'] = [s['id'] for s in SP if s['level'] <= SPELL_MAX]
+want['spells-short'] = want['spells']
 want['glossary-short'] = [g['id'] for g in L('data/srd/glossary.json')]
 bad = 0
 for g, ids in want.items():
-  p = 'data/th/glossary.json' if g == 'glossary-short' else f'data/th/full/{g}.json'
-  have = (L(p) if g == 'glossary-short' else flat(L(p))) if os.path.exists(p) else {}
+  p = {'glossary-short': 'data/th/glossary.json', 'spells-short': 'data/th/spells.json'}.get(g, f'data/th/full/{g}.json')
+  have = (L(p) if g in ('glossary-short', 'spells-short') else flat(L(p))) if os.path.exists(p) else {}
   miss = [i for i in ids if not have.get(i)]; extra = [k for k in have if k not in ids]
   bad += len(miss) + len(extra)
   print(f'{g}: {len(ids) - len(miss)}/{len(ids)}', 'ขาด: ' + ', '.join(miss) if miss else '', 'เกิน: ' + ', '.join(extra) if extra else '')
+fs = L('data/th/full/spells.json')
+print('สเปลแปลเต็มตามเลเวล:', ' · '.join(f"Lv{l} {sum(1 for x in SP if x['level'] == l and fs.get(x['id']))}/{sum(1 for x in SP if x['level'] == l)}" for l in range(10)))
 fg = L('data/th/full/glossary.json') if os.path.exists('data/th/full/glossary.json') else {}
 print(f'glossary (แปลเต็ม): {len(fg)}/{len(want["glossary-short"])} ', 'id ผิด: ' + ', '.join(k for k in fg if k not in want['glossary-short']) if any(k not in want['glossary-short'] for k in fg) else '')
 
