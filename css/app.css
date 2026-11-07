@@ -769,3 +769,5 @@ ul.cd-feats { margin: 0; padding-left: 18px; } ul.cd-feats li { margin: 3px 0; }
   .sh-title h1 { font-size: 1.2rem; line-height: 1.25; }
   .sh-title p { font-size: .8rem; }
 }
+.move-banner { position: sticky; top: 0; z-index: 60; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; padding: 8px 12px; background: var(--gold); color: #fff; font-size: .9rem; text-align: center; }
+.move-banner .btn { background: #fff; color: #111; border-color: #fff; }
