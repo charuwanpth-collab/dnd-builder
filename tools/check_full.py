@@ -30,4 +30,12 @@ for g, ids in want.items():
   print(f'{g}: {len(ids) - len(miss)}/{len(ids)}', 'ขาด: ' + ', '.join(miss) if miss else '', 'เกิน: ' + ', '.join(extra) if extra else '')
 fg = L('data/th/full/glossary.json') if os.path.exists('data/th/full/glossary.json') else {}
 print(f'glossary (แปลเต็ม): {len(fg)}/{len(want["glossary-short"])} ', 'id ผิด: ' + ', '.join(k for k in fg if k not in want['glossary-short']) if any(k not in want['glossary-short'] for k in fg) else '')
+
+# ไทยแบบสรุป (ทุกเลเวล) ของฟีเจอร์คลาส/ซับคลาส
+ths = L('data/th/classes.json')
+skip = lambda f: f['name'] in ('Ability Score Improvement', 'Epic Boon') or f['name'].endswith('Subclass')
+need = [(c, 'f', f['id']) for c, x in cls.items() for f in x['features'] if not skip(f)] + [(c, 'sub', f['id']) for c, x in cls.items() for f in x['subclass'].get('features', [])]
+miss = [f'{c}/{k}/{i}' for c, k, i in need if not (ths[c]['f'] if k == 'f' else ths[c]['sub']['f']).get(i, {}).get('s')]
+bad += len(miss)
+print(f'classes-short: {len(need) - len(miss)}/{len(need)}', 'ขาด: ' + ', '.join(miss) if miss else '')
 raise SystemExit(1 if bad else 0)

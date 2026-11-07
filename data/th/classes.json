@@ -15,12 +15,25 @@
       "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธประชิดที่เลือกได้ 2 ชนิด เปลี่ยนชนิดได้หลังพักยาว" },
       "danger-sense": { "t": "passive", "s": "ได้เปรียบในการเซฟ DEX (หลบระเบิด กับดัก) ยกเว้นตอนติดสถานะ Incapacitated" },
       "reckless-attack": { "t": "passive", "s": "ตอนโจมตีครั้งแรกของเทิร์น เลือก \"บ้าระห่ำ\" ได้: ได้เปรียบทุกการโจมตีที่ใช้ STR จนถึงต้นเทิร์นหน้า แต่ศัตรูก็ได้เปรียบเวลาโจมตีเราเช่นกัน" },
-      "primal-knowledge": { "t": "passive", "s": "ได้สกิลจากรายการ Barbarian เพิ่ม 1 อย่าง และระหว่าง Rage เช็ค Acrobatics, Intimidation, Perception, Stealth, Survival ใช้ STR แทนได้" }
+      "primal-knowledge": { "t": "passive", "s": "ได้สกิลจากรายการ Barbarian เพิ่ม 1 อย่าง และระหว่าง Rage เช็ค Acrobatics, Intimidation, Perception, Stealth, Survival ใช้ STR แทนได้" },
+      "extra-attack": { "t": "passive", "s": "ใช้ Attack action แล้วโจมตีได้ 2 ครั้งแทน 1 ครั้ง" },
+      "fast-movement": { "t": "passive", "s": "Speed +10 ฟุต ตอนที่ไม่ได้ใส่เกราะหนัก (Heavy armor)" },
+      "feral-instinct": { "t": "passive", "s": "ทอย Initiative ได้ Advantage" },
+      "instinctive-pounce": { "t": "passive", "s": "ตอนใช้ Bonus Action เปิด Rage เดินเพิ่มได้ครึ่งหนึ่งของ Speed ทันที" },
+      "brutal-strike": { "t": "passive", "s": "ตอนใช้ Reckless Attack ยอมสละ Advantage ของการโจมตีด้วย STR 1 ครั้งในเทิร์น (ครั้งนั้นต้องไม่ติด Disadvantage) ถ้าโดนจะเพิ่มดาเมจ 1d10 และเลือกผลพิเศษ 1 อย่าง: Forceful Blow (ผลักเป้า 15 ฟุต แล้วเราเดินตามได้ครึ่ง Speed โดยไม่โดน Opportunity Attack) หรือ Hamstring Blow (Speed เป้าลด 15 ฟุตจนถึงต้นเทิร์นถัดไปของเรา)" },
+      "relentless-rage": { "t": "passive", "s": "ระหว่าง Rage ถ้า HP ลดเหลือ 0 แต่ไม่ตายทันที ทอยเซฟ CON DC 10 — ผ่านแล้ว HP กลับมาเป็น 2 เท่าของเลเวล Barbarian · ใช้ครั้งต่อไป DC เพิ่มทีละ 5 และรีเซ็ตเป็น DC 10 เมื่อพักสั้นหรือพักยาว" },
+      "improved-brutal-strike": { "t": "passive", "s": "Lv13: Brutal Strike เลือกผลเพิ่มได้อีก 2 แบบ — Staggering Blow (เป้าติด Disadvantage ในเซฟครั้งถัดไป และทำ Opportunity Attack ไม่ได้จนถึงต้นเทิร์นถัดไปของเรา) และ Sundering Blow (การโจมตีครั้งถัดไปของคนอื่นที่ใส่เป้านี้ได้ +5 ทอยโจมตี) · Lv17: ดาเมจเพิ่มเป็น 2d10 และใช้ผลพิเศษได้ 2 แบบที่ต่างกันพร้อมกัน" },
+      "persistent-rage": { "t": "passive", "s": "ทอย Initiative แล้วคืน Rage ทั้งหมดได้ (1 ครั้ง/พักยาว) · Rage อยู่ได้ 10 นาทีเลยโดยไม่ต้องตีหรือบังคับเซฟเพื่อต่อเวลา ดับก่อนเวลาเฉพาะตอนหมดสติ (Unconscious) หรือใส่เกราะหนัก" },
+      "indomitable-might": { "t": "passive", "s": "ถ้าผลรวมเช็คหรือเซฟ STR ได้น้อยกว่าค่า STR ของเรา ใช้ค่า STR แทนผลที่ทอยได้เลย" },
+      "primal-champion": { "t": "passive", "s": "STR และ CON +4 (สูงสุด 25) — คำนวณให้ในใบตัวละครแล้ว" }
     },
     "sub": {
       "desc": "Path of the Berserker — สายคลั่งเลือด เน้นตีหนักแบบไม่ห่วงตัวเอง",
       "f": {
-        "frenzy": { "t": "passive", "s": "ระหว่าง Rage ถ้าใช้ Reckless Attack การโจมตีด้วย STR ครั้งแรกที่โดนในเทิร์น ทอย d6 เพิ่มเท่ากับค่า Rage Damage (เช่น +2 = ทอย 2d6) แล้วบวกเข้าไปในดาเมจ" }
+        "frenzy": { "t": "passive", "s": "ระหว่าง Rage ถ้าใช้ Reckless Attack การโจมตีด้วย STR ครั้งแรกที่โดนในเทิร์น ทอย d6 เพิ่มเท่ากับค่า Rage Damage (เช่น +2 = ทอย 2d6) แล้วบวกเข้าไปในดาเมจ" },
+        "mindless-rage": { "t": "passive", "s": "ระหว่าง Rage ไม่ติด Charmed และ Frightened (ถ้าติดอยู่ตอนเปิด Rage สถานะนั้นหายไปทันที)" },
+        "retaliation": { "t": "reaction", "s": "เมื่อโดนดาเมจจากศัตรูที่อยู่ในระยะ 5 ฟุต ใช้ Reaction ตีสวนด้วยอาวุธระยะประชิดหรือ Unarmed Strike ได้ 1 ครั้ง" },
+        "intimidating-presence": { "t": "bonus", "s": "ข่มขวัญ: ศัตรูที่เลือกในรัศมี 30 ฟุต เซฟ WIS (DC 8 + STR mod + PB) ไม่ผ่านติด Frightened 1 นาที (เซฟใหม่ได้ทุกท้ายเทิร์น ถ้าอยู่ห่างเกิน 60 ฟุตจากเรา) · 1 ครั้ง/พักยาว หรือใช้ Rage 1 ครั้งแลกคืนได้" }
       }
     }
   },
@@ -38,13 +51,20 @@
       "bardic-inspiration": { "t": "bonus", "s": "ให้เพื่อน 1 คนในระยะ 60 ฟุตได้ลูกเต๋า Bardic Die (d6) เก็บไว้ 1 ชั่วโมง เมื่อเพื่อนทอย D20 แล้วไม่ผ่าน ทอยลูกเต๋านี้บวกเพิ่มได้ อาจพลิกเป็นผ่าน", "tip": "ใช้ได้เท่ากับ CHA mod (อย่างน้อย 1) คืนตอนพักยาว" },
       "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย CHA ใช้เครื่องดนตรีเป็น focus ได้ ขึ้นเลเวลเมื่อไหร่เปลี่ยนเวทที่เตรียมได้ 1 อัน" },
       "expertise": { "t": "passive", "s": "เลือก 2 สกิลที่ชำนาญอยู่แล้ว ได้โบนัส Proficiency เป็นสองเท่า" },
-      "jack-of-all-trades": { "t": "passive", "s": "เช็คสกิลที่ไม่ได้ชำนาญ บวกครึ่งหนึ่งของ Proficiency Bonus (ปัดลง)" }
+      "jack-of-all-trades": { "t": "passive", "s": "เช็คสกิลที่ไม่ได้ชำนาญ บวกครึ่งหนึ่งของ Proficiency Bonus (ปัดลง)" },
+      "font-of-inspiration": { "t": "passive", "s": "Bardic Inspiration คืนครบตอนพักสั้นด้วย และใช้ Spell Slot แลกคืน Bardic Inspiration 1 ครั้งได้ (ไม่ต้องใช้ action)" },
+      "countercharm": { "t": "reaction", "s": "ถ้าเราหรือใครในระยะ 30 ฟุตเซฟไม่ผ่านกับผลที่ทำให้ติด Charmed หรือ Frightened ใช้ Reaction ให้ทอยเซฟใหม่ได้แบบมี Advantage" },
+      "magical-secrets": { "t": "passive", "s": "เวทที่เตรียมใหม่ของ Bard เลือกจากรายการ Bard, Cleric, Druid และ Wizard ได้ (นับเป็นเวทของ Bard) — ขั้นเวทมนตร์รวมรายการให้แล้ว" },
+      "superior-inspiration": { "t": "passive", "s": "ตอนทอย Initiative ถ้า Bardic Inspiration เหลือน้อยกว่า 2 ครั้ง ได้คืนจนเป็น 2" },
+      "words-of-creation": { "t": "passive", "s": "เตรียม Power Word Heal และ Power Word Kill ไว้เสมอ และตอนร่ายเลือกเป้าที่สองที่อยู่ห่างเป้าแรกไม่เกิน 10 ฟุตเพิ่มได้" }
     },
     "sub": {
       "desc": "College of Lore — กวีผู้รอบรู้ เก่งสกิลมาก ๆ และขัดขวางศัตรูด้วยคำพูด",
       "f": {
         "bonus-proficiencies": { "t": "passive", "s": "ได้ชำนาญสกิลเพิ่ม 3 อย่างอะไรก็ได้" },
-        "cutting-words": { "t": "reaction", "s": "เมื่อศัตรูในระยะ 60 ฟุตทอยดาเมจ หรือทอยโจมตี/เช็คผ่าน ใช้ Reaction เสีย Bardic Inspiration 1 ครั้ง ทอยลูกเต๋าแล้วลบออกจากผลของมัน อาจทำให้ไม่ผ่าน" }
+        "cutting-words": { "t": "reaction", "s": "เมื่อศัตรูในระยะ 60 ฟุตทอยดาเมจ หรือทอยโจมตี/เช็คผ่าน ใช้ Reaction เสีย Bardic Inspiration 1 ครั้ง ทอยลูกเต๋าแล้วลบออกจากผลของมัน อาจทำให้ไม่ผ่าน" },
+        "magical-discoveries": { "t": "passive", "s": "เลือกเวท 2 อย่างจากรายการ Cleric, Druid หรือ Wizard (cantrip หรือเลเวลที่มีสลอต) เตรียมไว้เสมอ ไม่นับโควตา เปลี่ยนได้ตอนเลเวลอัป" },
+        "peerless-skill": { "t": "passive", "s": "ทอยเช็คหรือทอยโจมตีแล้วพลาด ใช้ Bardic Inspiration ทอยเต๋าบวกเพิ่มได้ — ถ้ายังพลาดอยู่ ไม่เสีย Bardic Inspiration" }
       }
     }
   },
@@ -65,14 +85,21 @@
     "f": {
       "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย WIS ใช้ Holy Symbol เป็น focus เปลี่ยนเวทที่เตรียมได้ทุกครั้งที่พักยาว" },
       "divine-order": { "t": "passive", "s": "เลือกบทบาท: Protector (อาวุธ Martial + เกราะหนัก) หรือ Thaumaturge (cantrip +1 และเช็ค Arcana/Religion บวก WIS)" },
-      "channel-divinity": { "t": "magic", "s": "พลังเทพ 2 แบบ: Divine Spark — ชี้เป้าในระยะ 30 ฟุต ฮีล 1d8 + WIS หรือให้เซฟ CON ไม่ผ่านโดน 1d8 + WIS (Necrotic หรือ Radiant ผ่านโดนครึ่ง) / Turn Undead — Undead ในระยะ 30 ฟุตเซฟ WIS ไม่ผ่านจะกลัว (Frightened) และขยับทำอะไรไม่ได้ 1 นาที", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" }
+      "channel-divinity": { "t": "magic", "s": "พลังเทพ 2 แบบ: Divine Spark — ชี้เป้าในระยะ 30 ฟุต ฮีล 1d8 + WIS หรือให้เซฟ CON ไม่ผ่านโดน 1d8 + WIS (Necrotic หรือ Radiant ผ่านโดนครึ่ง) / Turn Undead — Undead ในระยะ 30 ฟุตเซฟ WIS ไม่ผ่านจะกลัว (Frightened) และขยับทำอะไรไม่ได้ 1 นาที", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" },
+      "sear-undead": { "t": "passive", "s": "ตอนใช้ Turn Undead ทอย d8 เท่ากับ WIS mod (อย่างน้อย 1d8) Undead ที่เซฟไม่ผ่านโดนดาเมจ Radiant ตามผลรวม (ยังติดผลไล่อยู่เหมือนเดิม)" },
+      "blessed-strikes": { "t": "passive", "s": "เลือก 1 อย่าง: Divine Strike (ตีด้วยอาวุธโดน 1 ครั้งต่อเทิร์น +1d8 ดาเมจ Necrotic หรือ Radiant) หรือ Potent Spellcasting (บวก WIS mod เข้าดาเมจของ cantrip สาย Cleric)" },
+      "divine-intervention": { "t": "magic", "s": "ร่ายเวท Cleric เลเวล 5 ลงไปอะไรก็ได้ (ที่ไม่ใช่ Reaction) ฟรี ไม่ใช้สลอตและไม่ต้องใช้ Material · 1 ครั้ง/พักยาว" },
+      "improved-blessed-strikes": { "t": "passive", "s": "Divine Strike เพิ่มเป็น 2d8 · หรือ Potent Spellcasting: ตอน cantrip ทำดาเมจ ให้ Temp HP เท่ากับ 2 เท่าของ WIS mod กับตัวเองหรือคนในระยะ 60 ฟุต" },
+      "greater-divine-intervention": { "t": "passive", "s": "Divine Intervention เลือกร่าย Wish ได้ — แต่ถ้าใช้แบบนั้นต้องพักยาว 2d4 ครั้งก่อนใช้ Divine Intervention ได้อีก" }
     },
     "sub": {
       "desc": "Life Domain — สายฮีลแท้ ฮีลแรงขึ้นทุกครั้ง",
       "f": {
         "disciple-of-life": { "t": "passive", "s": "เวทฮีลที่ใช้ Spell Slot ฟื้น HP เพิ่มอีก 2 + เลเวลของ slot (เช่น slot เลเวล 1 = +3)" },
         "life-domain-spells": { "t": "passive", "s": "เตรียม Aid, Bless, Cure Wounds, Lesser Restoration ไว้เสมอ (ไม่นับโควตา)" },
-        "preserve-life": { "t": "magic", "s": "ใช้ Channel Divinity ฮีลรวม 5 × เลเวล Cleric แบ่งให้คนในระยะ 30 ฟุตที่ HP ไม่ถึงครึ่ง (ฮีลแต่ละคนได้ไม่เกินครึ่งหลอดของเขา)" }
+        "preserve-life": { "t": "magic", "s": "ใช้ Channel Divinity ฮีลรวม 5 × เลเวล Cleric แบ่งให้คนในระยะ 30 ฟุตที่ HP ไม่ถึงครึ่ง (ฮีลแต่ละคนได้ไม่เกินครึ่งหลอดของเขา)" },
+        "blessed-healer": { "t": "passive", "s": "ร่ายเวทฟื้น HP ด้วย Spell Slot ให้คนอื่น เราฟื้น HP ด้วยเท่ากับ 2 + เลเวลของสลอต" },
+        "supreme-healing": { "t": "passive", "s": "เวทหรือ Channel Divinity ที่ฟื้น HP ไม่ต้องทอยเต๋า ใช้ค่าสูงสุดของเต๋าทุกลูกเลย (เช่น 2d6 = 12)" }
       }
     }
   },
@@ -95,13 +122,21 @@
       "druidic": { "t": "passive", "s": "รู้ภาษาลับ Druidic และเตรียมเวท Speak with Animals ไว้เสมอ" },
       "primal-order": { "t": "passive", "s": "เลือกบทบาท: Magician (cantrip +1 และเช็ค Arcana/Nature บวก WIS) หรือ Warden (อาวุธ Martial + เกราะกลาง)" },
       "wild-shape": { "t": "bonus", "s": "แปลงร่างเป็นสัตว์ (Beast) ที่จำไว้ 4 แบบ (CR ไม่เกิน 1/4 และบินไม่ได้) อยู่ได้ชั่วโมงเท่าครึ่งเลเวล Druid ได้ HP ชั่วคราวเท่าเลเวล Druid ระหว่างแปลงร่ายเวทไม่ได้", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" },
-      "wild-companion": { "t": "magic", "s": "เสีย Wild Shape 1 ครั้ง (หรือ Spell Slot) เพื่อร่าย Find Familiar โดยไม่ต้องใช้วัสดุ สัตว์ติดตามเป็นภูต (Fey) อยู่จนพักยาว" }
+      "wild-companion": { "t": "magic", "s": "เสีย Wild Shape 1 ครั้ง (หรือ Spell Slot) เพื่อร่าย Find Familiar โดยไม่ต้องใช้วัสดุ สัตว์ติดตามเป็นภูต (Fey) อยู่จนพักยาว" },
+      "wild-resurgence": { "t": "passive", "s": "เทิร์นละครั้ง ถ้า Wild Shape หมด ใช้ Spell Slot แลกคืน 1 ครั้งได้ · และใช้ Wild Shape 1 ครั้งแลกเป็นสลอตเลเวล 1 ได้ (1 ครั้ง/พักยาว) — ไม่ต้องใช้ action" },
+      "elemental-fury": { "t": "passive", "s": "เลือก 1 อย่าง: Potent Spellcasting (บวก WIS mod เข้าดาเมจ cantrip สาย Druid) หรือ Primal Strike (ตีด้วยอาวุธหรือร่างสัตว์โดน 1 ครั้งต่อเทิร์น +1d8 ดาเมจ Cold, Fire, Lightning หรือ Thunder)" },
+      "improved-elemental-fury": { "t": "passive", "s": "Potent Spellcasting: cantrip Druid ที่ระยะ 10 ฟุตขึ้นไป ระยะ +300 ฟุต · Primal Strike: ดาเมจเพิ่มเป็น 2d8" },
+      "beast-spells": { "t": "passive", "s": "ร่ายเวทได้ระหว่างอยู่ในร่าง Wild Shape (ยกเว้นเวทที่ Material มีราคาหรือถูกใช้หมดไป)" },
+      "archdruid": { "t": "passive", "s": "ทอย Initiative ตอน Wild Shape หมด คืนให้ 1 ครั้ง · แปลง Wild Shape เป็นสลอตได้ (ใช้ครั้งละ 2 เลเวลสลอต, 1 ครั้ง/พักยาว) · แก่ช้าลง 10 เท่า" }
     },
     "sub": {
       "desc": "Circle of the Land — นักเวทแห่งผืนดิน ได้เวทเพิ่มตามดินแดนที่เลือก",
       "f": {
         "circle-of-the-land-spells": { "t": "passive", "s": "ทุกครั้งที่พักยาว เลือกดินแดน แล้วได้ 3 เวทเตรียมไว้เสมอ: Arid (Blur, Burning Hands, Fire Bolt) / Polar (Fog Cloud, Hold Person, Ray of Frost) / Temperate (Misty Step, Shocking Grasp, Sleep) / Tropical (Acid Splash, Ray of Sickness, Web)" },
-        "lands-aid": { "t": "magic", "s": "เสีย Wild Shape 1 ครั้ง เลือกจุดในระยะ 60 ฟุต วงกลม 10 ฟุต ศัตรูที่เลือกเซฟ CON ไม่ผ่านโดน 2d6 Necrotic (ผ่านโดนครึ่ง) และฮีลคนในวง 1 คน 2d6" }
+        "lands-aid": { "t": "magic", "s": "เสีย Wild Shape 1 ครั้ง เลือกจุดในระยะ 60 ฟุต วงกลม 10 ฟุต ศัตรูที่เลือกเซฟ CON ไม่ผ่านโดน 2d6 Necrotic (ผ่านโดนครึ่ง) และฮีลคนในวง 1 คน 2d6" },
+        "natural-recovery": { "t": "passive", "s": "ร่ายเวท Circle Spells เลเวล 1+ ฟรี 1 ครั้ง/พักยาว · ตอนพักสั้นคืนสลอตได้ รวมเลเวลไม่เกินครึ่งเลเวล Druid (ปัดขึ้น) และห้ามสลอตเลเวล 6+ (1 ครั้ง/พักยาว)" },
+        "natures-ward": { "t": "passive", "s": "ไม่ติด Poisoned และได้ Resistance ตามดินแดนที่เลือก: Arid = Fire, Polar = Cold, Temperate = Lightning, Tropical = Poison" },
+        "natures-sanctuary": { "t": "magic", "s": "ใช้ Wild Shape 1 ครั้ง เสกต้นไม้ลูกบาศก์ 15 ฟุตในระยะ 120 ฟุต อยู่ 1 นาที: เราและพวกในพื้นที่ได้ Half Cover และพวกได้ Resistance ดาเมจชนิดเดียวกับ Nature's Ward · ใช้ Bonus Action ย้ายได้ 60 ฟุต" }
       }
     }
   },
@@ -120,13 +155,24 @@
       "second-wind": { "t": "bonus", "s": "ฟื้น HP = 1d10 + เลเวล Fighter", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" },
       "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธที่เลือกได้ 3 ชนิด เปลี่ยนได้หลังพักยาว" },
       "action-surge": { "t": "passive", "s": "ในเทิร์นของเรา ได้ Action เพิ่มอีก 1 ครั้ง (ใช้กับ Magic action ไม่ได้) 1 ครั้งต่อพักสั้นหรือยาว" },
-      "tactical-mind": { "t": "passive", "s": "เช็คค่าพลังไม่ผ่าน ใช้ Second Wind 1 ครั้งแทนการฮีล เพื่อทอย 1d10 บวกเพิ่ม ถ้ายังไม่ผ่านจะไม่เสีย Second Wind" }
+      "tactical-mind": { "t": "passive", "s": "เช็คค่าพลังไม่ผ่าน ใช้ Second Wind 1 ครั้งแทนการฮีล เพื่อทอย 1d10 บวกเพิ่ม ถ้ายังไม่ผ่านจะไม่เสีย Second Wind" },
+      "extra-attack": { "t": "passive", "s": "ใช้ Attack action แล้วโจมตีได้ 2 ครั้งแทน 1 ครั้ง" },
+      "tactical-shift": { "t": "passive", "s": "ตอนใช้ Second Wind ด้วย Bonus Action เดินได้ครึ่ง Speed โดยไม่โดน Opportunity Attack" },
+      "indomitable": { "t": "passive", "s": "เซฟไม่ผ่านแล้วทอยใหม่ได้ โดยบวกเลเวล Fighter เข้าไป (ต้องใช้ผลใหม่) · 1 ครั้ง/พักยาว, 2 ครั้งที่ Lv13, 3 ครั้งที่ Lv17" },
+      "tactical-master": { "t": "passive", "s": "ตอนโจมตีด้วยอาวุธที่ใช้ Mastery ได้ เปลี่ยน Mastery ของการโจมตีนั้นเป็น Push, Sap หรือ Slow ได้" },
+      "two-extra-attacks": { "t": "passive", "s": "ใช้ Attack action แล้วโจมตีได้ 3 ครั้ง" },
+      "studied-attacks": { "t": "passive", "s": "โจมตีพลาดเป้าไหน การโจมตีครั้งถัดไปใส่เป้านั้น (ก่อนจบเทิร์นถัดไป) ได้ Advantage" },
+      "three-extra-attacks": { "t": "passive", "s": "ใช้ Attack action แล้วโจมตีได้ 4 ครั้ง" }
     },
     "sub": {
       "desc": "Champion — นักรบที่เน้นพลังกายล้วน คริบ่อย เล่นง่าย",
       "f": {
         "improved-critical": { "t": "passive", "s": "โจมตีคริติคอลเมื่อทอยได้ 19 หรือ 20" },
-        "remarkable-athlete": { "t": "passive", "s": "ได้เปรียบในการทอย Initiative และเช็ค Athletics และหลังคริ เดินได้ครึ่งความเร็วโดยไม่โดน Opportunity Attack" }
+        "remarkable-athlete": { "t": "passive", "s": "ได้เปรียบในการทอย Initiative และเช็ค Athletics และหลังคริ เดินได้ครึ่งความเร็วโดยไม่โดน Opportunity Attack" },
+        "additional-fighting-style": { "t": "passive", "s": "ได้ Fighting Style feat เพิ่มอีก 1 อย่าง (จดไว้ในโน้ตหรือเลือกเป็น feat ตอน ASI)" },
+        "heroic-warrior": { "t": "passive", "s": "ระหว่างต่อสู้ ถ้าเริ่มเทิร์นโดยไม่มี Heroic Inspiration ได้รับ Heroic Inspiration ทันที" },
+        "superior-critical": { "t": "passive", "s": "ทอยโจมตีติด Critical Hit เมื่อได้ 18–20" },
+        "survivor": { "t": "passive", "s": "Defy Death: Death Saving Throw ได้ Advantage และทอยได้ 18–20 นับเป็น 20 · Heroic Rally: ต้นเทิร์นถ้า HP เหลือไม่เกินครึ่ง (Bloodied) และมากกว่า 0 ฟื้น HP 5 + CON mod" }
       }
     }
   },
@@ -146,12 +192,28 @@
       "monks-focus": { "t": "bonus", "s": "มี Focus Points: Flurry of Blows (1 แต้ม ต่อย 2 ครั้งด้วย Bonus Action), Patient Defense (Disengage ฟรี หรือ 1 แต้มได้ Disengage + Dodge), Step of the Wind (Dash ฟรี หรือ 1 แต้มได้ Disengage + Dash และกระโดดไกลสองเท่า)", "tip": "Focus Points คืนหมดตอนพักสั้นหรือยาว" },
       "unarmored-movement": { "t": "passive", "s": "ไม่ใส่เกราะและไม่ถือโล่ ความเร็วเพิ่ม +10 ฟุต (เพิ่มอีกตามเลเวล)" },
       "uncanny-metabolism": { "t": "passive", "s": "ตอนทอย Initiative คืน Focus Points ทั้งหมด และฟื้น HP = ลูกเต๋า Martial Arts + เลเวล Monk (1 ครั้งต่อพักยาว)" },
-      "deflect-attacks": { "t": "reaction", "s": "โดนโจมตีด้วยดาเมจ Bludgeoning/Piercing/Slashing ลดดาเมจ 1d10 + DEX + เลเวล Monk ถ้าลดเหลือ 0 ใช้ 1 Focus โยนกลับใส่ศัตรูอื่น (เซฟ DEX ไม่ผ่านโดน 2 ลูกเต๋า Martial Arts + DEX)" }
+      "deflect-attacks": { "t": "reaction", "s": "โดนโจมตีด้วยดาเมจ Bludgeoning/Piercing/Slashing ลดดาเมจ 1d10 + DEX + เลเวล Monk ถ้าลดเหลือ 0 ใช้ 1 Focus โยนกลับใส่ศัตรูอื่น (เซฟ DEX ไม่ผ่านโดน 2 ลูกเต๋า Martial Arts + DEX)" },
+      "slow-fall": { "t": "reaction", "s": "ตอนตกจากที่สูง ใช้ Reaction ลดดาเมจจากการตกได้ 5 เท่าของเลเวล Monk" },
+      "extra-attack": { "t": "passive", "s": "ใช้ Attack action แล้วโจมตีได้ 2 ครั้งแทน 1 ครั้ง" },
+      "stunning-strike": { "t": "passive", "s": "เทิร์นละครั้ง ตีด้วยอาวุธ Monk หรือ Unarmed Strike โดน ใช้ 1 Focus Point ให้เป้าเซฟ CON — ไม่ผ่านติด Stunned จนถึงต้นเทิร์นถัดไปของเรา · ผ่านแล้ว Speed ลดครึ่งและการโจมตีครั้งถัดไปที่ใส่มันได้ Advantage" },
+      "empowered-strikes": { "t": "passive", "s": "ดาเมจ Unarmed Strike เปลี่ยนเป็น Force ได้" },
+      "evasion": { "t": "passive", "s": "เซฟ DEX เพื่อลดดาเมจครึ่ง — ผ่านไม่โดนเลย ไม่ผ่านโดนครึ่งเดียว (ใช้ไม่ได้ตอนติด Incapacitated)" },
+      "acrobatic-movement": { "t": "passive", "s": "ไม่ใส่เกราะและไม่ถือโล่ เดินบนกำแพงแนวตั้งและบนผิวน้ำได้ในเทิร์นของเรา" },
+      "heightened-focus": { "t": "passive", "s": "Flurry of Blows ตีได้ 3 ครั้ง · Patient Defense ได้ Temp HP เท่ากับทอยเต๋า Martial Arts 2 ลูก · Step of the Wind พาเพื่อนที่ยินยอม (ขนาด Large ลงไป) ในระยะ 5 ฟุตไปด้วยได้" },
+      "self-restoration": { "t": "passive", "s": "ท้ายเทิร์นเราแก้ Charmed, Frightened หรือ Poisoned ออกจากตัวได้ 1 อย่าง · อดข้าวอดน้ำไม่ทำให้ Exhaustion เพิ่ม" },
+      "deflect-energy": { "t": "passive", "s": "Deflect Attacks ใช้กับดาเมจได้ทุกชนิด ไม่ใช่แค่ Bludgeoning/Piercing/Slashing" },
+      "disciplined-survivor": { "t": "passive", "s": "Proficiency ในเซฟทุกค่าพลัง (คำนวณให้แล้ว) · เซฟไม่ผ่านใช้ 1 Focus Point ทอยใหม่ได้" },
+      "perfect-focus": { "t": "passive", "s": "ทอย Initiative โดยไม่ได้ใช้ Uncanny Metabolism ถ้า Focus Point เหลือ 3 หรือน้อยกว่า ได้คืนจนเป็น 4" },
+      "superior-defense": { "t": "passive", "s": "ต้นเทิร์นใช้ 3 Focus Point ได้ Resistance ดาเมจทุกชนิดยกเว้น Force นาน 1 นาที (หรือจนติด Incapacitated)" },
+      "body-and-mind": { "t": "passive", "s": "DEX และ WIS +4 (สูงสุด 25) — คำนวณให้ในใบตัวละครแล้ว" }
     },
     "sub": {
       "desc": "Warrior of the Open Hand — ปรมาจารย์มือเปล่า ผลัก ล้ม ป่วนศัตรู",
       "f": {
-        "open-hand-technique": { "t": "passive", "s": "ทุกครั้งที่ต่อยโดนจาก Flurry of Blows เลือกใส่ผลเพิ่ม: Addle (ศัตรูทำ Opportunity Attack ไม่ได้จนต้นเทิร์นของมัน), Push (เซฟ STR ไม่ผ่านถูกผลัก 15 ฟุต) หรือ Topple (เซฟ DEX ไม่ผ่านล้มลง Prone)" }
+        "open-hand-technique": { "t": "passive", "s": "ทุกครั้งที่ต่อยโดนจาก Flurry of Blows เลือกใส่ผลเพิ่ม: Addle (ศัตรูทำ Opportunity Attack ไม่ได้จนต้นเทิร์นของมัน), Push (เซฟ STR ไม่ผ่านถูกผลัก 15 ฟุต) หรือ Topple (เซฟ DEX ไม่ผ่านล้มลง Prone)" },
+        "wholeness-of-body": { "t": "bonus", "s": "ทอยเต๋า Martial Arts ฟื้น HP เท่าผลทอย + WIS mod (อย่างน้อย 1) · ใช้ได้เท่ากับ WIS mod ครั้ง (อย่างน้อย 1)/พักยาว" },
+        "fleet-step": { "t": "passive", "s": "ใช้ Bonus Action อื่นที่ไม่ใช่ Step of the Wind แล้ว ใช้ Step of the Wind ต่อทันทีได้อีก" },
+        "quivering-palm": { "t": "passive", "s": "Unarmed Strike โดน ใช้ 4 Focus Point ฝังแรงสั่นสะเทือน (อยู่ได้ตามจำนวนวัน = เลเวล Monk) · ตอนตีโดนครั้งหลังหรือใช้ action เพื่อจบ เป้าเซฟ CON ไม่ผ่านโดน Force 10d12 ผ่านโดนครึ่ง" }
       }
     }
   },
@@ -171,13 +233,24 @@
       "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธที่เลือกได้ 2 ชนิด เปลี่ยนได้หลังพักยาว" },
       "fighting-style": { "t": "passive", "s": "ได้ Fighting Style feat 1 อย่าง หรือเลือก Blessed Warrior (ได้ cantrip ของ Cleric 2 อัน ร่ายด้วย CHA)" },
       "paladins-smite": { "t": "bonus", "s": "เตรียมเวท Divine Smite ไว้เสมอ: หลังตีโดนด้วยอาวุธประชิดหรือหมัด ใช้ Bonus Action + Spell Slot ใส่ Radiant เพิ่ม 2d8 (+1d8 ต่อ slot ที่สูงขึ้น) ร่ายฟรีไม่ใช้ slot ได้ 1 ครั้งต่อพักยาว" },
-      "channel-divinity": { "t": "bonus", "s": "Divine Sense: 10 นาที รู้ตำแหน่ง Celestial, Fiend, Undead ในระยะ 60 ฟุต และที่ที่ถูกอวยพรหรือสาปไว้", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" }
+      "channel-divinity": { "t": "bonus", "s": "Divine Sense: 10 นาที รู้ตำแหน่ง Celestial, Fiend, Undead ในระยะ 60 ฟุต และที่ที่ถูกอวยพรหรือสาปไว้", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" },
+      "extra-attack": { "t": "passive", "s": "ใช้ Attack action แล้วโจมตีได้ 2 ครั้งแทน 1 ครั้ง" },
+      "faithful-steed": { "t": "passive", "s": "เตรียม Find Steed ไว้เสมอ และร่ายฟรีไม่ใช้สลอตได้ 1 ครั้ง/พักยาว" },
+      "aura-of-protection": { "t": "passive", "s": "ออร่ารัศมี 10 ฟุตรอบตัว: เราและพวกได้โบนัสเซฟทุกอย่างเท่ากับ CHA mod (อย่างน้อย +1) ออร่าดับตอนเราติด Incapacitated · ถ้ามีหลาย Paladin รับได้จากออร่าเดียว — ตัวเราเองบวกให้ในใบแล้ว" },
+      "abjure-foes": { "t": "magic", "s": "ใช้ Channel Divinity 1 ครั้ง เลือกศัตรูที่เห็นในระยะ 60 ฟุตได้เท่ากับ CHA mod (อย่างน้อย 1) เซฟ WIS ไม่ผ่านติด Frightened 1 นาทีหรือจนโดนดาเมจ — ระหว่างนั้นแต่ละเทิร์นทำได้อย่างเดียว: เดิน หรือ action หรือ Bonus Action" },
+      "aura-of-courage": { "t": "passive", "s": "เราและพวกในออร่าไม่ติด Frightened" },
+      "radiant-strikes": { "t": "passive", "s": "ตีด้วยอาวุธระยะประชิดหรือ Unarmed Strike โดน +1d8 ดาเมจ Radiant ทุกครั้ง" },
+      "restoring-touch": { "t": "passive", "s": "ตอนใช้ Lay On Hands แก้สถานะ Blinded, Charmed, Deafened, Frightened, Paralyzed หรือ Stunned ได้ ใช้แต้มจากบ่อ 5 แต้มต่อ 1 สถานะ" },
+      "aura-expansion": { "t": "passive", "s": "ออร่าของ Paladin ขยายเป็นรัศมี 30 ฟุต" }
     },
     "sub": {
       "desc": "Oath of Devotion — อัศวินแห่งความดีงาม ทำให้อาวุธเปล่งแสงศักดิ์สิทธิ์",
       "f": {
         "oath-of-devotion-spells": { "t": "passive", "s": "เตรียม Protection from Evil and Good และ Shield of Faith ไว้เสมอ (ไม่นับโควตา)" },
-        "sacred-weapon": { "t": "passive", "s": "ตอนใช้ Attack action เสีย Channel Divinity 1 ครั้งปลุกพลังอาวุธ 10 นาที: บวก CHA (อย่างน้อย +1) ในการทอยโจมตี อาวุธส่องแสง และเปลี่ยนดาเมจเป็น Radiant ได้" }
+        "sacred-weapon": { "t": "passive", "s": "ตอนใช้ Attack action เสีย Channel Divinity 1 ครั้งปลุกพลังอาวุธ 10 นาที: บวก CHA (อย่างน้อย +1) ในการทอยโจมตี อาวุธส่องแสง และเปลี่ยนดาเมจเป็น Radiant ได้" },
+        "aura-of-devotion": { "t": "passive", "s": "เราและพวกในออร่าไม่ติด Charmed" },
+        "smite-of-protection": { "t": "passive", "s": "ทุกครั้งที่ร่าย Divine Smite เราและพวกในออร่าได้ Half Cover จนถึงต้นเทิร์นถัดไปของเรา" },
+        "holy-nimbus": { "t": "bonus", "s": "เปิดออร่าศักดิ์สิทธิ์ 10 นาที: เซฟต่อเวทหรือความสามารถของ Fiend/Undead ได้ Advantage · ศัตรูที่เริ่มเทิร์นในออร่าโดน Radiant = CHA mod + PB · ออร่าเปล่งแสงจ้าเหมือนแดด · 1 ครั้ง/พักยาว หรือใช้สลอตเลเวล 5 คืนได้" }
       }
     }
   },
@@ -196,13 +269,25 @@
       "favored-enemy": { "t": "passive", "s": "เตรียม Hunter's Mark ไว้เสมอ และร่ายได้ฟรีไม่ใช้ slot ตามคอลัมน์ Favored Enemy (2 ครั้ง) คืนตอนพักยาว" },
       "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธที่เลือกได้ 2 ชนิด เปลี่ยนได้หลังพักยาว" },
       "deft-explorer": { "t": "passive", "s": "ได้ Expertise 1 สกิลที่ชำนาญอยู่ และรู้ภาษาเพิ่ม 2 ภาษา" },
-      "fighting-style": { "t": "passive", "s": "ได้ Fighting Style feat 1 อย่าง หรือเลือก Druidic Warrior (ได้ cantrip ของ Druid 2 อัน ร่ายด้วย WIS)" }
+      "fighting-style": { "t": "passive", "s": "ได้ Fighting Style feat 1 อย่าง หรือเลือก Druidic Warrior (ได้ cantrip ของ Druid 2 อัน ร่ายด้วย WIS)" },
+      "extra-attack": { "t": "passive", "s": "ใช้ Attack action แล้วโจมตีได้ 2 ครั้งแทน 1 ครั้ง" },
+      "roving": { "t": "passive", "s": "Speed +10 ฟุตเมื่อไม่ใส่เกราะหนัก และได้ Climb Speed กับ Swim Speed เท่ากับ Speed" },
+      "expertise": { "t": "passive", "s": "เลือกสกิลที่ชำนาญอยู่แล้วอีก 2 อย่างให้เป็น Expertise" },
+      "tireless": { "t": "magic", "s": "ให้ Temp HP ตัวเอง 1d8 + WIS mod ใช้ได้เท่ากับ WIS mod ครั้ง/พักยาว · ตอนพักสั้น Exhaustion ลด 1 ระดับ" },
+      "relentless-hunter": { "t": "passive", "s": "โดนดาเมจแล้วสมาธิ (Concentration) ของ Hunter's Mark ไม่หลุด" },
+      "natures-veil": { "t": "bonus", "s": "ทำตัวล่องหน (Invisible) จนจบเทิร์นถัดไป ใช้ได้เท่ากับ WIS mod ครั้ง/พักยาว" },
+      "precise-hunter": { "t": "passive", "s": "โจมตีเป้าที่ติด Hunter's Mark ของเราได้ Advantage" },
+      "feral-senses": { "t": "passive", "s": "ได้ Blindsight ระยะ 30 ฟุต" },
+      "foe-slayer": { "t": "passive", "s": "เต๋าดาเมจของ Hunter's Mark เปลี่ยนจาก d6 เป็น d10" }
     },
     "sub": {
       "desc": "Hunter — นักล่าผู้เชี่ยวชาญ จัดการได้ทั้งตัวใหญ่และฝูง",
       "f": {
         "hunters-lore": { "t": "passive", "s": "ศัตรูที่ติด Hunter's Mark ของเรา — รู้ว่ามันมี Immunity, Resistance หรือ Vulnerability อะไรบ้าง" },
-        "hunters-prey": { "t": "passive", "s": "เลือก 1 แบบ (สลับได้หลังพัก): Colossus Slayer — ตีศัตรูที่ HP ไม่เต็มดาเมจ +1d8 (ครั้งเดียวต่อเทิร์น) หรือ Horde Breaker — ตีแล้วได้ตีอีกครั้งใส่ศัตรูอีกตัวที่อยู่ห่างเป้าแรกไม่เกิน 5 ฟุต (ครั้งเดียวต่อเทิร์น)" }
+        "hunters-prey": { "t": "passive", "s": "เลือก 1 แบบ (สลับได้หลังพัก): Colossus Slayer — ตีศัตรูที่ HP ไม่เต็มดาเมจ +1d8 (ครั้งเดียวต่อเทิร์น) หรือ Horde Breaker — ตีแล้วได้ตีอีกครั้งใส่ศัตรูอีกตัวที่อยู่ห่างเป้าแรกไม่เกิน 5 ฟุต (ครั้งเดียวต่อเทิร์น)" },
+        "defensive-tactics": { "t": "passive", "s": "เลือก 1 อย่าง (สลับได้ตอนพัก): Escape the Horde (Opportunity Attack ใส่เราติด Disadvantage) หรือ Multiattack Defense (ใครตีเราโดน การโจมตีอื่นของมันใส่เราในเทิร์นนั้นติด Disadvantage)" },
+        "superior-hunters-prey": { "t": "passive", "s": "เทิร์นละครั้ง ตอนทำดาเมจเป้าที่ติด Hunter's Mark ใส่ดาเมจเสริมของ Hunter's Mark ให้ศัตรูอีกตัวที่เห็นในระยะ 30 ฟุตจากเป้าแรกได้ด้วย" },
+        "superior-hunters-defense": { "t": "reaction", "s": "ตอนโดนดาเมจ ใช้ Reaction ได้ Resistance ดาเมจนั้นและชนิดเดียวกันจนจบเทิร์นปัจจุบัน" }
       }
     }
   },
@@ -222,13 +307,25 @@
       "thieves-cant": { "t": "passive", "s": "รู้ภาษาลับของโจร Thieves' Cant และภาษาเพิ่มอีก 1 ภาษา" },
       "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธที่เลือกได้ 2 ชนิด เปลี่ยนได้หลังพักยาว" },
       "cunning-action": { "t": "bonus", "s": "ใช้ Bonus Action ทำ Dash (วิ่ง), Disengage (ถอยไม่โดนตี) หรือ Hide (ซ่อนตัว)" },
-      "steady-aim": { "t": "bonus", "s": "ถ้ายังไม่ได้ขยับในเทิร์นนี้ ใช้ Bonus Action ให้ได้เปรียบการโจมตีครั้งถัดไป แต่หลังจากนั้นเดินไม่ได้อีกในเทิร์นนั้น" }
+      "steady-aim": { "t": "bonus", "s": "ถ้ายังไม่ได้ขยับในเทิร์นนี้ ใช้ Bonus Action ให้ได้เปรียบการโจมตีครั้งถัดไป แต่หลังจากนั้นเดินไม่ได้อีกในเทิร์นนั้น" },
+      "cunning-strike": { "t": "passive", "s": "ตอนใส่ Sneak Attack ยอมตัดเต๋า Sneak Attack แลกผลพิเศษได้ 1 อย่าง: Poison (1d6, เซฟ CON ไม่ผ่านติด Poisoned 1 นาที ต้องมี Poisoner's Kit), Trip (1d6, เป้าขนาด Large ลงไปเซฟ DEX ไม่ผ่านล้ม Prone), Withdraw (1d6, เดินครึ่ง Speed โดยไม่โดน Opportunity Attack) · DC = 8 + DEX mod + PB" },
+      "uncanny-dodge": { "t": "reaction", "s": "โดนศัตรูที่มองเห็นตีโดน ใช้ Reaction ลดดาเมจครั้งนั้นเหลือครึ่ง" },
+      "evasion": { "t": "passive", "s": "เซฟ DEX เพื่อลดดาเมจครึ่ง — ผ่านไม่โดนเลย ไม่ผ่านโดนครึ่งเดียว (ใช้ไม่ได้ตอนติด Incapacitated)" },
+      "reliable-talent": { "t": "passive", "s": "เช็คด้วยสกิลหรือเครื่องมือที่ชำนาญ ทอยได้ 9 ลงไปนับเป็น 10" },
+      "improved-cunning-strike": { "t": "passive", "s": "ใช้ Cunning Strike ได้ 2 ผลต่อการใส่ Sneak Attack 1 ครั้ง (จ่ายเต๋าแยกกัน)" },
+      "devious-strikes": { "t": "passive", "s": "Cunning Strike เพิ่ม: Daze (2d6, เซฟ CON ไม่ผ่านเทิร์นถัดไปทำได้อย่างเดียวระหว่างเดิน/action/Bonus Action), Knock Out (6d6, เซฟ CON ไม่ผ่านหมดสติ 1 นาทีหรือจนโดนดาเมจ), Obscure (3d6, เซฟ DEX ไม่ผ่านติด Blinded จนจบเทิร์นถัดไปของมัน)" },
+      "slippery-mind": { "t": "passive", "s": "ได้ Proficiency ในเซฟ WIS และ CHA (คำนวณให้แล้ว)" },
+      "elusive": { "t": "passive", "s": "ไม่มีการโจมตีไหนได้ Advantage ใส่เรา ยกเว้นตอนเราติด Incapacitated" },
+      "stroke-of-luck": { "t": "passive", "s": "D20 Test ไม่ผ่าน เปลี่ยนผลทอยเป็น 20 ได้ · 1 ครั้ง/พักสั้นหรือพักยาว" }
     },
     "sub": {
       "desc": "Thief — โจรมืออาชีพ มือไว ปีนป่ายเก่ง",
       "f": {
         "fast-hands": { "t": "bonus", "s": "ใช้ Bonus Action ทำ Sleight of Hand, ใช้ Thieves' Tools สะเดาะกุญแจ/แก้กับดัก หรือใช้สิ่งของ (Utilize)" },
-        "second-story-work": { "t": "passive", "s": "ได้ความเร็วปีนเท่าความเร็วปกติ และกระโดดใช้ DEX แทน STR ได้" }
+        "second-story-work": { "t": "passive", "s": "ได้ความเร็วปีนเท่าความเร็วปกติ และกระโดดใช้ DEX แทน STR ได้" },
+        "supreme-sneak": { "t": "passive", "s": "Cunning Strike เพิ่ม Stealth Attack (1d6): ถ้าล่องหนจากการ Hide อยู่ การโจมตีนี้ไม่ทำให้หายล่องหน ถ้าจบเทิร์นหลัง Three-Quarters Cover หรือ Total Cover" },
+        "use-magic-device": { "t": "passive", "s": "Attune ไอเทมได้ 4 ชิ้น · ใช้ charge แล้วทอย 1d6 ได้ 6 ไม่เสีย charge · ใช้ Spell Scroll ได้ทุกเวท (ใช้ INT ร่าย ถ้าเวทเลเวลสูงกว่าที่ร่ายได้ต้องเช็ค Arcana DC 10 + เลเวลเวท)" },
+        "thiefs-reflexes": { "t": "passive", "s": "รอบแรกของการต่อสู้ได้ 2 เทิร์น: เทิร์นแรกตาม Initiative ปกติ เทิร์นที่สองที่ Initiative ลบ 10" }
       }
     }
   },
@@ -246,13 +343,19 @@
       "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย CHA ใช้ Arcane Focus ขึ้นเลเวลเมื่อไหร่เปลี่ยนเวทที่เตรียมได้ 1 อัน" },
       "innate-sorcery": { "t": "bonus", "s": "1 นาที: Spell Save DC ของ Sorcerer +1 และได้เปรียบการโจมตีด้วยเวท Sorcerer", "tip": "ใช้ได้ 2 ครั้ง คืนตอนพักยาว" },
       "font-of-magic": { "t": "bonus", "s": "มี Sorcery Points = เลเวล Sorcerer แปลงแต้มเป็น Spell Slot ได้ (Bonus Action: slot เลเวล 1 = 2 แต้ม, เลเวล 2 = 3 แต้ม) หรือสลาย slot เป็นแต้มเท่าเลเวลของ slot", "tip": "Sorcery Points คืนตอนพักยาว" },
-      "metamagic": { "t": "passive", "s": "เลือก 2 วิธีดัดแปลงเวท (Metamagic) ใช้ Sorcery Points ตอนร่าย ใช้ได้ 1 แบบต่อเวท 1 อัน" }
+      "metamagic": { "t": "passive", "s": "เลือก 2 วิธีดัดแปลงเวท (Metamagic) ใช้ Sorcery Points ตอนร่าย ใช้ได้ 1 แบบต่อเวท 1 อัน" },
+      "sorcerous-restoration": { "t": "passive", "s": "ตอนพักสั้น คืน Sorcery Points ได้ไม่เกินครึ่งเลเวล Sorcerer (ปัดลง) · 1 ครั้ง/พักยาว" },
+      "sorcery-incarnate": { "t": "passive", "s": "ถ้า Innate Sorcery หมด ใช้ 2 Sorcery Points เปิดแทนได้ · ระหว่าง Innate Sorcery ใช้ Metamagic ได้ 2 อย่างต่อเวท 1 ครั้ง" },
+      "arcane-apotheosis": { "t": "passive", "s": "ระหว่าง Innate Sorcery ใช้ Metamagic 1 อย่างต่อเทิร์นได้ฟรีไม่เสีย Sorcery Points" }
     },
     "sub": {
       "desc": "Draconic Sorcery — สายเลือดมังกร ถึกขึ้น เกล็ดมังกรเป็นเกราะ",
       "f": {
         "draconic-resilience": { "t": "passive", "s": "HP สูงสุดเพิ่ม 3 ตอนได้ซับคลาส และ +1 ทุกเลเวล Sorcerer ต่อจากนั้น ไม่ใส่เกราะ AC = 10 + DEX + CHA" },
-        "draconic-spells": { "t": "passive", "s": "เตรียม Alter Self, Chromatic Orb, Command, Dragon's Breath ไว้เสมอ (ไม่นับโควตา)" }
+        "draconic-spells": { "t": "passive", "s": "เตรียม Alter Self, Chromatic Orb, Command, Dragon's Breath ไว้เสมอ (ไม่นับโควตา)" },
+        "elemental-affinity": { "t": "passive", "s": "เลือกธาตุมังกร (Acid, Cold, Fire, Lightning, Poison): ได้ Resistance ธาตุนั้น และเวทที่ทำดาเมจธาตุนั้นบวก CHA mod เข้าดาเมจ 1 ครั้ง" },
+        "dragon-wings": { "t": "bonus", "s": "กางปีกมังกร ได้ Fly Speed 60 ฟุต นาน 1 ชั่วโมง · 1 ครั้ง/พักยาว หรือใช้ 3 Sorcery Points ใช้อีกครั้ง" },
+        "dragon-companion": { "t": "passive", "s": "ร่าย Summon Dragon ได้โดยไม่ต้องใช้ Material และร่ายฟรี 1 ครั้ง/พักยาว · ตอนร่ายเลือกไม่ต้องใช้ Concentration ได้ (เวลาเหลือ 1 นาที)" }
       }
     }
   },
@@ -269,13 +372,19 @@
     "f": {
       "eldritch-invocations": { "t": "passive", "s": "เลือก Eldritch Invocations ตามคอลัมน์ (เลเวล 1 = 1 อัน) บางอันต้องเลเวลถึงหรือมี cantrip ก่อน เปลี่ยนได้ 1 อันตอนขึ้นเลเวล" },
       "pact-magic": { "t": "passive", "s": "ร่ายเวทด้วย CHA Spell Slot มีน้อยแต่เป็นเลเวลสูงสุดเสมอ และคืนทั้งหมดตอนพักสั้นหรือยาว ขึ้นเลเวลเปลี่ยนเวทได้ 1 อัน" },
-      "magical-cunning": { "t": "passive", "s": "ทำพิธี 1 นาที คืน Pact Slot ครึ่งหนึ่งของที่มี (ปัดขึ้น) 1 ครั้งต่อพักยาว" }
+      "magical-cunning": { "t": "passive", "s": "ทำพิธี 1 นาที คืน Pact Slot ครึ่งหนึ่งของที่มี (ปัดขึ้น) 1 ครั้งต่อพักยาว" },
+      "contact-patron": { "t": "passive", "s": "เตรียม Contact Other Plane ไว้เสมอ ร่ายฟรีเพื่อคุยกับ Patron ได้และผ่านเซฟอัตโนมัติ · 1 ครั้ง/พักยาว" },
+      "mystic-arcanum": { "t": "passive", "s": "เลือกเวท Warlock เลเวล 6 ร่ายฟรีได้ 1 ครั้ง/พักยาว · ได้เพิ่มเวทเลเวล 7, 8, 9 ที่ Lv13, 15, 17 (อย่างละ 1 ครั้ง/พักยาว)" },
+      "eldritch-master": { "t": "passive", "s": "ตอนใช้ Magical Cunning คืน Pact Slot ทั้งหมด" }
     },
     "sub": {
       "desc": "Fiend Patron — สัญญากับปีศาจ ได้ HP ชั่วคราวทุกครั้งที่ศัตรูล้ม",
       "f": {
         "dark-ones-blessing": { "t": "passive", "s": "เมื่อศัตรูลดเหลือ 0 HP (โดยเรา หรือในระยะ 10 ฟุตจากเรา) ได้ HP ชั่วคราว = CHA + เลเวล Warlock (อย่างน้อย 1)" },
-        "fiend-spells": { "t": "passive", "s": "เตรียม Burning Hands, Command, Scorching Ray, Suggestion ไว้เสมอ (ไม่นับโควตา)" }
+        "fiend-spells": { "t": "passive", "s": "เตรียม Burning Hands, Command, Scorching Ray, Suggestion ไว้เสมอ (ไม่นับโควตา)" },
+        "dark-ones-own-luck": { "t": "passive", "s": "ตอนทอยเช็คหรือเซฟ บวก 1d10 ได้ (ตัดสินใจหลังเห็นผลก่อนผลเกิด) ใช้ได้เท่ากับ CHA mod ครั้ง (อย่างน้อย 1)/พักยาว และใช้ได้ไม่เกิน 1 ครั้งต่อการทอย" },
+        "fiendish-resilience": { "t": "passive", "s": "ตอนพักสั้นหรือพักยาว เลือกดาเมจ 1 ชนิด (ยกเว้น Force) ได้ Resistance จนกว่าจะเปลี่ยน" },
+        "hurl-through-hell": { "t": "passive", "s": "เทิร์นละครั้ง โจมตีโดน ให้เป้าเซฟ CHA (DC เวท) ไม่ผ่านหายไปท่องนรก โดน Psychic 8d10 (ถ้าไม่ใช่ Fiend) แล้วกลับมาท้ายเทิร์นถัดไปของเรา · 1 ครั้ง/พักยาว หรือใช้ Pact Slot แลก" }
       }
     }
   },
@@ -293,13 +402,19 @@
       "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย INT มีสมุดเวท 6 อันตอนเลเวล 1 (+2 อันทุกเลเวล) เตรียมเวทจากสมุดได้ใหม่ทุกครั้งที่พักยาว" },
       "ritual-adept": { "t": "passive", "s": "ร่ายเวทที่มีป้าย Ritual จากสมุดได้เลยโดยไม่ต้องเตรียม (ใช้เวลาเพิ่ม 10 นาที ไม่เสีย slot)" },
       "arcane-recovery": { "t": "passive", "s": "หลังพักสั้น คืน Spell Slot รวมเลเวลไม่เกินครึ่งเลเวล Wizard (ปัดขึ้น) ห้ามเป็น slot เลเวล 6+ ทำได้ 1 ครั้งต่อพักยาว" },
-      "scholar": { "t": "passive", "s": "ได้ Expertise 1 สกิลที่ชำนาญอยู่จาก Arcana, History, Investigation, Medicine, Nature หรือ Religion" }
+      "scholar": { "t": "passive", "s": "ได้ Expertise 1 สกิลที่ชำนาญอยู่จาก Arcana, History, Investigation, Medicine, Nature หรือ Religion" },
+      "memorize-spell": { "t": "passive", "s": "ตอนพักสั้น สลับเวทเลเวล 1+ ที่เตรียมไว้ 1 อย่างกับเวทอื่นในสมุดเวทได้" },
+      "spell-mastery": { "t": "passive", "s": "เลือกเวทเลเวล 1 และเลเวล 2 ในสมุด (ร่ายด้วย action) เตรียมไว้เสมอ และร่ายที่เลเวลต่ำสุดได้ไม่จำกัดไม่ใช้สลอต · เปลี่ยนได้ตอนพักยาวด้วยการศึกษา 8 ชั่วโมง" },
+      "signature-spells": { "t": "passive", "s": "เลือกเวทเลเวล 3 ในสมุด 2 อย่าง เตรียมไว้เสมอ และร่ายฟรีที่เลเวล 3 ได้อย่างละ 1 ครั้ง/พักสั้นหรือพักยาว" }
     },
     "sub": {
       "desc": "Evoker — ผู้เชี่ยวชาญเวทพลังงาน ไฟ น้ำแข็ง สายฟ้า",
       "f": {
         "evocation-savant": { "t": "passive", "s": "ใส่เวทสาย Evocation (เลเวลไม่เกิน 2) ลงสมุดฟรี 2 อัน และทุกครั้งที่ได้ slot เลเวลใหม่ ได้ใส่เวท Evocation ฟรีอีก 1 อัน" },
-        "potent-cantrip": { "t": "passive", "s": "cantrip ที่ทำดาเมจ ถ้าโจมตีพลาดหรือเป้าเซฟผ่าน เป้ายังโดนดาเมจครึ่งหนึ่ง" }
+        "potent-cantrip": { "t": "passive", "s": "cantrip ที่ทำดาเมจ ถ้าโจมตีพลาดหรือเป้าเซฟผ่าน เป้ายังโดนดาเมจครึ่งหนึ่ง" },
+        "sculpt-spells": { "t": "passive", "s": "ร่ายเวทสาย Evocation เลือกคนได้ 1 + เลเวลเวท ให้ผ่านเซฟอัตโนมัติ และไม่โดนดาเมจถ้าปกติผ่านเซฟโดนครึ่ง" },
+        "empowered-evocation": { "t": "passive", "s": "เวท Wizard สาย Evocation บวก INT mod เข้าดาเมจ 1 ครั้ง" },
+        "overchannel": { "t": "passive", "s": "เวท Wizard ที่ใช้สลอตเลเวล 1–5 และทำดาเมจ ทำดาเมจสูงสุดได้เลย · ครั้งแรกไม่มีผลเสีย ใช้ซ้ำก่อนพักยาวโดน Necrotic 2d12 ต่อเลเวลเวท (เพิ่มอีก 1d12 ต่อเลเวลทุกครั้งที่ใช้ซ้ำ) ทะลุ Resistance/Immunity" }
       }
     }
   }
