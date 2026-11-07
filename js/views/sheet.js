@@ -4,7 +4,6 @@ import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
 import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, compute, missing, rebuildEquipment, levelInfo, chOf } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
-import { iconButton } from '../icons.js';
 import { classFeatureCard, featureCard, spellRow, statBox, original, LEVEL_TH, fullTh, stubSubBox } from './parts.js';
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
@@ -28,7 +27,7 @@ export function renderSheet(root, c, tab, nav) {
     const subtitle = [x.sp?.name + (c.speciesOpt?.lineage ? ` (${c.speciesOpt.lineage})` : ''), x.classLine || '?', x.CL >= 3 && x.sub ? x.sub.name : null, x.bg?.name].filter(Boolean).join(' · ');
     root.replaceChildren(...[
       h('header.sh-head',
-        h('span.sh-ico', { html: iconSvg(c.icon || c.classId || 'd20') }),
+        h('span.sh-ico', { html: iconSvg(c.classId || 'd20') }),
         h('div.sh-title', h('h1', c.name || 'Character ไร้ชื่อ'), h('p', subtitle)),
         h('button.icon-btn', { 'aria-label': 'เมนู', onclick: menu }, '⋯')),
       h('div.stats-row.sticky-stats',
@@ -263,7 +262,7 @@ export function renderSheet(root, c, tab, nav) {
     const feats = [...x.featIds];
     if (feats.length) {
       out.push(h('h2.sec', 'Feats'));
-      for (const id of new Set(feats)) { const f = D.feat[id]; if (f) out.push(featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id], pack: f.pack, icon: f.icon })); }
+      for (const id of new Set(feats)) { const f = D.feat[id]; if (f) out.push(featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id], pack: f.pack })); }
     }
     if (x.sp) {
       out.push(h('h2.sec', x.sp.name));
@@ -281,7 +280,6 @@ export function renderSheet(root, c, tab, nav) {
       h('div.coins', coin('pp', 'PP'), coin('gp', 'GP'), coin('ep', 'EP'), coin('sp', 'SP'), coin('cp', 'CP')),
       h('p.muted.small', `สวมอยู่: ${x.acNote} → AC ${x.ac}`),
       h('div.card.list', e.items.map((it, i) => h('div.item-row',
-        iconButton(it.icon, it.weapon ? 'weapon' : it.armor ? (/shield/i.test(it.name) ? 'shield' : 'armor') : 'gear', v => { if (v) it.icon = v; else delete it.icon; save(); }, { label: '', title: `ไอคอน: ${it.name}` }),
         h('b', it.name), it.weapon ? h('i.tag', 'อาวุธ') : null, it.armor ? h('i.tag', 'เกราะ') : null,
         h('div.qty',
           h('button.icon-btn', { 'aria-label': 'ลด', onclick: () => { it.qty--; if (it.qty <= 0) e.items.splice(i, 1); e.touched = true; save(); redraw(); } }, '−'),

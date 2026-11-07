@@ -24,7 +24,7 @@ export function renderHome(root, nav) {
       let x = null;
       try { x = compute(c); } catch { /* ข้อมูลไม่ครบ */ }
       return h('a.char-card', { href: `#/c/${c.id}` },
-        h('span.char-ico', { html: iconSvg(c.icon || c.classId || 'd20') }),
+        h('span.char-ico', { html: iconSvg(c.classId || 'd20') }),
         h('div', h('b', c.name || 'Character ไร้ชื่อ'), h('small', [x?.sp?.name, x?.cls ? x.classLine : 'ยังไม่เลือกคลาส'].filter(Boolean).join(' · '))),
         x?.cls ? h('div.char-stats', h('span', `AC ${x.ac}`), h('span', `HP ${c.play?.hp ?? x.hpMax}/${x.hpMax}`)) : null);
     })) : h('p.empty', 'ยังไม่มีตัวละคร — กดปุ่มด้านบนเพื่อเริ่มสร้างเลย'),
@@ -41,7 +41,7 @@ export async function renderImport(root, data, nav) {
     const c = await S.decodeChar(data);
     const x = compute(c);
     root.replaceChildren(h('section.hero',
-      h('span.hero-ico', { html: iconSvg(c.icon || c.classId || 'd20') }),
+      h('span.hero-ico', { html: iconSvg(c.classId || 'd20') }),
       h('h1', c.name || 'Character ไร้ชื่อ'),
       h('p', [x.sp?.name, x.cls ? x.classLine : null, x.bg?.name].filter(Boolean).join(' · ')),
       h('p.muted', 'มีคนแชร์ตัวละครนี้ให้คุณ — บันทึกลงเครื่องเพื่อเปิดดูและใช้งาน'),
@@ -66,7 +66,6 @@ export function renderCredits(root) {
     h('h3', 'ไอคอน'),
     h('p', 'Icons by Lorc, Delapouite and contributors from ', h('a', { href: 'https://game-icons.net', target: '_blank', rel: 'noopener' }, 'game-icons.net'), ', licensed under ',
       h('a', { href: 'https://creativecommons.org/licenses/by/3.0/', target: '_blank', rel: 'noopener' }, 'CC BY 3.0'), '.'),
-    h('p.muted.small', 'คลังไอคอนทั้งหมด 4,134 รูป (รวมรูปที่ผู้เล่นเลือกให้ตัวละคร ของ และไอเทมในแพ็ก) มาจาก game-icons.net ผ่านแพ็กเกจ ', h('a', { href: 'https://github.com/iconify/icon-sets', target: '_blank', rel: 'noopener' }, '@iconify-json/game-icons'), ' — ไม่มีการดัดแปลงรูป ยกเว้นเปลี่ยนสี'),
     h('h3', 'ข้อมูลของคุณ'),
     h('p', 'ตัวละครทั้งหมดเก็บอยู่ในเบราว์เซอร์ของเครื่องนี้เท่านั้น ไม่มีการส่งขึ้นเซิร์ฟเวอร์ ลิงก์แชร์คือข้อมูลตัวละครที่บีบอัดไว้ในลิงก์เอง'),
     h('details.orig', h('summary', 'SRD 5.2.1 Legal Information (ต้นฉบับ)'), h('div.md', { html: md(D.legal) }))));
