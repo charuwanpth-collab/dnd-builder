@@ -3,7 +3,7 @@ import { D, thFeature } from '../data.js';
 import { h, sheet, toast, sign } from '../util.js';
 import { featureCard, classFeatureCard, spellDetail, TYPE_LABEL, LEVEL_TH } from './parts.js';
 import { showTerm } from './glossary.js';
-import { dmgRange } from './explain.js';
+import { dmgRange, spellMath } from './explain.js';
 
 const INCAP = ['Incapacitated', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious'];
 const NO_MOVE = ['Grappled', 'Restrained', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious'];
@@ -220,7 +220,7 @@ function collect(c, x, P, save, redraw) {
     const s = D.spell[id], k = s && castKind(s);
     if (!k || seen.has('sp:' + id) || !canCast(s, pools)) continue;
     seen.add('sp:' + id);
-    items[k].push({ name: s.name, s: D.th.spells?.[id], tag: LEVEL_TH(s.level), spell: true, open: () => spellDetail(s, castActions(s, x, P, done)) });
+    items[k].push({ name: s.name, s: D.th.spells?.[id], tag: LEVEL_TH(s.level), spell: true, open: () => spellDetail(s, castActions(s, x, P, done), spellMath(s, b, x)) });
   }
   return { items, done };
 }

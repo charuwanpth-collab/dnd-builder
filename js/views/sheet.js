@@ -6,7 +6,7 @@ import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, compute, missing, rebuildEquipment, levelInfo, chOf, hitDieAvg, itemWeight, carry } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
 import { classFeatureCard, featureCard, spellRow, LEVEL_TH, stubSubBox, TYPE_LABEL, detailGroups, detailField } from './parts.js';
-import { formula, explain, attackBody, dmgText, helpBody, infoBtn } from './explain.js';
+import { formula, explain, attackBody, dmgText, helpBody, infoBtn, spellMath } from './explain.js';
 import { showTerm } from './glossary.js';
 import * as T from './turn.js';
 
@@ -490,7 +490,7 @@ export function renderSheet(root, c, tab, nav) {
         const ss = ids.map(id => D.spell[id]).filter(Boolean).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
         if (!ss.length) return null;
         return h('div.sp-group', title ? h('h4.lv', title) : null, h('div.spell-list', ss.map(s => {
-          const row = spellRow(s, { badge: badge || LEVEL_TH(s.level), actions: () => T.castActions(s, x, P, done) });
+          const row = spellRow(s, { badge: badge || LEVEL_TH(s.level), actions: () => T.castActions(s, x, P, done), extra: () => spellMath(s, b, x) });
           Object.assign(row.dataset, { lv: s.level, c: s.concentration ? 1 : '', r: s.ritual ? 1 : '', t: T.castKind(s) || '', q: `${s.name} ${D.th.spells?.[s.id] || ''}`.toLowerCase() });
           return row;
         })));

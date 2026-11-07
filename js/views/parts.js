@@ -68,11 +68,12 @@ export function spellMeta(s) {
   return [LEVEL_TH(s.level), s.school, s.time, s.range, s.concentration ? 'สมาธิ (C)' : null, s.ritual ? 'Ritual' : null].filter(Boolean).join(' · ');
 }
 
-export function spellDetail(s, actions = []) {
+export function spellDetail(s, actions = [], extra = null) {
   sheet(s.name, h('div.spell-detail',
     h('div.spell-head', h('span.school', { html: iconSvg(s.school) }), h('div', h('b', `${LEVEL_TH(s.level)} · ${s.school}`), h('small', `สำนัก${SCHOOL_TH[s.school] || ''}`))),
     s.pack ? h('span.pack-badge', '📦 ' + s.pack) : null,
     D.th.spells?.[s.id] ? h('p.th', D.th.spells[s.id]) : null,
+    extra ? h('div.spell-math', extra) : null,
     s.pack ? (D.thFull?.spells?.[s.id] ? h('div.md', { html: md(D.thFull.spells[s.id]) }) : null) : fullTh('spells', s.id),
     h('dl.kv',
       h('dt', 'Casting Time'), h('dd', s.time),
@@ -83,10 +84,10 @@ export function spellDetail(s, actions = []) {
     s.pack ? (s.text ? original(s.text, 'ข้อความ EN') : null) : h('div.md', { html: md(s.text) })), actions);
 }
 
-export function spellRow(s, { selected, disabled, onToggle, badge, actions } = {}) {
+export function spellRow(s, { selected, disabled, onToggle, badge, actions, extra } = {}) {
   const row = h('div.spell-row' + (selected ? '.on' : '') + (disabled ? '.off' : ''),
     h('span.school', { html: iconSvg(s.school) }),
-    h('div.spell-main', { onclick: () => spellDetail(s, typeof actions === 'function' ? actions() : actions) },
+    h('div.spell-main', { onclick: () => spellDetail(s, typeof actions === 'function' ? actions() : actions, typeof extra === 'function' ? extra() : extra) },
       h('b', s.name, s.concentration ? h('i.tag', 'C') : null, s.ritual ? h('i.tag', 'R') : null),
       h('small', D.th.spells?.[s.id] || spellMeta(s))),
     badge ? h('span.badge', badge) : null,
