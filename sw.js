@@ -1,5 +1,5 @@
 // แคชไฟล์ไว้ให้เปิดเว็บได้แม้เน็ตหลุดตอนเล่น
-const V = 'hh-v5';
+const V = 'hh-v6';
 const CORE = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'assets/icon.svg',
   'js/main.js', 'js/util.js', 'js/md.js', 'js/data.js', 'js/rules.js', 'js/store.js',
   'js/views/parts.js', 'js/views/glossary.js', 'js/views/wizard.js', 'js/views/sheet.js', 'js/views/home.js',

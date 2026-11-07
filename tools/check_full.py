@@ -29,5 +29,5 @@ for g, ids in want.items():
   bad += len(miss) + len(extra)
   print(f'{g}: {len(ids) - len(miss)}/{len(ids)}', 'ขาด: ' + ', '.join(miss) if miss else '', 'เกิน: ' + ', '.join(extra) if extra else '')
 fg = L('data/th/full/glossary.json') if os.path.exists('data/th/full/glossary.json') else {}
-print(f'glossary (แปลเต็ม): {len(fg)}/{len(want["glossary-short"])} — ทยอยแปล', 'id ผิด: ' + ', '.join(k for k in fg if k not in want['glossary-short']) if any(k not in want['glossary-short'] for k in fg) else '')
+print(f'glossary (แปลเต็ม): {len(fg)}/{len(want["glossary-short"])} ', 'id ผิด: ' + ', '.join(k for k in fg if k not in want['glossary-short']) if any(k not in want['glossary-short'] for k in fg) else '')
 raise SystemExit(1 if bad else 0)
