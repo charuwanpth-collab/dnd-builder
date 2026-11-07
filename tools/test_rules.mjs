@@ -51,3 +51,12 @@ hi('Warlock 3 / Wizard 2 (pact แยก)', { classId: 'warlock', speciesId: 'hu
   [{ c: 'warlock' }, { c: 'warlock' }, { c: 'warlock' }, { c: 'wizard' }, { c: 'wizard' }]);
 hi('Monk 2 / Barbarian 1 (UD อันแรก)', { classId: 'monk', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 13, dex: 15, con: 14, int: 8, wis: 13, cha: 10 }, bonus: { dex: 2, con: 1 } } },
   [{ c: 'monk' }, { c: 'monk' }, { c: 'barbarian' }]);
+// ---- 2L-3 ----
+hi('Rogue 6 (Expertise 4)', { classId: 'rogue', speciesId: 'human', bgId: 'criminal', skills: ['Acrobatics', 'Perception', 'Deception', 'Insight'], choices: { expertise: ['Stealth', 'Perception'], mastery: ['dagger', 'shortbow'] } }, Array.from({ length: 6 }, () => ({ c: 'rogue' })));
+hi('Bard 10 (Magical Secrets)', { classId: 'bard', speciesId: 'human', bgId: 'sage' }, Array.from({ length: 10 }, () => ({ c: 'bard' })));
+hi('Warlock 5 Tome + Thirsting', { classId: 'warlock', speciesId: 'human', bgId: 'sage', choices: { invocations: ['pact-of-the-tome', 'thirsting-blade', 'agonizing-blast'], tomeCantrips: ['guidance'] } }, Array.from({ length: 5 }, () => ({ c: 'warlock' })));
+const lvS = Array.from({ length: 4 }, () => ({ c: 'fighter' })); lvS[3] = { c: 'fighter', feat: 'magic-initiate', sub: { miList: 'cleric', miAb: 'wis', miCantrips: ['guidance'] } };
+hi('Fighter 4 + MI (cleric) จาก ASI', { classId: 'fighter', speciesId: 'human', bgId: 'soldier', choices: { fightingStyle: 'defense' } }, lvS);
+D.subs = { fighter: [D.cls.fighter.subclass, { id: 'ek-x', classId: 'fighter', name: 'Eldritch Knight', pack: 'Test', features: [], spells: [], casting: { list: 'wizard', ab: 'int' } }] };
+hi('Fighter 7 EK (pack 1/3)', { classId: 'fighter', subclassId: 'ek-x', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 12, con: 14, int: 13, wis: 10, cha: 8 }, bonus: { str: 2, int: 1 } } }, Array.from({ length: 7 }, () => ({ c: 'fighter' })));
+hi('Fighter 7 EK / Wizard 2', { classId: 'fighter', subclassId: 'ek-x', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 12, con: 14, int: 13, wis: 10, cha: 8 }, bonus: { str: 2, int: 1 } } }, [...Array.from({ length: 7 }, () => ({ c: 'fighter' })), { c: 'wizard' }, { c: 'wizard' }]);

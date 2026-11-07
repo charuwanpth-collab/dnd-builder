@@ -5,7 +5,7 @@ import * as S from '../store.js';
 import {
   ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, SKILLS, SKILL_AB, LANGS, STANDARD_ARRAY, POINT_COST, MAX_LEVEL,
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
-  compute, missing, col, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub,
+  compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub,
 } from '../rules.js';
 import { featIdOf } from '../packs.js';
 import { levelEditor, levelSummary } from './levelup.js';
@@ -184,8 +184,8 @@ export function renderWizard(root, c, stepId, nav) {
           h('ul.mastery-list', D.mastery.map(mm => h('li', h('b', mm.name + ': '), D.th.mastery?.[mm.id] || mm.text, fullTh('mastery', mm.id)))))));
     }
 
-    for (const [lv, n, only] of EXPERTISE[cls.id] || []) {
-      if (L < lv) continue;
+    if (expertiseCount(cls.id, L)) {
+      const n = expertiseCount(cls.id, L), only = EXPERTISE[cls.id][0][2];
       const profSkills = x.skills.filter(s => s.prof && (!only || only.includes(s.name))).map(s => s.name);
       out.push(block('Expertise', `เลือก ${n} สกิลที่ชำนาญอยู่แล้ว ให้โบนัสเป็นสองเท่า${only ? ' (ต้องเป็นสกิลจากรายการของ Scholar)' : ''}`,
         counter((ch.expertise || []).length, n),
@@ -214,8 +214,9 @@ export function renderWizard(root, c, stepId, nav) {
 
     if (cls.id === 'sorcerer' && L >= 2) {
       const items = cls.options['metamagic-options'].items;
-      out.push(block('Metamagic', 'เลือก 2 วิธีบิดเวท (ใช้ Sorcery Points)', counter((ch.metamagic || []).length, 2),
-        optionList(items, ch.metamagic || [], 2, v => { ch.metamagic = v; changed(); })));
+      const n = metamagicCount(L);
+      out.push(block('Metamagic', `เลือก ${n} วิธีบิดเวท (ใช้ Sorcery Points) — ได้เพิ่มที่เลเวล 10 และ 17`, counter((ch.metamagic || []).length, n),
+        optionList(items, ch.metamagic || [], n, v => { ch.metamagic = v; changed(); })));
     }
     if (cls.id === 'warlock') {
       const n = parseInt(col(cls, 'Eldritch Invocations', L), 10);
@@ -406,8 +407,9 @@ export function renderWizard(root, c, stepId, nav) {
     const out = [intro('เลเวลอัป', `ตั้งค่าทีละเลเวล (2–${c.level}): HP แบบค่าเฉลี่ยหรือทอย, ASI / feat ที่เลเวล 4, 8, 12, 16 (บางคลาสได้เพิ่ม) และ Epic Boon ที่เลเวล 19 · อยากลองคลาสอื่นก็เปลี่ยนคลาสของเลเวลนั้นได้ (Multiclass)`)];
     out.push(h('div.ab-mini', ABIL.map(a => h('div', h('small', ABIL_SHORT[a]), h('b', sign(x.m[a])), h('span', String(x.score[a]))))),
       h('p.muted.small', `HP สูงสุด ${x.hpMax} · ${x.classLine}`));
+    const miss = missing(c);
     for (const li of levelInfo(c).slice(1)) {
-      const need = (li.asi || li.boon) && !li.e.feat;
+      const need = (li.asi || li.boon) && miss.some(t => t.endsWith(`(Lv ${li.lv})`));
       const open = openLv.has(li.i) || need;
       out.push(h('details.block.lv-card' + (need ? '.need' : ''), {
         open, ontoggle: e => { if (e.currentTarget.open) openLv.add(li.i); else openLv.delete(li.i); },
@@ -474,13 +476,19 @@ export function renderWizard(root, c, stepId, nav) {
         } else if (b.preparedMax) {
           out.push(pick('เวทที่เตรียมไว้', all.filter(s => s.level > 0 && !always.has(s.id)), sp.prepared, b.preparedMax, v => { sp.prepared = v; changed(); }));
         }
-        if (['cleric', 'druid', 'paladin', 'ranger', 'wizard'].includes(b.list)) out.push(h('p.muted.small', '💡 คลาสนี้เปลี่ยนเวทที่เตรียมได้ทุกครั้งที่พักยาว'));
+        if (b.secrets) out.push(h('p.muted.small', '✨ Magical Secrets: เลือกเวทจากรายการ Bard, Cleric, Druid และ Wizard ได้'));
+        if (['cleric', 'druid', 'paladin', 'ranger', 'wizard'].includes(b.cid)) out.push(h('p.muted.small', '💡 คลาสนี้เปลี่ยนเวทที่เตรียมได้ทุกครั้งที่พักยาว'));
       } else if (b.key === 'fs') {
         out.push(pick('Cantrips', classSpellList(b.list, 0).filter(s => s.level === 0), b.chs.fsCantrips || [], 2, v => { b.chs.fsCantrips = v; changed(); }));
       } else if (b.key === 'mi') {
         const all = classSpellList(b.list, 1);
-        out.push(pick('Cantrips', all.filter(s => s.level === 0), c.choices.miCantrips || [], 2, v => { c.choices.miCantrips = v; changed(); }));
-        out.push(pick('เวทเลเวล 1 (ร่ายฟรีได้ 1 ครั้ง/พักยาว)', all.filter(s => s.level === 1), c.choices.miSpell ? [c.choices.miSpell] : [], 1, v => { c.choices.miSpell = v[0] || null; changed(); }));
+        out.push(pick('Cantrips', all.filter(s => s.level === 0), b.chs.miCantrips || [], 2, v => { b.chs.miCantrips = v; changed(); }));
+        out.push(pick('เวทเลเวล 1 (ร่ายฟรีได้ 1 ครั้ง/พักยาว)', all.filter(s => s.level === 1), b.chs.miSpell ? [b.chs.miSpell] : [], 1, v => { b.chs.miSpell = v[0] || null; changed(); }));
+      } else if (b.key === 'tome') {
+        const all = classSpellList('any', 1);
+        out.push(h('p.muted.small', 'Book of Shadows: cantrip 3 อย่าง + เวทเลเวล 1 ที่เป็น Ritual 2 อย่าง จากคลาสไหนก็ได้ (นับเป็นเวทของ Warlock)'));
+        out.push(pick('Cantrips', all.filter(s => s.level === 0), b.chs.tomeCantrips || [], 3, v => { b.chs.tomeCantrips = v; changed(); }));
+        out.push(pick('Ritual เลเวล 1', all.filter(s => s.level === 1 && s.ritual), b.chs.tomeRituals || [], 2, v => { b.chs.tomeRituals = v; changed(); }));
       }
     }
     return out;

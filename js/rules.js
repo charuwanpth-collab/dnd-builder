@@ -25,10 +25,15 @@ export const SPELL_AB = { bard: 'cha', cleric: 'wis', druid: 'wis', paladin: 'ch
 export const FIGHTING_STYLE_AT = { fighter: 1, paladin: 2, ranger: 2 };
 export const MASTERY_AT = { barbarian: 1, fighter: 1, paladin: 1, ranger: 1, rogue: 1 };
 export const EXPERTISE = { // [ระดับ, จำนวน, รายการจำกัด]
-  rogue: [[1, 2]], bard: [[2, 2]], ranger: [[2, 1]],
+  rogue: [[1, 2], [6, 2]], bard: [[2, 2], [9, 2]], ranger: [[2, 1], [9, 2]],
   wizard: [[2, 1, ['Arcana', 'History', 'Investigation', 'Medicine', 'Nature', 'Religion']]],
 };
 
+/** จำนวน Expertise / Metamagic ทั้งหมดที่ได้ถึงเลเวลคลาสนั้น */
+export const expertiseCount = (id, L) => (EXPERTISE[id] || []).filter(([lv]) => L >= lv).reduce((t, [, n]) => t + n, 0);
+export const metamagicCount = L => (L >= 17 ? 6 : L >= 10 ? 4 : L >= 2 ? 2 : 0);
+/** Prepared spells ของ 1/3 caster (Eldritch Knight / Arcane Trickster แบบ 2024) ตามเลเวลคลาส */
+const THIRD_PREP = [0, 0, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 9, 10, 10, 11, 11, 11, 12, 13];
 export const mod = s => Math.floor((s - 10) / 2);
 export const pbOf = l => 2 + Math.floor((l - 1) / 4);
 
@@ -244,8 +249,20 @@ export function casterInfo(cls, level) {
   };
 }
 
+/** ข้อมูลการร่ายเวทของคลาส id ที่เลเวล n — รวมซับคลาสจาก Content Pack ที่ตั้งเป็น 1/3 caster */
+export function casterOf(c, id, n) {
+  const k = D.cls[id];
+  if (!k) return null;
+  const ci = casterInfo(k, n);
+  if (ci) return ci;
+  const sub = subOf(c, id);
+  if (!sub?.pack || !sub.casting?.list || n < 3) return null;
+  const slots = casterInfo(D.cls.wizard, Math.ceil(n / 3)).slots;
+  return { ability: sub.casting.ab || 'int', cantrips: n >= 10 ? 3 : 2, prepared: THIRD_PREP[n - 1], slots, maxLevel: Math.max(...Object.keys(slots).map(Number)), pact: false, third: true, list: sub.casting.list };
+}
 export function classSpellList(classId, maxLevel, includeCantrips = true) {
-  return D.spells.filter(s => s.classes.includes(classId) && (s.level === 0 ? includeCantrips : s.level <= maxLevel));
+  const ids = [].concat(classId);
+  return D.spells.filter(s => (ids.includes('any') || s.classes.some(k => ids.includes(k))) && (s.level === 0 ? includeCantrips : s.level <= maxLevel));
 }
 
 // ---------- อุปกรณ์ ----------
@@ -431,6 +448,7 @@ export function compute(c) {
   const prof = new Set([...(bg?.skills || []), ...(c.skills || [])]);
   if (so.skill) prof.add(so.skill);
   for (const k of ['skilled', 'skilled2']) (ch[k] || []).forEach(s => SKILL_AB[s] && prof.add(s));
+  for (const li of LI) if ((li.asi || li.boon) && li.e.feat === 'skilled') (li.e.sub?.skills || []).forEach(s => SKILL_AB[s] && prof.add(s));
   const expList = [];
   for (const [id, n] of Object.entries(CLs)) {
     if (!D.cls[id]) continue;
@@ -539,22 +557,26 @@ export function compute(c) {
   const unarmedDie = monkL ? col(monk, 'Martial Arts', monkL) : null;
   let atkPer = 1;
   for (const [id, n] of Object.entries(CLs)) atkPer = Math.max(atkPer, 1 + (EXTRA_ATK[id] || []).filter(l => n >= l).length);
+  const inv = CLs.warlock ? chOf(c, 'warlock').invocations || [] : [];
+  if (inv.includes('devouring-blade') && CLs.warlock >= 12) atkPer = Math.max(atkPer, 3);
+  else if (inv.includes('thirsting-blade') && CLs.warlock >= 5) atkPer = Math.max(atkPer, 2);
   const uAb = monkL && m.dex > m.str ? 'dex' : 'str';
   attacks.push({ name: 'Unarmed Strike', hit: m[uAb] + pb, dmg: unarmedDie ? `${unarmedDie}${m[uAb] >= 0 ? '+' : ''}${m[uAb]} Bludgeoning` : `${Math.max(0, 1 + m.str)} Bludgeoning`, props: '', prof: true });
 
   // เวท
   const casting = [];
   // สเปลสลอต: ร่ายเวทคลาสเดียว = ตารางของคลาสนั้น · หลายคลาส = ตาราง Multiclass Spellcaster (Paladin/Ranger ครึ่งปัดขึ้น) · Pact Magic แยก
-  const slotCls = Object.entries(CLs).filter(([id]) => SPELL_AB[id] && id !== 'warlock' && D.cls[id]);
+  const CI = Object.fromEntries(Object.entries(CLs).map(([id, n]) => [id, casterOf(c, id, n)]));
+  const slotCls = Object.entries(CLs).filter(([id]) => CI[id] && !CI[id].pact);
   let shared = {}, casterLv = 0;
-  if (slotCls.length === 1) shared = casterInfo(D.cls[slotCls[0][0]], slotCls[0][1]).slots;
+  if (slotCls.length === 1) shared = CI[slotCls[0][0]].slots;
   else if (slotCls.length > 1) {
-    casterLv = slotCls.reduce((t, [id, n]) => t + (HALF_CASTER.has(id) ? Math.ceil(n / 2) : n), 0);
+    casterLv = slotCls.reduce((t, [id, n]) => t + (CI[id].third ? Math.floor(n / 3) : HALF_CASTER.has(id) ? Math.ceil(n / 2) : n), 0);
     shared = casterInfo(D.cls.wizard, Math.min(20, casterLv)).slots;
   }
   let slotsGiven = false;
   for (const [id, n] of Object.entries(CLs)) {
-    const k = D.cls[id], ci = k ? casterInfo(k, n) : null;
+    const k = D.cls[id], ci = CI[id];
     if (!ci) continue;
     const kc = chOf(c, id), sel = spellsOf(c, id), primary = id === c.classId, ab = ci.ability;
     const always = [];
@@ -567,13 +589,24 @@ export function compute(c) {
     if (ci.pact) slots = ci.slots;
     else if (!slotsGiven) { slots = shared; slotsGiven = true; }
     casting.push({
-      key: primary ? 'class' : 'mc:' + id, cid: id, sel, source: primary ? k.name : `${k.name} (Multiclass)`, ab, dc: 8 + pb + m[ab], atk: pb + m[ab],
+      key: primary ? 'class' : 'mc:' + id, cid: id, sel, source: (primary ? k.name : `${k.name} (Multiclass)`) + (ci.third ? ` · ${subOf(c, id).name}` : ''), ab, dc: 8 + pb + m[ab], atk: pb + m[ab],
       cantripMax: ci.cantrips + extraCantrips, preparedMax: ci.prepared, slots, pact: ci.pact, maxLevel: ci.maxLevel, casterLv: !ci.pact && casterLv && Object.keys(slots).length ? casterLv : 0,
       cantrips: sel.cantrips || [], prepared: sel.prepared || [], book: sel.book,
       bookMax: id === 'wizard' ? 6 + 2 * (n - 1) : null,
-      always: always.map(nm => D.spellByName[nm.toLowerCase()]?.id).filter(Boolean), list: id,
+      always: always.map(nm => D.spellByName[nm.toLowerCase()]?.id).filter(Boolean),
+      list: ci.list || (id === 'bard' && n >= 10 ? ['bard', 'cleric', 'druid', 'wizard'] : id), secrets: id === 'bard' && n >= 10,
     });
     if (ci.cantrips + extraCantrips < (sel.cantrips || []).length) warn.push(`เลือก cantrip ของ ${k.name} เกินจำนวน`);
+  }
+  if (inv.includes('pact-of-the-tome')) {
+    const kc = chOf(c, 'warlock'), ab = 'cha';
+    casting.push({ key: 'tome', chs: kc, source: 'Pact of the Tome (Book of Shadows)', ab, dc: 8 + pb + m[ab], atk: pb + m[ab], cantripMax: 3, preparedMax: 2, maxLevel: 1, cantrips: kc.tomeCantrips || [], prepared: kc.tomeRituals || [], always: [], list: 'any', slots: {} });
+  }
+  // Magic Initiate ที่ได้ตอน ASI/feat
+  const miLv = LI.filter(li => (li.asi || li.boon) && li.e.feat === 'magic-initiate' && li.e.sub?.miList);
+  for (const li of miLv) {
+    const q = li.e.sub, ab = q.miAb || SPELL_AB[q.miList] || 'int';
+    casting.push({ key: 'mi', chs: q, source: `Magic Initiate (${q.miList[0].toUpperCase() + q.miList.slice(1)}) · Lv ${li.lv}`, ab, dc: 8 + pb + m[ab], atk: pb + m[ab], cantripMax: 2, preparedMax: 1, maxLevel: 1, cantrips: q.miCantrips || [], prepared: q.miSpell ? [q.miSpell] : [], always: [], list: q.miList, slots: {} });
   }
   for (const id of ['paladin', 'ranger']) {
     if ((CLs[id] || 0) < 2) continue;
@@ -619,6 +652,7 @@ export function compute(c) {
 
   const xx = { CLs, TL: L, pb, m, originFeats: featIds };
   const res = cls ? resources(c, xx) : [];
+  for (const li of miLv) res.push({ id: 'mi' + li.i, name: `Magic Initiate Lv ${li.lv} (ร่ายฟรี)`, max: 1, reset: 'long', icon: 'feat' });
 
   // ภาษา
   const langs = new Set(['Common', ...(c.languages || [])]);
@@ -657,9 +691,10 @@ export function missing(c) {
     if (id === 'bard' && L >= 3 && isSrdSub && (ch.loreSkills || []).length < 3) out.push('เลือกสกิล 3 อย่าง (Bonus Proficiencies)' + tag);
     if (id === 'druid' && L >= 3 && isSrdSub && !ch.land) out.push('เลือกชนิดดินแดน (Circle of the Land)' + tag);
     if (id === 'ranger' && L >= 3 && isSrdSub && !ch.huntersPrey) out.push("เลือก Hunter's Prey" + tag);
-    if (id === 'sorcerer' && L >= 2 && (ch.metamagic || []).length < 2) out.push('เลือก Metamagic 2 อย่าง' + tag);
+    if (id === 'sorcerer' && (ch.metamagic || []).length < metamagicCount(L)) out.push(`เลือก Metamagic ${metamagicCount(L)} อย่าง` + tag);
+    if (id === 'warlock' && (ch.invocations || []).includes('pact-of-the-tome') && ((ch.tomeCantrips || []).length < 3 || (ch.tomeRituals || []).length < 2)) out.push('เลือกเวทใน Book of Shadows (Pact of the Tome)');
     if (id === 'warlock' && (ch.invocations || []).length < num(col(k, 'Eldritch Invocations', L))) out.push('เลือก Eldritch Invocations' + tag);
-    for (const [lv, n] of EXPERTISE[id] || []) if (L >= lv && (ch.expertise || []).length < n) out.push('เลือก Expertise' + tag);
+    if ((ch.expertise || []).length < expertiseCount(id, L)) out.push(`เลือก Expertise ${expertiseCount(id, L)} อย่าง` + tag);
   }
   if (SPECIES_OPT[c.speciesId] && !c.speciesOpt?.[SPECIES_OPT[c.speciesId].key]) out.push(`เลือก ${SPECIES_OPT[c.speciesId].label}`);
   if (c.speciesId === 'human' && !c.speciesOpt?.feat) out.push('เลือก Origin Feat (Human Versatile)');
@@ -670,6 +705,8 @@ export function missing(c) {
     if (!f) { out.push(`เลือก ${li.boon ? 'Epic Boon' : 'ASI'} หรือ Feat (Lv ${li.lv})`); continue; }
     const r = featAsiRule(f);
     if (r && Object.values(li.e.asi || {}).reduce((s, n) => s + n, 0) < r.total) out.push(`ใส่แต้มค่าพลังของ ${f.name} (Lv ${li.lv})`);
+    if (f.id === 'skilled' && (li.e.sub?.skills || []).length < 3) out.push(`เลือกสกิล 3 อย่างของ Skilled (Lv ${li.lv})`);
+    if (f.id === 'magic-initiate' && !li.e.sub?.miList) out.push(`เลือกรายการเวทของ Magic Initiate (Lv ${li.lv})`);
   }
   return out;
 }

@@ -1,12 +1,12 @@
 // เลเวลอัป: ตัวแก้ไขรายเลเวล (ใช้ทั้งในวิซาร์ดและหน้าต่าง Level Up บนใบตัวละคร)
 import { D } from '../data.js';
+import { chips } from './parts.js';
 import { h, sheet, toast, sign } from '../util.js';
 import {
-  ABIL, ABIL_SHORT, MAX_LEVEL, MC_PROF, compute, levelInfo, ensureLevels, featChoices, featAsiRule, meetsPrimary, hitDieAvg, subOf,
+  ABIL, ABIL_SHORT, SKILLS, MAX_LEVEL, MC_PROF, compute, levelInfo, ensureLevels, featChoices, featAsiRule, meetsPrimary, hitDieAvg, subOf,
 } from '../rules.js';
 import { classFeatureCard, original } from './parts.js';
 
-const SUBFEAT_LATER = new Set(['skilled', 'magic-initiate']);
 
 /** สรุปสั้นของเลเวลหนึ่ง เช่น "Fighter 4 · HP +8 · ASI STR+2" */
 export function levelSummary(c, li, x = compute(c)) {
@@ -81,7 +81,7 @@ export function levelEditor(c, i, changed) {
   if (li.asi || li.boon) {
     const opts = featChoices(c, li);
     out.push(h('label.lbl', li.boon ? 'Epic Boon (หรือ feat อื่นที่เข้าเงื่อนไข)' : 'Ability Score Improvement หรือ Feat'),
-      h('select.inp', { onchange: ev => { if (ev.target.value) e.feat = ev.target.value; else delete e.feat; e.asi = {}; changed(); } },
+      h('select.inp', { onchange: ev => { if (ev.target.value) e.feat = ev.target.value; else delete e.feat; e.asi = {}; delete e.sub; changed(); } },
         h('option', { value: '' }, '— เลือก —'),
         opts.map(f => h('option', { value: f.id, selected: f.id === e.feat }, `${f.pack ? '📦 ' : ''}${f.name} (${f.category})`))));
     const f = D.feat[e.feat];
@@ -103,7 +103,19 @@ export function levelEditor(c, i, changed) {
       }
       const th = D.th.feats?.[f.id];
       if (th?.s) out.push(h('p.th', th.s));
-      if (SUBFEAT_LATER.has(f.id) && f.id !== 'ability-score-improvement') out.push(h('p.muted.small', 'ℹ️ ตัวเลือกย่อยของ feat นี้ (สกิล/สเปล) ตอนเลเวลอัปจะเลือกได้ในอัปเดตถัดไป — ตอนนี้จดไว้ในโน้ตก่อนนะ'));
+      if (f.id === 'skilled') {
+        const q = e.sub = e.sub || { skills: [] };
+        out.push(h('label.lbl', 'Skilled: เลือกสกิล 3 อย่าง'),
+          chips(SKILLS.map(k => k[0]), q.skills, 3, v => { q.skills = v; changed(); }, { locked: x.skills.filter(k => k.prof && !q.skills.includes(k.name)).map(k => k.name) }));
+      }
+      if (f.id === 'magic-initiate') {
+        const q = e.sub = e.sub || {};
+        out.push(h('label.lbl', 'Magic Initiate: รายการเวท'),
+          chips(['cleric', 'druid', 'wizard'], q.miList ? [q.miList] : [], 1, v => { q.miList = v[0]; q.miCantrips = []; q.miSpell = null; changed(); }, { labels: { cleric: 'Cleric', druid: 'Druid', wizard: 'Wizard' } }),
+          h('label.lbl', 'ค่าพลังที่ใช้ร่าย'),
+          chips(['int', 'wis', 'cha'], q.miAb ? [q.miAb] : [], 1, v => { q.miAb = v[0]; changed(); }, { labels: { int: 'INT', wis: 'WIS', cha: 'CHA' } }),
+          h('p.muted.small', 'เลือก cantrip 2 อย่าง + เวทเลเวล 1 อีก 1 อย่าง ได้ที่ขั้น "เวทมนตร์" (หรือปุ่ม ✏️ เปลี่ยนเวท ในใบตัวละคร)'));
+      }
       out.push(original(f.text, `${f.name} (EN)`));
     }
   }
