@@ -33,6 +33,8 @@ export function renderSheet(root, c, tab, nav) {
   const ui = { act: 'all', feat: 'all', spQ: '', spLv: 'all', spF: '' };
 
   function draw() {
+    if (c.theme) { document.documentElement.style.setProperty('--gold', c.theme); document.documentElement.style.setProperty('--gold2', `color-mix(in srgb, ${c.theme} 60%, white)`); }
+    else for (const k of ['--gold', '--gold2']) document.documentElement.style.removeProperty(k);
     const e = c.equipment;
     if (!e.items.length && !e.gp && (c.classId || c.bgId) && !e.touched) { rebuildEquipment(c); save(); }
     const x = compute(c);
@@ -86,14 +88,36 @@ export function renderSheet(root, c, tab, nav) {
 
   // ---------- หัว ----------
   function header(x) {
-    const subtitle = [x.sp?.name + (c.speciesOpt?.lineage ? ` (${c.speciesOpt.lineage})` : ''), x.classLine || '?', x.CL >= 3 && x.sub ? x.sub.name : null, x.bg?.name].filter(Boolean).join(' · ');
+    const subtitle = [x.sp ? x.sp.name + (c.speciesOpt?.lineage ? ` (${c.speciesOpt.lineage})` : '') : null, x.classLine || '?', x.CL >= 3 && x.sub ? x.sub.name : null, x.bg?.name].filter(Boolean).join(' · ');
     return h('header.sh-head',
-      h('span.sh-ico', { html: iconSvg(c.classId || 'd20') }),
+      h('button.sh-ico' + (c.portrait ? '.has-pic' : ''), { onclick: lookSheet, 'aria-label': 'รูปและสีประจำตัว' }, c.portrait ? h('img', { src: c.portrait, alt: '' }) : h('span', { html: iconSvg(c.classId || 'd20') })),
       h('div.sh-title', h('h1', c.name || 'Character ไร้ชื่อ'), h('p', subtitle)),
       h('button.rest-btn', { onclick: () => shortRest(x), 'aria-label': 'พักสั้น' }, h('span', { html: iconSvg('short') }), h('small', 'พักสั้น')),
       h('button.rest-btn', { onclick: () => longRest(x), 'aria-label': 'พักยาว' }, h('span', { html: iconSvg('long') }), h('small', 'พักยาว')),
       h('a.icon-btn.help-btn', { href: `#/help/${c.id}`, 'aria-label': 'เล่นยังไง' }, '❓'),
       h('button.icon-btn', { 'aria-label': 'เมนู', onclick: menu }, '⋯'));
+  }
+  // รูปตัวละคร (ย่อเหลือ 256px เก็บในเครื่อง) + สีประจำตัว
+  const THEMES = [['', 'แดง (ค่าเริ่มต้น)'], ['#e8833a', 'ส้ม'], ['#d4a73a', 'ทอง'], ['#4caf6e', 'เขียว'], ['#3f8fd8', 'ฟ้า'], ['#9b6be0', 'ม่วง'], ['#e05c9a', 'ชมพู'], ['#9aa0a6', 'เทา']];
+  function lookSheet() {
+    const file = h('input', { type: 'file', accept: 'image/*', hidden: true, onchange: async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try {
+        const img = await createImageBitmap(f), k = Math.min(1, 256 / Math.max(img.width, img.height));
+        const cv = h('canvas', { width: Math.round(img.width * k), height: Math.round(img.height * k) });
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        c.portrait = cv.toDataURL('image/jpeg', 0.85); S.save(c); redraw(); close(); toast('ใส่รูปแล้ว');
+      } catch { toast('เปิดรูปนี้ไม่ได้ ลองรูปอื่นดูนะ'); }
+    } });
+    const close = sheet('รูปและสีประจำตัว', h('div.look',
+      h('div.look-pic', c.portrait ? h('img', { src: c.portrait, alt: 'รูปตัวละคร' }) : h('span', { html: iconSvg(c.classId || 'd20') })),
+      h('div.row.wrap', h('button.btn.primary', { onclick: () => file.click() }, c.portrait ? 'เปลี่ยนรูป' : 'เลือกรูปจากเครื่อง'),
+        c.portrait ? h('button.btn', { onclick: () => { delete c.portrait; S.save(c); redraw(); close(); } }, 'เอารูปออก') : null, file),
+      h('p.muted.small', 'รูปจะถูกย่อให้เล็กแล้วเก็บไว้ในเครื่องนี้ · ลิงก์แชร์จะไม่มีรูปติดไป (ลิงก์จะยาวเกิน) แต่ไฟล์สำรองมีรูปไปด้วย'),
+      h('h4', 'สีประจำตัวละคร'),
+      h('div.swatches', THEMES.map(([v, l]) => h('button.swatch' + ((c.theme || '') === v ? '.on' : ''), { 'aria-label': l, title: l, style: { background: v || '#e0464a' },
+        onclick: () => { if (v) c.theme = v; else delete c.theme; S.save(c); redraw(); close(); lookSheet(); } }))),
+      h('p.muted.small', 'สีนี้ใช้เฉพาะตอนเปิดใบของตัวละครนี้ ช่วยให้แยกตัวละครออกง่ายเวลามีหลายตัว')));
   }
   function mini(x) {
     return h('button.mini', { onclick: () => root.querySelector('.hp-box')?.scrollIntoView({ block: 'center', behavior: 'smooth' }) },

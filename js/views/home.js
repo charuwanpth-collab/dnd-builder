@@ -25,7 +25,7 @@ export function renderHome(root, nav) {
       let x = null;
       try { x = compute(c); } catch { /* ข้อมูลไม่ครบ */ }
       return h('a.char-card', { href: `#/c/${c.id}` },
-        h('span.char-ico', { html: iconSvg(c.classId || 'd20') }),
+        c.portrait ? h('img.char-ico.pic', { src: c.portrait, alt: '' }) : h('span.char-ico', { html: iconSvg(c.classId || 'd20') }),
         h('div', h('b', c.name || 'Character ไร้ชื่อ'), h('small', [x?.sp?.name, x?.cls ? x.classLine : 'ยังไม่เลือกคลาส'].filter(Boolean).join(' · '))),
         x?.cls ? h('div.char-stats', h('span', `AC ${x.ac}`), h('span', `HP ${c.play?.hp ?? x.hpMax}/${x.hpMax}`)) : null);
     })) : h('p.empty', 'ยังไม่มีตัวละคร — กดปุ่มด้านบนเพื่อเริ่มสร้างเลย'),

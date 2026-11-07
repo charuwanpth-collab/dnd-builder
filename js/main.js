@@ -21,6 +21,7 @@ function route() {
   const parts = location.hash.replace(/^#\/?/, '').split('/');
   const [page, a, b] = parts;
   document.body.dataset.page = page || 'home';
+  for (const k of ['--gold', '--gold2']) document.documentElement.style.removeProperty(k); // สีประจำตัวละคร (ตั้งใหม่ในใบตัวละคร)
   $$('[data-nav]').forEach(el => el.classList.toggle('on', el.dataset.nav === (page || 'home')));
   if (page === 'c' || page === 'edit') {
     const c = S.get(a);

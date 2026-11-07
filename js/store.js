@@ -55,7 +55,7 @@ async function pipe(bytes, stream) {
 }
 
 export async function encodeChar(c) {
-  const { id, createdAt, updatedAt, ...rest } = c;
+  const { id, createdAt, updatedAt, portrait, ...rest } = c; // รูปไม่ใส่ในลิงก์ (ยาวเกิน) — ไปกับไฟล์สำรองแทน
   const packs = usedPackItems([c]);
   if (packs.length) rest.packs = packs;
   const bytes = new TextEncoder().encode(JSON.stringify(rest));
