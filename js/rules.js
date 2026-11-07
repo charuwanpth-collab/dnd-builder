@@ -1,5 +1,6 @@
 // กฎและการคำนวณค่าตัวละคร (D&D 2024 / SRD 5.2.1) — ทุกอย่างคำนวณจากข้อมูลตัวละครดิบ
 import { D } from './data.js';
+import { featIdOf } from './packs.js';
 
 export const MAX_LEVEL = 3; // เฟส 1
 export const ABIL = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
@@ -77,10 +78,20 @@ export function parseMdTables(text) {
   return out;
 }
 
+/** ซับคลาสที่ตัวละครเลือก (SRD หรือจาก Content Pack) */
+export function subOf(c) {
+  const cls = D.cls[c.classId];
+  if (!cls) return null;
+  return D.subs?.[cls.id]?.find(s => s.id === c.subclassId) || cls.subclass;
+}
+/** เลือกซับคลาส SRD อยู่หรือเปล่า (ตัวเลือกพิเศษอย่าง Land / Hunter's Prey ใช้เฉพาะซับคลาส SRD) */
+export const srdSub = c => !!D.cls[c.classId] && subOf(c) === D.cls[c.classId].subclass;
+
 /** สเปลที่ซับคลาสให้ "เตรียมไว้เสมอ" */
-export function subclassSpells(cls, level, land) {
+export function subclassSpells(cls, level, land, sub = cls.subclass) {
   if (level < 3) return [];
-  const f = cls.subclass.features.find(x => /Spells$/.test(x.name));
+  if (sub.pack) return (sub.spells || []).filter(r => num(r.level) <= level).flatMap(r => String(r.list || '').split(',').map(x => x.trim()).filter(Boolean));
+  const f = sub.features.find(x => /Spells$/.test(x.name));
   if (!f) return [];
   let tables = parseMdTables(f.text);
   if (cls.id === 'druid') tables = tables.filter(t => t.label.toLowerCase().startsWith((land || 'arid').toLowerCase()));
@@ -210,6 +221,11 @@ function resources(c, x) {
   if (SPECIES_SPELLS[so.lineage || so.legacy] && L >= 3 && SPECIES_SPELLS[so.lineage || so.legacy][1])
     add('sp3', SPECIES_SPELLS[so.lineage || so.legacy][1] + ' (ร่ายฟรี)', 1, 'long', 'spell');
   if (x.originFeats.includes('magic-initiate')) add('mi', 'Magic Initiate (ร่ายฟรี)', 1, 'long', 'feat');
+  // ฟีเจอร์ซับคลาสจาก Content Pack ที่กำหนดจำนวนครั้งไว้
+  if (x.sub?.pack && L >= 3) for (const f of x.sub.features) if (f.level <= L && f.uses?.n) {
+    const u = f.uses.n, n = u === 'pb' ? pb : x.m[u] != null ? Math.max(1, x.m[u]) : parseInt(u, 10) || 0;
+    add('pk-' + f.id, f.name, n, f.uses.reset === 'short' ? 'short' : 'long', 'feat');
+  }
   return R;
 }
 
@@ -218,6 +234,8 @@ export function compute(c) {
   const cls = D.cls[c.classId], sp = D.sp[c.speciesId], bg = D.bg[c.bgId];
   const L = c.level || 1, pb = pbOf(L), ch = c.choices || {}, so = c.speciesOpt || {};
   const warn = [];
+  const sub = subOf(c), isSrdSub = srdSub(c);
+  if (cls && c.subclassId && sub?.id !== c.subclassId) warn.push('ซับคลาสที่เลือกไว้ไม่มีในเครื่องนี้ (แพ็กถูกปิดหรือลบ) — แสดงซับคลาส SRD แทน');
 
   // ค่าความสามารถ
   const score = {};
@@ -226,7 +244,7 @@ export function compute(c) {
 
   // Origin feats (จาก background + Human Versatile)
   const originFeats = [];
-  if (bg) originFeats.push(D.feat[bg.feat.replace(/\s*\(.*\)/, '').toLowerCase().replace(/\s+/g, '-')]?.id);
+  if (bg) originFeats.push(D.feat[featIdOf(bg.feat)]?.id);
   if (c.speciesId === 'human' && so.feat) originFeats.push(so.feat);
   const featIds = originFeats.filter(Boolean);
   if (ch.fightingStyle && !['blessed-warrior', 'druidic-warrior'].includes(ch.fightingStyle)) featIds.push(ch.fightingStyle);
@@ -235,7 +253,7 @@ export function compute(c) {
   const prof = new Set([...(bg?.skills || []), ...(c.skills || [])]);
   if (so.skill) prof.add(so.skill);
   if (cls?.id === 'barbarian' && L >= 3 && ch.primalSkill) prof.add(ch.primalSkill);
-  if (cls?.id === 'bard' && L >= 3) (ch.loreSkills || []).forEach(k => prof.add(k));
+  if (cls?.id === 'bard' && L >= 3 && isSrdSub) (ch.loreSkills || []).forEach(k => prof.add(k));
   for (const k of ['skilled', 'skilled2']) (ch[k] || []).forEach(s => SKILL_AB[s] && prof.add(s));
   const exp = new Set((ch.expertise || []).filter(s => prof.has(s)));
   const skills = SKILLS.map(([name, ab]) => {
@@ -337,7 +355,7 @@ export function compute(c) {
     if (cls.id === 'druid') always.push('Speak with Animals');
     if (cls.id === 'ranger') always.push("Hunter's Mark");
     if (cls.id === 'paladin' && L >= 2) always.push('Divine Smite');
-    always.push(...subclassSpells(cls, L, ch.land));
+    always.push(...subclassSpells(cls, L, ch.land, sub));
     const extraCantrips = (cls.id === 'cleric' && ch.divineOrder === 'Thaumaturge') || (cls.id === 'druid' && ch.primalOrder === 'Magician') ? 1 : 0;
     casting.push({
       key: 'class', source: cls.name, ab, dc: 8 + pb + m[ab], atk: pb + m[ab],
@@ -377,10 +395,10 @@ export function compute(c) {
   const feats = [];
   if (cls) {
     for (const f of cls.features) if (f.level <= L && !/Subclass$|^Ability Score Improvement$|^Epic Boon$/.test(f.name)) feats.push({ ...f, src: 'class' });
-    if (L >= 3) for (const f of cls.subclass.features) if (f.level <= L) feats.push({ ...f, src: 'sub' });
+    if (L >= 3) for (const f of sub.features) if (f.level <= L) feats.push({ ...f, src: 'sub' });
   }
 
-  const xx = { cls, L, pb, m, originFeats: featIds };
+  const xx = { cls, L, pb, m, originFeats: featIds, sub };
   const res = cls ? resources(c, xx) : [];
 
   // ภาษา
@@ -394,7 +412,7 @@ export function compute(c) {
   if (!bg) warn.push('ยังไม่ได้เลือก Background');
 
   return {
-    cls, sp, bg, L, pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, perception, darkvision,
+    cls, sub, sp, bg, L, pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, perception, darkvision,
     attacks, casting, feats, res, featIds, originFeats: originFeats.filter(Boolean), langs: [...langs],
     training: [...training], weaponRule: rule, warn,
   };
@@ -412,9 +430,10 @@ export function missing(c) {
   if (cls.id === 'druid' && !ch.primalOrder) out.push('เลือก Primal Order');
   if (MASTERY_AT[cls.id] && (ch.mastery || []).length < num(col(cls, cls.id === 'barbarian' ? 'Mastery' : 'Weapon Mastery', L) || 2)) out.push('เลือก Weapon Mastery');
   if (cls.id === 'barbarian' && L >= 3 && !ch.primalSkill) out.push('เลือกสกิลจาก Primal Knowledge');
-  if (cls.id === 'bard' && L >= 3 && (ch.loreSkills || []).length < 3) out.push('เลือกสกิล 3 อย่าง (Bonus Proficiencies)');
-  if (cls.id === 'druid' && L >= 3 && !ch.land) out.push('เลือกชนิดดินแดน (Circle of the Land)');
-  if (cls.id === 'ranger' && L >= 3 && !ch.huntersPrey) out.push("เลือก Hunter's Prey");
+  const isSrdSub = srdSub(c);
+  if (cls.id === 'bard' && L >= 3 && isSrdSub && (ch.loreSkills || []).length < 3) out.push('เลือกสกิล 3 อย่าง (Bonus Proficiencies)');
+  if (cls.id === 'druid' && L >= 3 && isSrdSub && !ch.land) out.push('เลือกชนิดดินแดน (Circle of the Land)');
+  if (cls.id === 'ranger' && L >= 3 && isSrdSub && !ch.huntersPrey) out.push("เลือก Hunter's Prey");
   if (cls.id === 'sorcerer' && L >= 2 && (ch.metamagic || []).length < 2) out.push('เลือก Metamagic 2 อย่าง');
   if (cls.id === 'warlock' && (ch.invocations || []).length < num(col(cls, 'Eldritch Invocations', L))) out.push('เลือก Eldritch Invocations');
   for (const [lv, n] of EXPERTISE[cls.id] || []) if (L >= lv && (ch.expertise || []).length < (cls.id === 'ranger' ? 1 : n)) out.push('เลือก Expertise');

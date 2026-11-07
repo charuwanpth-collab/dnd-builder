@@ -21,7 +21,7 @@ export function renderSheet(root, c, tab, nav) {
     const x = compute(c);
     if (P.hp == null || P.hp > x.hpMax) P.hp = x.hpMax;
     const y = window.scrollY;
-    const subtitle = [x.sp?.name + (c.speciesOpt?.lineage ? ` (${c.speciesOpt.lineage})` : ''), `${x.cls?.name || '?'} ${c.level}`, c.level >= 3 && x.cls ? x.cls.subclass.name : null, x.bg?.name].filter(Boolean).join(' · ');
+    const subtitle = [x.sp?.name + (c.speciesOpt?.lineage ? ` (${c.speciesOpt.lineage})` : ''), `${x.cls?.name || '?'} ${c.level}`, c.level >= 3 && x.sub ? x.sub.name : null, x.bg?.name].filter(Boolean).join(' · ');
     root.replaceChildren(...[
       h('header.sh-head',
         h('span.sh-ico', { html: iconSvg(c.classId || 'd20') }),
@@ -223,14 +223,14 @@ export function renderSheet(root, c, tab, nav) {
       const ch = c.choices || {};
       const opts = [...(ch.metamagic || []).map(id => x.cls.options['metamagic-options']?.items.find(i => i.id === id)), ...(ch.invocations || []).map(id => x.cls.options['eldritch-invocation-options']?.items.find(i => i.id === id))].filter(Boolean);
       if (opts.length) { out.push(h('h3', 'ตัวเลือกที่เลือกไว้')); opts.forEach(o => out.push(featureCard({ name: o.name, text: o.text, th: { s: D.th.options?.[o.id] }, full: ['options', o.id] }))); }
-      if (ch.huntersPrey) out.push(h('p', h('b', "Hunter's Prey: "), ch.huntersPrey));
+      if (ch.huntersPrey && x.sub === x.cls.subclass) out.push(h('p', h('b', "Hunter's Prey: "), ch.huntersPrey));
       if (ch.divineOrder || ch.primalOrder) out.push(h('p', h('b', 'บทบาท: '), ch.divineOrder || ch.primalOrder));
       if (ch.mastery?.length) out.push(h('p', h('b', 'Weapon Mastery: '), ch.mastery.map(id => `${D.weapon[id]?.name} (${D.weapon[id]?.mastery})`).join(', ')));
     }
     const feats = [...x.featIds];
     if (feats.length) {
       out.push(h('h2.sec', 'Feats'));
-      for (const id of new Set(feats)) { const f = D.feat[id]; if (f) out.push(featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id] })); }
+      for (const id of new Set(feats)) { const f = D.feat[id]; if (f) out.push(featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id], pack: f.pack })); }
     }
     if (x.sp) {
       out.push(h('h2.sec', x.sp.name));

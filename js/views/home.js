@@ -11,7 +11,7 @@ export function renderHome(root, nav) {
   const stale = chars.length && (!m.lastBackup || Date.now() - m.lastBackup > 7 * 864e5);
   const fileIn = h('input', { type: 'file', accept: '.json,application/json', hidden: true, onchange: async e => {
     try { const n = await S.importFile(e.target.files[0]); toast(`นำเข้า ${n} ตัวละครแล้ว`); renderHome(root, nav); }
-    catch { toast('ไฟล์นี้อ่านไม่ได้'); }
+    catch (err) { toast(err.message === 'pack' ? 'นี่เป็นไฟล์ Content Pack — นำเข้าที่หน้า "แพ็ก"' : 'ไฟล์นี้อ่านไม่ได้'); }
   } });
   root.replaceChildren(...[
     h('section.hero',
@@ -45,6 +45,7 @@ export async function renderImport(root, data, nav) {
       h('h1', c.name || 'Character ไร้ชื่อ'),
       h('p', [x.sp?.name, x.cls ? `${x.cls.name} ${c.level}` : null, x.bg?.name].filter(Boolean).join(' · ')),
       h('p.muted', 'มีคนแชร์ตัวละครนี้ให้คุณ — บันทึกลงเครื่องเพื่อเปิดดูและใช้งาน'),
+      c.packs?.length ? h('p.muted.small', `📦 มีของจาก Content Pack ${c.packs.reduce((n, p) => n + Object.values(p.items).flat().length, 0)} รายการ (${c.packs.map(p => p.name).join(', ')}) — จะเพิ่มลงเครื่องให้ตอนบันทึก`) : null,
       h('div.row', h('button.btn.primary.big', { onclick: () => { S.save(c); nav(`#/c/${c.id}`); toast('บันทึกลงเครื่องแล้ว'); } }, 'บันทึกลงเครื่องนี้'),
         h('a.btn.ghost', { href: '#/' }, 'ยกเลิก'))));
   } catch {

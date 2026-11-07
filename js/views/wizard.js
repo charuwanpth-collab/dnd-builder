@@ -5,8 +5,9 @@ import * as S from '../store.js';
 import {
   ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, SKILLS, SKILL_AB, LANGS, STANDARD_ARRAY, POINT_COST, MAX_LEVEL,
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
-  compute, missing, col, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod,
+  compute, missing, col, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub,
 } from '../rules.js';
+import { featIdOf } from '../packs.js';
 import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh } from './parts.js';
 
 const STEPS = [
@@ -23,6 +24,7 @@ const STEPS = [
 const thc = id => D.th.classes?.[id] || {};
 const ths = id => D.th.species?.[id] || {};
 const featTh = id => D.th.feats?.[id];
+const packSub = (x, base) => (x?.pack ? [base, '📦 ' + x.pack].filter(Boolean).join(' · ') : base);
 
 export function renderWizard(root, c, stepId, nav) {
   let step = STEPS.findIndex(s => s.id === stepId);
@@ -102,7 +104,8 @@ export function renderWizard(root, c, stepId, nav) {
       cls.features.filter(f => f.level <= L && !/Subclass$/.test(f.name)).map(f => classFeatureCard(cls, f, false)),
       h('h4', `ซับคลาส: ${cls.subclass.name}`),
       thc(cls.id).sub?.desc ? h('p', thc(cls.id).sub.desc) : null,
-      cls.subclass.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, f, true))),
+      cls.subclass.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, f, true)),
+      (D.subs?.[cls.id] || []).length > 1 ? h('p.muted.small', 'ซับคลาสจาก Content Pack: ' + D.subs[cls.id].slice(1).map(x => x.name).join(', ')) : null),
       [{ label: c.classId === cls.id ? 'เลือกอยู่แล้ว' : 'เลือกคลาสนี้', primary: true, onClick: () => pickClass(cls.id) }]);
   }
   function pickClass(id) {
@@ -146,7 +149,7 @@ export function renderWizard(root, c, stepId, nav) {
       if (cls.id === 'ranger') opts.push({ id: 'druidic-warrior', name: 'Druidic Warrior', text: cls.features.find(f => f.name === 'Fighting Style').text });
       out.push(block('Fighting Style', 'สไตล์การต่อสู้ที่ถนัด (เปลี่ยนได้ตอนเลเวลอัป)',
         h('div.grid.grid-2', opts.map(o => choiceCard({
-          id: o.id, iconName: 'weapon', title: o.name, desc: featTh(o.id)?.s, selected: ch.fightingStyle === o.id,
+          id: o.id, iconName: 'weapon', title: o.name, sub: packSub(D.feat[o.id]), desc: featTh(o.id)?.s, selected: ch.fightingStyle === o.id,
           onClick: () => { ch.fightingStyle = o.id; changed(); },
         })))));
     }
@@ -177,15 +180,16 @@ export function renderWizard(root, c, stepId, nav) {
       out.push(block('Primal Knowledge', 'เลือกสกิลเพิ่มอีก 1 อย่างจากรายการสกิลของ Barbarian',
         chips(opts, ch.primalSkill ? [ch.primalSkill] : [], 1, v => { ch.primalSkill = v[0]; changed(); })));
     }
-    if (cls.id === 'bard' && L >= 3) {
+    const isSrdSub = srdSub(c);
+    if (cls.id === 'bard' && L >= 3 && isSrdSub) {
       const opts = SKILLS.map(k => k[0]).filter(k => !x.skills.find(z => z.name === k && z.prof) || (ch.loreSkills || []).includes(k));
       out.push(block('Bonus Proficiencies (College of Lore)', 'เลือกสกิลที่ยังไม่ชำนาญ 3 อย่าง', counter((ch.loreSkills || []).length, 3),
         chips(opts, ch.loreSkills || [], 3, v => { ch.loreSkills = v; changed(); })));
     }
-    if (cls.id === 'druid' && L >= 3) out.push(block('ดินแดนของ Circle of the Land', 'เลือกชนิดดินแดน (เปลี่ยนได้ทุกครั้งที่พักยาว) — ได้สเปลติดตัวต่างกัน',
+    if (cls.id === 'druid' && L >= 3 && isSrdSub) out.push(block('ดินแดนของ Circle of the Land', 'เลือกชนิดดินแดน (เปลี่ยนได้ทุกครั้งที่พักยาว) — ได้สเปลติดตัวต่างกัน',
       chips(['Arid', 'Polar', 'Temperate', 'Tropical'], ch.land ? [ch.land[0].toUpperCase() + ch.land.slice(1)] : [], 1, v => { ch.land = v[0]?.toLowerCase(); changed(); },
         { labels: { Arid: 'Arid (ทะเลทราย)', Polar: 'Polar (ขั้วโลก)', Temperate: 'Temperate (เขตอบอุ่น)', Tropical: 'Tropical (เขตร้อน)' } })));
-    if (cls.id === 'ranger' && L >= 3) out.push(block("Hunter's Prey", 'เลือกสไตล์ล่า (สลับได้หลังพัก)',
+    if (cls.id === 'ranger' && L >= 3 && isSrdSub) out.push(block("Hunter's Prey", 'เลือกสไตล์ล่า (สลับได้หลังพัก)',
       h('div.grid.grid-2', [['Colossus Slayer', 'ตีศัตรูที่เลือดไม่เต็ม ดาเมจ +1d8 (ครั้งเดียวต่อเทิร์น) — เหมาะล่าตัวใหญ่'], ['Horde Breaker', 'ตีแล้วได้ตีอีกครั้งใส่ศัตรูอีกตัวที่ยืนติดกัน — เหมาะเจอฝูง']].map(([n, d]) =>
         choiceCard({ id: n, iconName: 'eye', title: n, desc: d, selected: ch.huntersPrey === n, onClick: () => { ch.huntersPrey = n; changed(); } })))));
 
@@ -201,10 +205,17 @@ export function renderWizard(root, c, stepId, nav) {
         optionList(items, ch.invocations || [], n, v => { ch.invocations = v; changed(); })));
     }
 
+    const subs = D.subs?.[cls.id] || [cls.subclass], cur = subOf(c);
     out.push(h('div.block.sub-info',
-      h('h3', `ซับคลาส: ${cls.subclass.name}`),
-      h('p', L >= 3 ? 'ได้รับแล้วที่เลเวล 3' : 'จะได้ตอนเลเวล 3'),
-      h('p.muted.small', 'ข้อมูลฟรี (SRD) มีซับคลาสละ 1 แบบ — ซับคลาสอื่นจากหนังสือจะเพิ่มเองได้ผ่าน Content Pack ในอัปเดตถัดไป')));
+      h('h3', `ซับคลาส: ${cur.name}`),
+      h('p', L >= 3 ? 'ได้รับแล้วที่เลเวล 3' : 'จะได้ตอนเลเวล 3 (เลือกไว้ก่อนได้)'),
+      subs.length > 1 ? h('div.grid.grid-2', subs.map(sb => choiceCard({
+        id: sb.id, iconName: cls.id, title: sb.name, sub: sb.pack ? '📦 ' + sb.pack : 'SRD',
+        desc: sb.pack ? sb.th?.s : thc(cls.id).sub?.desc, selected: cur.id === sb.id,
+        onClick: () => { c.subclassId = sb.id === cls.subclass.id ? null : sb.id; changed(); },
+      }))) : null,
+      cur.pack && L >= 3 ? cur.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, f, true)) : null,
+      h('p.muted.small', 'ข้อมูลฟรี (SRD) มีซับคลาสละ 1 แบบ — ซับคลาสอื่นเพิ่มเองได้ที่ ', h('a', { href: '#/packs' }, 'Content Pack'))));
     return out;
   }
 
@@ -238,11 +249,11 @@ export function renderWizard(root, c, stepId, nav) {
   function background() {
     const out = [intro('เลือก Background', 'อดีตของCharacter ก่อนออกผจญภัย ให้โบนัสค่าพลัง สกิล 2 อย่าง เครื่องมือ 1 อย่าง และ Origin Feat 1 อย่าง')];
     out.push(h('div.grid', D.backgrounds.map(bg => choiceCard({
-      id: bg.id, iconName: 'background', title: bg.name, sub: bg.abilities.map(a => ABIL_SHORT[a]).join(' · '),
+      id: bg.id, iconName: 'background', title: bg.name, sub: packSub(bg, bg.abilities.map(a => ABIL_SHORT[a]).join(' · ')),
       desc: D.th.backgrounds?.[bg.id]?.desc, selected: c.bgId === bg.id,
       onClick: () => { if (c.bgId !== bg.id) { c.bgId = bg.id; c.abilities.bonus = {}; c.abilities.plus2 = null; c.abilities.plus1 = null; c.equipment.bgOpt = 'A'; rebuildEquipment(c); } changed(); },
     }))));
-    out.push(h('p.muted.small', 'ข้อมูลฟรี (SRD) มี Background 4 แบบ — Background อื่นจากหนังสือ (เช่น Guard) จะเพิ่มเองได้ผ่าน Content Pack ในอัปเดตถัดไป'));
+    out.push(h('p.muted.small', 'ข้อมูลฟรี (SRD) มี Background 4 แบบ — Background อื่นจากหนังสือ (เช่น Guard) เพิ่มเองได้ที่ ', h('a', { href: '#/packs' }, 'Content Pack')));
     const bg = D.bg[c.bgId];
     if (!bg) return out;
     const A = c.abilities;
@@ -259,11 +270,11 @@ export function renderWizard(root, c, stepId, nav) {
       mode === '21' ? h('div.bonus-pick',
         h('label', '+2 ให้ ', h('select.inp', { onchange: e => { A.plus2 = e.target.value; setBonus(); } }, h('option', { value: '' }, '—'), bg.abilities.map(a => h('option', { value: a, selected: A.plus2 === a }, ABIL_EN[a])))),
         h('label', '+1 ให้ ', h('select.inp', { onchange: e => { A.plus1 = e.target.value; setBonus(); } }, h('option', { value: '' }, '—'), bg.abilities.filter(a => a !== A.plus2).map(a => h('option', { value: a, selected: A.plus1 === a }, ABIL_EN[a]))))) : null));
-    const fid = bg.feat.replace(/\s*\(.*\)/, '').toLowerCase().replace(/\s+/g, '-');
+    const fid = featIdOf(bg.feat);
     const feat = D.feat[fid];
     out.push(section('ได้รับ',
       h('dl.kv', h('dt', 'Skills'), h('dd', bg.skills.join(', ')), h('dt', 'Tool'), h('dd', bg.tool.replace(/\s*\(see.*\)/, '')), h('dt', 'Origin Feat'), h('dd', bg.feat)),
-      feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: ['feats', fid] }) : null));
+      feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: ['feats', fid], pack: feat.pack }) : null));
     if (fid === 'magic-initiate') out.push(miAbility());
     if (bg.id === 'soldier') out.push(section('Gaming Set', chips(['Dice Set', 'Dragonchess Set', 'Playing Card Set', 'Three-Dragon Ante Set'], c.choices.gamingSet ? [c.choices.gamingSet] : [], 1, v => { c.choices.gamingSet = v[0]; changed(); })));
     return out;
@@ -297,7 +308,7 @@ export function renderWizard(root, c, stepId, nav) {
       out.push(section('Skillful', h('p.muted', 'เลือกสกิลอะไรก็ได้ 1 อย่าง'), chips(SKILLS.map(s => s[0]), so.skill ? [so.skill] : [], 1, v => { so.skill = v[0]; changed(); })));
       const origin = D.feats.filter(f => f.category === 'Origin');
       out.push(section('Versatile: Origin Feat', h('div.grid.grid-2', origin.map(f => choiceCard({
-        id: f.id, iconName: 'feat', title: f.name, desc: featTh(f.id)?.s, selected: so.feat === f.id,
+        id: f.id, iconName: 'feat', title: f.name, sub: packSub(f), desc: featTh(f.id)?.s, selected: so.feat === f.id,
         onClick: () => { so.feat = f.id; changed(); },
       })))));
       if (so.feat === 'magic-initiate' && !D.bg[c.bgId]?.feat.startsWith('Magic Initiate')) {

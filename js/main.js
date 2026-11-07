@@ -1,5 +1,7 @@
 // จุดเริ่มต้นของแอป: โหลดข้อมูล + เราเตอร์ (hash)
 import { loadData } from './data.js';
+import { applyPacks } from './packs.js';
+import { renderPacks } from './views/packs.js';
 import { $, $$, h, hydrateIcons } from './util.js';
 import * as S from './store.js';
 import { renderHome, renderImport, renderCredits } from './views/home.js';
@@ -27,10 +29,12 @@ function route() {
   if (page === 'import' && a) return renderImport(app, parts.slice(1).join('/'), nav);
   if (page === 'credits') return renderCredits(app);
   if (page === 'glossary') return renderGlossary(app, a);
+  if (page === 'packs') return renderPacks(app, parts.slice(1), nav);
   renderHome(app, nav);
 }
 
 loadData().then(() => {
+  applyPacks();
   hydrateIcons();
   S.askPersist();
   initGlossaryLinks();

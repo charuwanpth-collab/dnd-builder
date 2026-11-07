@@ -1,5 +1,6 @@
 // เก็บตัวละครในเครื่อง (localStorage) + ลิงก์แชร์ + ไฟล์สำรอง
 import { uid } from './util.js';
+import { usedPackItems, mergeEmbedded } from './packs.js';
 
 const KEY = 'hh.chars.v1';
 const META = 'hh.meta.v1';
@@ -21,6 +22,7 @@ export const list = () => Object.values(readAll()).sort((a, b) => (b.updatedAt |
 export const get = id => readAll()[id] || null;
 
 export function save(c) {
+  if (c.packs) { mergeEmbedded(c.packs); delete c.packs; }
   const all = readAll();
   if (!c.id) { c.id = uid(); c.createdAt = Date.now(); }
   c.updatedAt = Date.now();
@@ -54,6 +56,8 @@ async function pipe(bytes, stream) {
 
 export async function encodeChar(c) {
   const { id, createdAt, updatedAt, ...rest } = c;
+  const packs = usedPackItems([c]);
+  if (packs.length) rest.packs = packs;
   const bytes = new TextEncoder().encode(JSON.stringify(rest));
   if (typeof CompressionStream === 'undefined') return 'j' + b64u(bytes);
   return 'z' + b64u(await pipe(bytes, new CompressionStream('deflate-raw')));
@@ -73,6 +77,8 @@ export async function shareUrl(c) {
 // ---------- ไฟล์สำรอง ----------
 export function exportFile(chars) {
   const data = { app: 'hero-hall', v: 1, at: new Date().toISOString(), chars };
+  const packs = usedPackItems(chars);
+  if (packs.length) data.packs = packs;
   const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
   const a = document.createElement('a');
   const name = chars.length === 1 ? (chars[0].name || 'character') : 'all-characters';
@@ -85,7 +91,9 @@ export function exportFile(chars) {
 
 export async function importFile(file) {
   const data = JSON.parse(await file.text());
+  if (data.kind === 'pack') throw new Error('pack');
   const chars = data.chars || (data.classId ? [data] : []);
+  mergeEmbedded(data.packs);
   for (const c of chars) {
     delete c.id;
     save(c);
