@@ -20,6 +20,24 @@
 2. หลัง push แล้ว เปิด GitHub Pages: repo → Settings → Pages → Source: Deploy from a branch → `main` / `(root)` → Save
    ลิงก์จะเป็น `https://charuwanpth-collab.github.io/dnd-builder/`
 
+## งานถัดไปทันที: แปลไทยแบบละเอียด (พี่จ๋าสั่งแล้ว — ทำ A → B → C)
+เว็บขึ้นแล้วที่ https://charuwanpth-collab.github.io/dnd-builder/ (push ได้แล้ว, Pages = main /root)
+
+**รูปแบบการ์ด**: สรุปสั้น (ของเดิม) → **แปลเต็ม (ไทย)** แบบเปิดพับได้ → ต้นฉบับ EN พับไว้
+- เก็บคำแปลเต็มใน `data/th/full/<กลุ่ม>.json` คีย์ด้วย id เดิม ค่าเป็น markdown (ตารางแปลด้วย) โหลดแบบ lazy ตอนกดเปิดครั้งแรก
+- แก้ `js/views/parts.js` → `featureCard`/`spellDetail`/`optionList` ให้แสดงบล็อก "แปลเต็ม"
+
+**สไตล์แปล**: แปลครบทุกประโยค ตัวเลขตรงต้นฉบับ คงคำเฉพาะเป็นอังกฤษ (Action, Bonus Action, Reaction, Magic action, Advantage/Disadvantage, Saving Throw, ชื่อค่าพลัง STR/DEX…, ชนิดดาเมจ, Conditions, ชื่อสเปล/ฟีเจอร์, Short/Long Rest, Proficiency, Spell Slot, Concentration, Attunement) ส่วนอื่นเป็นไทยพูดง่าย
+
+**ลำดับ (แบ่งแชต)**
+- A (~60 อัน): Invocations ทั้งหมด, Metamagic, Feats ทั้งหมด, Weapon Mastery + Weapon Properties → `full/options.json`, `full/feats.json`, `full/mastery.json`
+- B (~160 อัน): ฟีเจอร์คลาส+ซับคลาส Lv1–3, trait ทุก species, background → `full/classes.json` (`{classId:{f:{},sub:{}}}`), `full/species.json`
+- C (141 อัน): สเปล Cantrip / Lv1 / Lv2 แยกทีละเลเวลต่อแชต → `full/spells.json`
+
+**ของแถม (เสนอแล้ว)**: หน้าอภิธานศัพท์ `#/glossary` + คำในคำอธิบายแตะดูความหมายได้ (Attunement, Advantage, Concentration, Proficiency, Saving Throw, Cover ฯลฯ) — ข้อมูลอยู่ใน SRD `08_Rules_Glossary`
+
+ทุกเฟสย่อย: เขียนสคริปต์เช็คว่าครบทุก id → ทดสอบด้วย headless Chrome (`/usr/bin/google-chrome` + puppeteer-core 22.15.0, เปิด http.server ด้วย run_in_background) → commit + push → อัปเดต handoff
+
 ## เฟสถัดไป
 - **เฟส 2**: Content Pack (ฟอร์มเพิ่มซับคลาส/background/feat/สเปลเอง + export/import แชร์ในกลุ่ม), รายชื่อซับคลาสทั้งหมดพร้อมป้าย "ต้องเติมข้อมูล", คลังไอคอนเต็ม 4,134 รูปให้เลือก (`@iconify-json/game-icons`)
 - **เฟส 3**: เลเวล 4–20 (ASI/feat, Extra Attack, ฟีเจอร์ทุกเลเวล), แปลไทยสเปล Lv3–9, Epic Boon, Pact of the Tome อัตโนมัติ, หน้า print แบบเต็มใบ
