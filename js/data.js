@@ -43,3 +43,9 @@ export function thFeature(classId, featId, sub = false) {
   const c = D.th.classes?.[classId];
   return (sub ? c?.sub?.f : c?.f)?.[featId];
 }
+
+/** สัตว์ SRD (ใช้ในแท็บ EXTRAS) — โหลดตอนต้องใช้ครั้งแรก */
+export async function loadAnimals() {
+  if (!D.animals) { D.animals = await get('data/srd/animals.json'); D.animal = Object.fromEntries(D.animals.map(a => [a.id, a])); }
+  return D.animals;
+}

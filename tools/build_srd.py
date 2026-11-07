@@ -270,10 +270,26 @@ for blk in re.findall(r'((?:^\|.*\n?)+)', read('06_Equipment/Equipment_All.md'),
             amt = int(r[t['head'].index('Amount')]) if 'Amount' in t['head'] and r[t['head'].index('Amount')].isdigit() else 1  # กระสุนคิดน้ำหนักต่อมัด
             weights.setdefault(re.sub(r'\s*\(.*\)$', '', r[0]).strip().lower(), round(lb(r[wi]) / amt, 4))
 
+# ---------------- สัตว์ (Animals) → data/srd/animals.json (โหลดตอนเปิดแท็บ EXTRAS) ----------------
+def animal(md):
+    name = re.search(r'^# (.+)$', md, re.M).group(1).strip()
+    metas = list(re.finditer(r'^\*(Tiny|Small|Medium|Large|Huge|Gargantuan) .*\*$', md, re.M))
+    if len(metas) > 1:  # ไฟล์ต้นทางมีค่าสถานะตัวอื่นติดมาข้างหน้า (เช่น Giant Eagle มี Giant Crab ติดมา) → ใช้บล็อกสุดท้าย
+        md = f'# {name}\n\n' + md[metas[-1].start():]
+    g = lambda rx: (re.search(rx, md, re.M) or [None, ''])[1].strip()
+    abil = {k.lower(): int(v) for k, v in re.findall(r'\*\*(Str|Dex|Con|Int|Wis|Cha) (\d+)\*\*', md)}
+    cr = g(r'^\*\*CR\*\* ([\d/]+)')
+    body = md[md.index('**CR**'):].split('\n', 1)[1].strip() if '**CR**' in md else ''
+    extra = g(r'^(\*\*Skills\*\*.*|\*\*Senses\*\*.*)$')
+    return {'id': slug(name), 'name': name, 'meta': g(r'^\*(.+)\*$'), 'ac': int(g(r'\*\*AC\*\* (\d+)') or 10),
+            'hp': int(g(r'\*\*HP\*\* (\d+)') or 1), 'hpDice': g(r'\*\*HP\*\* \d+ \(([^)]+)\)'), 'speed': g(r'^\*\*Speed\*\* (.+)$'),
+            'abil': abil, 'cr': cr, 'crN': eval(cr) if re.match(r'^[\d/]+$', cr or '') else 0, 'info': extra, 'md': body}
+animals = [animal(read(f'12_Animals/Animals_Each/{f.name}')) for f in sorted((SRC / '12_Animals/Animals_Each').glob('*.md'))]
+
 out = {
     'classes': classes, 'spells': spells, 'species': species, 'backgrounds': backgrounds,
     'feats': feats, 'weapons': weapons, 'weaponProps': props, 'mastery': mastery,
-    'armor': armor, 'gear': gear, 'legal': legal, 'glossary': glossary, 'weights': weights,
+    'armor': armor, 'gear': gear, 'legal': legal, 'glossary': glossary, 'weights': weights, 'animals': animals,
 }
 for k, v in out.items():
     (OUT / f'{k}.json').write_text(json.dumps(v, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')

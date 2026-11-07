@@ -691,3 +691,20 @@ button.sh-ico { border: 1px solid var(--line); cursor: pointer; display: flex; a
 .swatches { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
 .swatch { width: 38px; height: 38px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; padding: 0; }
 .swatch.on { border-color: var(--text); }
+.wild-chip { border-color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--card)); }
+.titem.extra { cursor: default; flex-wrap: wrap; }
+.ex-btns { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+.extra-card .ex-head { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.extra-card .ex-head small { display: block; color: var(--muted); font-size: .8rem; }
+.extra-card .tag { margin-left: 6px; }
+.ex-hp { text-align: right; flex: none; }
+.ex-hp b { font-size: 1.6rem; }
+.ex-hp small { color: var(--dim); }
+.ex-ctl { margin: 8px 0 0; grid-template-columns: 1fr 80px 1fr; }
+.ex-ctl .btn:last-child { grid-column: auto; }
+.sb-abil { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; text-align: center; margin: 8px 0; }
+.sb-abil > div { background: var(--card2); border-radius: 8px; padding: 4px 0; }
+.sb-abil small { display: block; font-size: .62rem; color: var(--muted); }
+.sb-abil b { display: block; }
+.sb-abil span { font-size: .75rem; color: var(--dim); }
+.statblock .box { cursor: default; }

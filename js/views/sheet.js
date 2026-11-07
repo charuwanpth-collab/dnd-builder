@@ -1,7 +1,8 @@
 // ใบตัวละครสำหรับใช้ตอนเล่น — โครงแบบ D&D Beyond: สแตททั้งหมดอยู่ส่วนบน + แท็บด้านล่าง
 // ใช้เต๋าจริง: แตะอะไรก็ได้ = เปิดการ์ดบอกสูตร (เว็บไม่ทอยให้)
-import { D } from '../data.js';
-import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
+import { D, loadAnimals } from '../data.js';
+import { h, iconSvg, sheet, toast, sign, confirmSheet, uid } from '../util.js';
+import { md } from '../md.js';
 import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, compute, missing, rebuildEquipment, levelInfo, chOf, hitDieAvg, itemWeight, carry } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
@@ -11,7 +12,7 @@ import { showTerm } from './glossary.js';
 import * as T from './turn.js';
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
-const TABS = [['actions', 'ACTIONS', 'การกระทำ'], ['spells', 'SPELLS', 'เวท'], ['inventory', 'INVENTORY', 'ของในกระเป๋า'], ['features', 'FEATURES & TRAITS', 'ความสามารถ'], ['background', 'BACKGROUND', 'ภูมิหลัง'], ['notes', 'NOTES', 'โน้ต']];
+const TABS = [['actions', 'ACTIONS', 'การกระทำ'], ['spells', 'SPELLS', 'เวท'], ['inventory', 'INVENTORY', 'ของในกระเป๋า'], ['features', 'FEATURES & TRAITS', 'ความสามารถ'], ['background', 'BACKGROUND', 'ภูมิหลัง'], ['notes', 'NOTES', 'โน้ต'], ['extras', 'EXTRAS', 'สัตว์คู่ใจ']];
 const OLD_TAB = { main: 'actions', skills: 'actions', gear: 'inventory' };
 const head = (en, th, ...rest) => h('h3.sec2', h('span', en), h('small', th), ...rest);
 let obs; // IntersectionObserver ของกล่อง HP (โชว์แถบย่อตอนเลื่อนพ้น)
@@ -44,7 +45,7 @@ export function renderSheet(root, c, tab, nav) {
     const tabsEl = h('nav.tabs', { role: 'tablist' }, TABS.map(([id, en, th]) => h('button.tab' + (cur === id ? '.on' : ''), {
       role: 'tab', 'aria-selected': cur === id ? 'true' : 'false', onclick: () => go(id),
     }, h('b', en), h('small', th))));
-    const body = h('section.sh-body', ({ actions, spells, inventory, features, background, notes })[cur](x));
+    const body = h('section.sh-body', ({ actions, spells, inventory, features, background, notes, extras })[cur](x));
     swipe(body);
     root.replaceChildren(...[
       header(x),
@@ -123,6 +124,7 @@ export function renderSheet(root, c, tab, nav) {
     return h('button.mini', { onclick: () => root.querySelector('.hp-box')?.scrollIntoView({ block: 'center', behavior: 'smooth' }) },
       h('span', '❤️ ', h('b', String(P.hp)), `/${x.hpMax}`, P.temp ? h('em', ` +${P.temp}`) : null),
       h('span', '🛡️ AC ', h('b', String(x.ac))), h('span', '👣 ', h('b', String(x.speed)), ' ft'),
+      P.wild && wildOf() ? h('span', '🐾 ', h('b', wildOf().name)) : null,
       P.conc ? h('span', '🧠 ', h('b', D.spell[P.conc]?.name || '')) : null,
       P.conditions.length || P.exh ? h('span.bad', '⚠ ' + [...P.conditions, P.exh ? `Exhaustion ${P.exh}` : null].filter(Boolean).join(', ')) : null);
   }
@@ -202,6 +204,7 @@ export function renderSheet(root, c, tab, nav) {
         box('CONDITIONS', 'สถานะ', nCond ? String(nCond) : '—', null, () => condSheet(), nCond ? '.bad' : '')),
       nCond ? h('p.cond-line', '⚠ ติดอยู่: ', [...P.conditions.map(k => h('button.link', { onclick: () => showTerm(k.toLowerCase()) }, k)),
         P.exh ? h('button.link', { onclick: () => condSheet() }, `Exhaustion ${P.exh}`) : null].filter(Boolean).flatMap((b, i) => (i ? [', ', b] : [b]))) : null,
+      wildBanner(),
       P.conc ? h('div.conc-chip', h('span', '🧠 Concentration: ', h('b', D.spell[P.conc]?.name || P.conc)),
         h('button.link', { onclick: () => explain('Concentration', helpBody('conc')) }, 'คืออะไร'),
         h('button.btn.small', { onclick: () => { dropConc('เลิกเอง'); done(); } }, 'เลิกใช้สมาธิ')) : null,
@@ -697,6 +700,104 @@ export function renderSheet(root, c, tab, nav) {
     row('ภาษา', x.langs.join(', '));
     return h('details.orig.built', h('summary', '🧾 ตัวละครนี้สร้างมายังไง'), h('dl.kv', rows),
       h('button.btn.ghost.small', { onclick: () => nav(`#/edit/${c.id}/basic`) }, '✏️ แก้ไขตัวเลือก'));
+  }
+
+  // ---------- EXTRAS: ร่าง Wild Shape + สัตว์คู่ใจ / สิ่งที่เรียกมา ----------
+  if (P.wild && !D.animals) loadAnimals().then(() => redraw()).catch(() => {});
+  const wildOf = () => (c.extras || []).find(z => z.id === P.wild);
+  const crTxt = n => (n === 0.125 ? '1/8' : n === 0.25 ? '1/4' : n === 0.5 ? '1/2' : String(n));
+  function wildBanner() {
+    const w = wildOf();
+    if (!P.wild || !w) return null;
+    const a = D.animal?.[w.animal];
+    return h('div.conc-chip.wild-chip', h('span', '🐾 อยู่ในร่าง ', h('b', w.name), a ? ` — AC ${a.ac} · Speed ${a.speed}` : ''),
+      a ? h('button.link', { onclick: () => statSheet(a) }, 'ค่าสถานะ') : null,
+      h('button.btn.small', { onclick: () => { P.wild = null; done(); toast(`กลับร่างเดิมแล้ว`); } }, 'กลับร่าง'));
+  }
+  function statSheet(a) {
+    const AB = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+    sheet(a.name, h('div.statblock',
+      h('p.muted', a.meta),
+      h('div.box3', box('AC', null, String(a.ac), null, null), box('HP', a.hpDice, String(a.hp), null, null), box('CR', null, a.cr, null, null)),
+      h('p', h('b', 'Speed: '), a.speed),
+      h('div.sb-abil', AB.map(k => h('div', h('small', k.toUpperCase()), h('b', String(a.abil[k] ?? 10)), h('span', sign(Math.floor(((a.abil[k] ?? 10) - 10) / 2)))))),
+      a.info ? h('div.md', { html: md(a.info.replace(/ \*\*/g, '\n\n**')) }) : null,
+      h('div.md', { html: md(a.md) })));
+  }
+  function pickAnimal(title, filter, onPick, hint) {
+    const q = h('input.inp', { type: 'search', placeholder: 'ค้นหาชื่อสัตว์ (อังกฤษ)', oninput: () => { const v = q.value.trim().toLowerCase(); list.querySelectorAll('.titem').forEach(r => { r.hidden = !r.dataset.n.includes(v); }); } });
+    let close;
+    const list = h('div.titems', D.animals.filter(filter).sort((a, b) => a.crN - b.crN || a.name.localeCompare(b.name)).map(a => h('button.titem', { 'data-n': a.name.toLowerCase(), onclick: () => { close(); onPick(a); } },
+      h('div', h('b', a.name), h('i.tag', `CR ${a.cr}`), h('small', `AC ${a.ac} · HP ${a.hp} · ${a.speed}`)))));
+    close = sheet(title, h('div', hint ? h('p.muted.small', hint) : null, q, list));
+  }
+  function extras(x) {
+    if (!D.animals) { loadAnimals().then(() => cur === 'extras' && redraw()).catch(() => toast('โหลดข้อมูลสัตว์ไม่ได้')); return [h('p.muted', 'กำลังโหลดข้อมูลสัตว์…')]; }
+    const E = c.extras = c.extras || [];
+    const out = [];
+    const dl = x.CLs.druid || 0;
+    if (dl >= 2) {
+      const [nF, maxCR, fly] = dl >= 8 ? [8, 1, true] : dl >= 4 ? [6, 0.5, false] : [4, 0.25, false];
+      const forms = E.filter(z => z.kind === 'wild');
+      const res = x.res.find(r => /(^|-)wild$/.test(r.id));
+      const left = res ? res.max - (P.res[res.id] || 0) : null;
+      out.push(head('WILD SHAPE', 'แปลงร่างเป็นสัตว์'),
+        h('p.small', `รู้ร่างได้ ${nF} แบบ (ตอนนี้ ${forms.length}) · เลือกได้ถึง CR ${crTxt(maxCR)} · ${fly ? 'ร่างที่บินได้ก็ได้' : 'ยังใช้ร่างที่บินได้ไม่ได้'}${left != null ? ` · ใช้ได้อีก ${left} ครั้ง` : ''}`),
+        h('p.muted.small', `แปลงร่างใช้ Bonus Action · อยู่ได้ ${Math.floor(dl / 2)} ชั่วโมง · ได้ Temp HP เท่ากับเลเวล Druid (${dl}) · HP, INT, WIS, CHA และสกิลยังเป็นของเราเอง ส่วน STR, DEX, CON, AC และ Speed ใช้ของสัตว์`),
+        wildBanner(),
+        h('div.titems', forms.map(f => { const a = D.animal[f.animal]; return h('div.titem.extra', h('div', h('b', f.name), a ? h('i.tag', `CR ${a.cr}`) : null, a ? h('small', `AC ${a.ac} · ${a.speed}`) : null),
+          h('div.ex-btns', a ? h('button.btn.small', { onclick: () => statSheet(a) }, 'ค่าสถานะ') : null,
+            P.wild === f.id ? null : h('button.btn.small.primary', { onclick: () => {
+              if (left === 0 && !confirm('Wild Shape ใช้ครบแล้ว — แปลงร่างต่อไหม?')) return;
+              if (res) P.res[res.id] = (P.res[res.id] || 0) + 1;
+              P.wild = f.id; P.temp = Math.max(P.temp, dl);
+              const m = P.turn ? T.spend(P, 'b') : '';
+              done(); toast(`🐾 แปลงร่างเป็น ${f.name} · Temp HP ${P.temp}${m ? ' · ' + m : ''}`);
+            } }, 'แปลงร่าง'),
+            h('button.icon-btn', { 'aria-label': 'ลบร่าง', onclick: () => { E.splice(E.indexOf(f), 1); if (P.wild === f.id) P.wild = null; done(); } }, '✕'))); })),
+        forms.length < nF ? h('button.btn', { onclick: () => pickAnimal('เพิ่มร่างที่รู้', a => a.crN <= maxCR && (fly || !/Fly/i.test(a.speed)) && /Beast/.test(a.meta),
+          a => { E.push({ id: uid(), kind: 'wild', name: a.name, animal: a.id }); done(); }, `แสดงเฉพาะสัตว์ CR ${crTxt(maxCR)} ลงไป${fly ? '' : ' ที่บินไม่ได้'}`) }, '+ เพิ่มร่างที่รู้') : null);
+    }
+    const KIND = { familiar: 'Familiar', steed: 'Steed', summon: 'Summon', pet: 'สัตว์เลี้ยง / พาหนะ', other: 'อื่น ๆ' };
+    const comps = E.filter(z => z.kind !== 'wild');
+    out.push(head('COMPANIONS', 'สัตว์คู่ใจ / สิ่งที่เรียกมา'),
+      comps.length ? null : h('p.muted.small', 'เช่น Familiar จากเวท Find Familiar, ม้าที่ขี่ หรือสิ่งที่เรียกมาด้วยเวท Summon — เพิ่มไว้เพื่อจด HP และดูค่าสถานะตอนเล่น'),
+      comps.map(z => {
+        const a = D.animal[z.animal];
+        const amt = h('input.inp.num', { type: 'number', inputmode: 'numeric', min: 0, placeholder: '0', 'aria-label': 'จำนวน' });
+        const v = () => Math.max(0, parseInt(amt.value, 10) || 0);
+        return h('div.card.extra-card',
+          h('div.ex-head', h('div', h('b', z.name), h('i.tag', KIND[z.kind] || z.kind), h('small', [`AC ${z.ac}`, z.speed].filter(Boolean).join(' · '))),
+            h('div.ex-hp', h('b', String(z.hp)), h('small', `/${z.hpMax} HP`))),
+          h('div.hp-ctl.ex-ctl',
+            h('button.btn.heal', { onclick: () => { z.hp = Math.min(z.hpMax, z.hp + v()); done(); } }, '+ ฮีล'), amt,
+            h('button.btn.dmg', { onclick: () => { z.hp = Math.max(0, z.hp - v()); done(); if (!z.hp) toast(`${z.name} HP เหลือ 0`); } }, '− โดนตี')),
+          z.notes ? h('p.small', z.notes) : null,
+          h('div.ex-btns', a ? h('button.btn.small', { onclick: () => statSheet(a) }, 'ค่าสถานะ') : null,
+            h('button.btn.small', { onclick: () => { z.hp = z.hpMax; done(); } }, 'HP เต็ม'),
+            h('button.btn.small', { onclick: async () => { if (await confirmSheet(`ลบ ${z.name}?`, 'ลบออกจากรายการสัตว์คู่ใจ', 'ลบ')) { E.splice(E.indexOf(z), 1); done(); } } }, 'ลบ')));
+      }),
+      h('div.row.wrap',
+        h('button.btn', { onclick: () => pickAnimal('เลือกสัตว์จาก SRD', () => true, a => { E.push({ id: uid(), kind: a.crN === 0 ? 'familiar' : 'pet', name: a.name, animal: a.id, ac: a.ac, hp: a.hp, hpMax: a.hp, speed: a.speed }); done(); },
+          'Find Familiar เลือกได้: Bat, Cat, Frog, Hawk, Lizard, Octopus, Owl, Rat, Raven, Spider, Weasel หรือสัตว์ CR 0 ตัวอื่น') }, '+ เพิ่มจากสัตว์ SRD'),
+        h('button.btn', { onclick: customExtra }, '+ สร้างเอง')),
+      h('p.muted.small', '💡 สิ่งที่เรียกด้วยเวท (เช่น Find Steed หรือเวท Summon) มีค่าสถานะอยู่ในคำอธิบายเวท — กด "สร้างเอง" แล้วกรอก AC กับ HP ตามนั้น'));
+    return out;
+  }
+  function customExtra() {
+    const f = { kind: 'other' };
+    const inp = (k, label, type = 'text') => h('label.fld', h('small', label), h('input.inp' + (type === 'number' ? '.num' : ''), { type, inputmode: type === 'number' ? 'numeric' : null, oninput: e => { f[k] = e.target.value; } }));
+    sheet('สร้างสัตว์คู่ใจเอง', h('div',
+      inp('name', 'ชื่อ'),
+      h('label.fld', h('small', 'ประเภท'), h('select.inp', { onchange: e => { f.kind = e.target.value; } }, [['other', 'อื่น ๆ'], ['familiar', 'Familiar'], ['steed', 'Steed (Find Steed)'], ['summon', 'Summon (เรียกด้วยเวท)'], ['pet', 'สัตว์เลี้ยง / พาหนะ']].map(([v, l]) => h('option', { value: v, selected: v === 'other' }, l)))),
+      h('div.cu-grid', inp('ac', 'AC', 'number'), inp('hp', 'HP สูงสุด', 'number'), inp('speed', 'Speed')),
+      h('label.fld', h('small', 'โน้ต (ท่าโจมตี ความสามารถ)'), h('textarea.inp', { rows: 3, oninput: e => { f.notes = e.target.value; } }))),
+      [{ label: 'เพิ่ม', primary: true, onClick: () => {
+        if (!f.name?.trim()) { toast('ใส่ชื่อก่อนนะ'); return false; }
+        const hp = Math.max(1, parseInt(f.hp, 10) || 1);
+        (c.extras = c.extras || []).push({ id: uid(), kind: f.kind, name: f.name.trim(), ac: parseInt(f.ac, 10) || 10, hp, hpMax: hp, speed: f.speed || '', notes: f.notes || '' });
+        done();
+      } }]);
   }
 
   // ---------- NOTES ----------
