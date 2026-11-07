@@ -16,10 +16,45 @@ const clone = o => JSON.parse(JSON.stringify(o));
 export function renderPacks(root, parts, nav) {
   const [pid, type, iid] = parts;
   if (!pid) return listView(root, nav);
+  if (pid === 'fill') return fillSub(root, decodeURIComponent(type || ''), decodeURIComponent(iid || ''), nav);
   const p = P.getPack(pid);
   if (!p) { root.replaceChildren(h('section.hero', h('h1', 'ไม่พบแพ็กนี้ในเครื่อง'), h('a.btn', { href: '#/packs' }, 'กลับไปหน้าแพ็ก'))); return; }
   if (type && P.TYPES.includes(type)) return itemForm(root, p, type, iid, nav);
   packView(root, p, nav);
+}
+
+// ---------- สร้างซับคลาสจากชื่อ (ปุ่ม "สร้างในแพ็ก") ----------
+let PREFILL = null;
+function fillSub(root, classId, name, nav) {
+  if (!D.cls[classId] || !name) return location.replace('#/packs');
+  const all = P.listPacks();
+  for (const p of all) {
+    const s = (p.items?.subclasses || []).find(x => x.classId === classId && P.normName(x.name) === P.normName(name));
+    if (s) {
+      if (!p.enabled) toast(`แพ็ก "${p.name}" ปิดอยู่ — เปิดใช้แล้วตัวละครจะได้ข้อมูลนี้`);
+      return location.replace(`#/packs/${p.id}/subclasses/${s.id}`);
+    }
+  }
+  const go = (p, replace = true) => { PREFILL = { classId, name }; const to = `#/packs/${p.id}/subclasses/new`; replace ? location.replace(to) : nav(to); };
+  const fresh = () => { const p = P.newPack('ซับคลาสเพิ่มเติม'); P.savePack(p); return p; };
+  if (!all.length) return go(fresh());
+  if (all.length === 1) return go(all[0]);
+  root.replaceChildren(h('section.packs',
+    h('h1', `เพิ่ม ${name} ลงแพ็กไหน?`),
+    h('div.pack-list', all.map(p => h('button.btn', { onclick: () => go(p, false) }, (p.name || 'แพ็กไม่มีชื่อ') + (p.enabled ? '' : ' (ปิดอยู่)')))),
+    h('button.btn.primary', { onclick: () => go(fresh(), false) }, '+ สร้างแพ็กใหม่')));
+}
+
+/** ซับคลาส PHB 2024 ที่ยังไม่มีข้อมูล */
+function missingList() {
+  const rows = D.classes.map(k => [k, P.missingSubs(k.id)]).filter(([, l]) => l.length);
+  const total = D.classes.reduce((n, k) => n + (D.subList?.[k.id] || []).filter(x => P.normName(x) !== P.normName(k.subclass.name)).length, 0);
+  const miss = rows.reduce((n, [, l]) => n + l.length, 0);
+  if (!total) return null;
+  return h('details.block.miss-subs',
+    h('summary', h('b', 'ซับคลาส PHB 2024 '), miss ? `ยังต้องเติม ${miss} จาก ${total}` : `เติมครบ ${total} แล้ว 🎉`),
+    h('p.muted.small', 'ซับคลาสพวกนี้ไม่อยู่ในข้อมูลฟรี (SRD) — กดชื่อเพื่อสร้างในแพ็ก แล้วกรอกข้อมูลจากหนังสือ'),
+    rows.map(([k, l]) => h('div.miss-row', h('b', k.name), h('div.chips', l.map(s => h('a.chip', { href: P.fillHref(k.id, s.name) }, s.name))))));
 }
 
 // ---------- รายการแพ็ก ----------
@@ -52,7 +87,8 @@ function listView(root, nav) {
         h('b', p.name || 'แพ็กไม่มีชื่อ'),
         h('small', [p.author ? `โดย ${p.author}` : null, P.TYPES.map(t => p.items?.[t]?.length ? `${P.TYPE_LABEL[t]} ${p.items[t].length}` : null).filter(Boolean).join(' · ') || 'ยังว่างอยู่'].filter(Boolean).join(' — '))),
       toggle(p.enabled, v => { p.enabled = v; P.savePack(p); listView(root, nav); }))))
-      : h('div.empty', h('p', 'ยังไม่มีแพ็กในเครื่องนี้'), h('p.muted.small', 'กด "สร้างแพ็กใหม่" หรือขอไฟล์แพ็กจากเพื่อนมานำเข้า'))));
+      : h('div.empty', h('p', 'ยังไม่มีแพ็กในเครื่องนี้'), h('p.muted.small', 'กด "สร้างแพ็กใหม่" หรือขอไฟล์แพ็กจากเพื่อนมานำเข้า')),
+    missingList()));
 }
 
 function toggle(on, onChange, label = 'เปิดใช้') {
@@ -155,6 +191,7 @@ function itemForm(root, p, type, iid, nav) {
   const orig = iid !== 'new' ? p.items[type].find(x => x.id === iid) : null;
   if (iid !== 'new' && !orig) { nav(`#/packs/${p.id}`); return; }
   const it = orig ? clone(orig) : DEFAULTS[type]();
+  if (!orig && type === 'subclasses' && PREFILL) { Object.assign(it, PREFILL); PREFILL = null; }
   const back = `#/packs/${p.id}`;
   const body = h('div.form', ({ subclasses: subForm, backgrounds: bgForm, feats: featForm, spells: spellForm })[type](it));
 
@@ -231,9 +268,13 @@ function subForm(it) {
     el.title = bad.length ? 'ไม่พบสเปล: ' + bad.join(', ') : '';
   };
   drawFeats(); drawSpells();
+  const names = h('datalist#sub-names');
+  function fillNames() { names.replaceChildren(...P.missingSubs(it.classId).map(x => h('option', { value: x.name }))); }
+  fillNames();
   return [
-    field('คลาส', select(it, 'classId', [['', '— เลือกคลาส —'], ...D.classes.map(c => [c.id, c.name])])),
-    field('ชื่อซับคลาส', inp(it, 'name', { placeholder: 'เช่น Path of the Wild Heart' })),
+    field('คลาส', select(it, 'classId', [['', '— เลือกคลาส —'], ...D.classes.map(c => [c.id, c.name])], fillNames)),
+    field('ชื่อซับคลาส', [inp(it, 'name', { placeholder: 'เช่น Path of the Wild Heart', list: 'sub-names', autocomplete: 'off' }), names],
+      'พิมพ์ให้ตรงชื่อในหนังสือ ตัวละครที่เลือกชื่อนี้ไว้จะได้ข้อมูลเอง'),
     field('คำโปรยภาษาไทย', inp(it, 'th.s', { placeholder: 'สายนี้เด่นเรื่องอะไร เล่นแบบไหน' })),
     h('h3', 'การร่ายเวท (ไม่บังคับ)'),
     h('p.muted.small', 'สำหรับซับคลาสแบบ Eldritch Knight / Arcane Trickster ที่ทำให้คลาสที่ร่ายเวทไม่ได้ ร่ายเวทได้แบบ 1/3 caster ตั้งแต่ Lv3 (สลอต cantrip และเวทที่เตรียมได้คิดตามตาราง 2024 ให้อัตโนมัติ)'),

@@ -4,7 +4,7 @@ import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
 import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, compute, missing, rebuildEquipment, levelInfo, chOf } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
-import { classFeatureCard, featureCard, spellRow, statBox, original, LEVEL_TH, fullTh } from './parts.js';
+import { classFeatureCard, featureCard, spellRow, statBox, original, LEVEL_TH, fullTh, stubSubBox } from './parts.js';
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
 const TABS = [['main', 'หลัก', 'hp'], ['skills', 'สกิล', 'skill'], ['spells', 'เวท', 'spell'], ['features', 'ความสามารถ', 'feat'], ['gear', 'ของ', 'gear'], ['notes', 'โน้ต', 'note']];
@@ -243,6 +243,7 @@ export function renderSheet(root, c, tab, nav) {
       out.push(h('button.btn.primary.lvup-btn', { onclick: () => openLevelUp(c, () => { S.save(c); redraw(); }) }, `⬆️ เลเวลอัป (→ Lv ${c.level + 1})`));
       out.push(h('h2.sec', `${x.cls.name} ${x.CL}`));
       for (const f of x.feats) out.push(classFeatureCard(x.cls, f, f.src === 'sub'));
+      if (x.CL >= 3 && x.sub?.stub) out.push(stubSubBox(x.sub, x.cls.id));
       const ch = c.choices || {};
       const chS = x.CLs.sorcerer ? chOf(c, 'sorcerer') : {}, chW = x.CLs.warlock ? chOf(c, 'warlock') : {};
       const opts = [...(chS.metamagic || []).map(id => D.cls.sorcerer.options['metamagic-options']?.items.find(i => i.id === id)), ...(chW.invocations || []).map(id => D.cls.warlock.options['eldritch-invocation-options']?.items.find(i => i.id === id))].filter(Boolean);
@@ -254,6 +255,7 @@ export function renderSheet(root, c, tab, nav) {
     for (const mc of x.mcFeats) {
       out.push(h('h2.sec', `${mc.cls.name} ${mc.n}`), h('p.muted.small', `Multiclass${mc.n >= 3 ? ` · ซับคลาส ${mc.sub.name}` : ''}`));
       for (const f of mc.feats) out.push(classFeatureCard(mc.cls, f, f.src === 'sub'));
+      if (mc.n >= 3 && mc.sub?.stub) out.push(stubSubBox(mc.sub, mc.cls.id));
     }
     if (c.level > 1) out.push(h('details.orig', h('summary', `ประวัติเลเวล (${c.level})`),
       h('ol.lv-hist', levelInfo(c).map(li => h('li', levelSummary(c, li, x))))));

@@ -58,7 +58,7 @@ export function applyPacks() {
   D.th.feats = { ...BASE.th.feats };
   D.th.spells = { ...BASE.th.spells };
   D.th.backgrounds = { ...BASE.th.backgrounds };
-  D.subs = Object.fromEntries(D.classes.map(c => [c.id, [c.subclass]]));
+  const packSubs = {};
   D.packOf = {};   // id ไอเทม → ชื่อแพ็ก
   D.thFull = { spells: {} };
   for (const p of listPacks()) {
@@ -66,10 +66,10 @@ export function applyPacks() {
     const it = p.items || {};
     const mark = x => { D.packOf[x.id] = p.name; x.pack = p.name; return x; };
     for (const s of it.subclasses || []) {
-      if (!D.subs[s.classId]) continue;
+      if (!D.cls[s.classId]) continue;
       mark(s);
       s.features = (s.features || []).map(f => ({ ...f, pack: p.name, subName: s.name })).sort((a, b) => a.level - b.level);
-      D.subs[s.classId].push(s);
+      (packSubs[s.classId] ||= []).push(s);
     }
     for (const b of it.backgrounds || []) {
       bgs.push(mark({ ...b, tool: b.tool || '—', equipment: bgEquipText(b) }));
@@ -90,7 +90,28 @@ export function applyPacks() {
   D.bg = idx(bgs); D.feat = idx(feats); D.spell = idx(spells);
   D.spellByName = Object.fromEntries(spells.map(s => [s.name.toLowerCase(), s]));
   D.featByName = Object.fromEntries(feats.map(f => [f.name.toLowerCase(), f]));
+  // ซับคลาส: [SRD, ...รายชื่อ PHB 2024 (ใช้ข้อมูลแพ็กที่ชื่อตรงกัน ไม่งั้นเป็นซับคลาสว่าง), ...ซับคลาสแพ็กอื่น ๆ]
+  D.subs = {};
+  for (const k of D.classes) {
+    const ps = [...(packSubs[k.id] || [])], list = [k.subclass];
+    for (const name of D.subList?.[k.id] || []) {
+      if (normName(name) === normName(k.subclass.name)) continue;
+      const phb = phbId(name), i = ps.findIndex(x => normName(x.name) === normName(name));
+      if (i >= 0) { const x = ps.splice(i, 1)[0]; x.phb = phb; list.push(x); } else list.push(stubSub(k.id, name, phb));
+    }
+    D.subs[k.id] = [...list, ...ps];
+  }
 }
+
+export const normName = s => String(s || '').trim().toLowerCase();
+export const slugName = s => normName(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+export const phbId = name => 'phb:' + slugName(name);
+/** ซับคลาสที่มีแค่ชื่อ (ยังไม่มีข้อมูล) */
+export const stubSub = (classId, name, id = null) => ({ id: id || phbId(name), classId, name, stub: true, phb: id || null, features: [], spells: [] });
+/** ชื่อซับคลาส PHB ที่ยังไม่มีข้อมูล (ไม่มีแพ็กที่เปิดใช้ชื่อตรงกัน) */
+export const missingSubs = classId => (D.subs?.[classId] || []).filter(s => s.stub && s.phb);
+/** ลิงก์ไปสร้าง/แก้ซับคลาสชื่อนี้ในแพ็ก */
+export const fillHref = (classId, name) => `#/packs/fill/${classId}/${encodeURIComponent(name)}`;
 
 export function bgEquipText(b) {
   return `Choose A or B: (A) ${b.equipA || '—'}; or (B) ${Number(b.gpB) || 50} GP`;
@@ -111,14 +132,16 @@ export function usedPackItems(chars) {
     const sp = c.spells || {};
     [...(sp.cantrips || []), ...(sp.prepared || []), ...(sp.book || [])].forEach(id => want.spells.add(id));
   }
+  // ซับคลาสที่เลือกตามชื่อ PHB (phb:<slug>) → ใช้ของในแพ็กที่ชื่อตรงกัน
+  const subWanted = x => want.subclasses.has(x.id) || want.subclasses.has(phbId(x.name));
   // สเปลประจำซับคลาสจากแพ็ก
-  for (const p of listPacks()) for (const s of p.items?.subclasses || []) if (want.subclasses.has(s.id))
+  for (const p of listPacks()) for (const s of p.items?.subclasses || []) if (subWanted(s))
     for (const r of s.spells || []) String(r.list || '').split(',').forEach(n => { const x = D.spellByName[n.trim().toLowerCase()]; if (x && D.packOf[x.id]) want.spells.add(x.id); });
   const out = [];
   for (const p of listPacks()) {
     const items = {};
     let n = 0;
-    for (const t of TYPES) { items[t] = (p.items?.[t] || []).filter(x => want[t].has(x.id)); n += items[t].length; }
+    for (const t of TYPES) { items[t] = (p.items?.[t] || []).filter(x => t === 'subclasses' ? subWanted(x) : want[t].has(x.id)); n += items[t].length; }
     if (n) out.push({ id: p.id, name: p.name, author: p.author || '', items });
   }
   return out;

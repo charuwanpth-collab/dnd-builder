@@ -60,3 +60,38 @@ hi('Fighter 4 + MI (cleric) จาก ASI', { classId: 'fighter', speciesId: 'hu
 D.subs = { fighter: [D.cls.fighter.subclass, { id: 'ek-x', classId: 'fighter', name: 'Eldritch Knight', pack: 'Test', features: [], spells: [], casting: { list: 'wizard', ab: 'int' } }] };
 hi('Fighter 7 EK (pack 1/3)', { classId: 'fighter', subclassId: 'ek-x', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 12, con: 14, int: 13, wis: 10, cha: 8 }, bonus: { str: 2, int: 1 } } }, Array.from({ length: 7 }, () => ({ c: 'fighter' })));
 hi('Fighter 7 EK / Wizard 2', { classId: 'fighter', subclassId: 'ek-x', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 12, con: 14, int: 13, wis: 10, cha: 8 }, bonus: { str: 2, int: 1 } } }, [...Array.from({ length: 7 }, () => ({ c: 'fighter' })), { c: 'wizard' }, { c: 'wizard' }]);
+
+// ---------- 2B: รายชื่อซับคลาส PHB + ผูกกับแพ็กตามชื่อ ----------
+{
+  const mem = {}; globalThis.localStorage = { getItem: k => mem[k] ?? null, setItem: (k, v) => { mem[k] = String(v); } };
+  D.subList = JSON.parse(fs.readFileSync('data/subclass-list.json'));
+  const P = await import('../js/packs.js');
+  const ok = (cond, msg) => console.log(cond ? '  ✓' : '  ✗ FAIL', msg);
+  console.log('\n== 2B subclass list');
+  P.applyPacks();
+  ok(Object.values(D.subs).reduce((n, l) => n + l.length, 0) === 48, 'ซับคลาสรวม 48 (SRD 12 + ว่าง 36): ' + Object.values(D.subs).reduce((n, l) => n + l.length, 0));
+  const lv = n => Array.from({ length: n }, () => ({ c: 'fighter' }));
+  const c = base({ classId: 'fighter', speciesId: 'human', bgId: 'soldier', level: 5, levels: lv(5) });
+  R.setSub(c, 'fighter', D.subs.fighter.find(s => s.name === 'Battle Master'));
+  let x = R.compute(c);
+  ok(c.subclassId === 'phb:battle-master' && x.sub.stub && !x.warn.length, 'เลือก Battle Master (ว่าง) → ' + c.subclassId);
+  const pk = P.newPack('T'); pk.items.subclasses.push({ id: 'battle-master-ab12', classId: 'fighter', name: 'battle master', features: [{ id: 'cs', level: 3, name: 'Combat Superiority', uses: { n: '4', reset: 'short' } }], spells: [] });
+  P.savePack(pk);
+  x = R.compute(c);
+  ok(!x.sub.stub && x.feats.some(f => f.name === 'Combat Superiority'), 'มีแพ็กชื่อตรง → ได้ฟีเจอร์เอง');
+  ok(P.usedPackItems([c]).length === 1, 'ลิงก์แชร์ฝังซับคลาสแพ็กไปด้วย');
+  pk.enabled = false; P.savePack(pk);
+  x = R.compute(c);
+  ok(x.sub.stub && x.sub.name === 'Battle Master', 'ปิดแพ็ก → กลับเป็นซับคลาสว่างชื่อเดิม');
+  const old = base({ classId: 'fighter', subclassId: 'my-homebrew-zz99', speciesId: 'human', bgId: 'soldier', level: 3, levels: lv(3) });
+  x = R.compute(old);
+  ok(x.sub.stub && x.sub.lost && x.sub.name === 'My Homebrew' && x.warn.length === 1, 'ตัวละครเก่าที่แพ็กหาย → ซับคลาสว่าง "' + x.sub.name + '" + เตือน');
+  const old2 = base({ classId: 'fighter', subclassId: 'eldritch-knight-q1w2', speciesId: 'human', bgId: 'soldier', level: 3, levels: lv(3) });
+  ok(R.compute(old2).sub.phb === 'phb:eldritch-knight', 'ตัวละครเก่า id แพ็ก EK → ผูกกับชื่อ PHB');
+  const mc = base({ classId: 'fighter', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 13, con: 14, int: 8, wis: 10, cha: 13 }, bonus: {} }, level: 6, levels: [...lv(3), { c: 'warlock' }, { c: 'warlock' }, { c: 'warlock' }] });
+  R.setSub(mc, 'warlock', D.subs.warlock.find(s => s.name === 'Celestial Patron'));
+  x = R.compute(mc);
+  ok(x.mcFeats[0].sub.stub && mc.mc.warlock.subclassId === 'phb:celestial-patron', 'Multiclass Warlock 3 → Celestial Patron (ว่าง)');
+  R.setSub(mc, 'warlock', D.cls.warlock.subclass);
+  ok(mc.mc.warlock.subclassId === null, 'เลือกกลับเป็น SRD → null');
+}

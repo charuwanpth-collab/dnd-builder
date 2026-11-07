@@ -5,11 +5,11 @@ import * as S from '../store.js';
 import {
   ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, SKILLS, SKILL_AB, LANGS, STANDARD_ARRAY, POINT_COST, MAX_LEVEL,
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
-  compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub,
+  compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub, setSub,
 } from '../rules.js';
 import { featIdOf } from '../packs.js';
 import { levelEditor, levelSummary } from './levelup.js';
-import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh } from './parts.js';
+import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh, stubSubBox } from './parts.js';
 
 const STEPS = [
   { id: 'basic', label: 'เริ่ม', icon: 'edit' },
@@ -109,7 +109,7 @@ export function renderWizard(root, c, stepId, nav) {
       h('h4', `ซับคลาส: ${cls.subclass.name}`),
       thc(cls.id).sub?.desc ? h('p', thc(cls.id).sub.desc) : null,
       cls.subclass.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, f, true)),
-      (D.subs?.[cls.id] || []).length > 1 ? h('p.muted.small', 'ซับคลาสจาก Content Pack: ' + D.subs[cls.id].slice(1).map(x => x.name).join(', ')) : null),
+      (D.subs?.[cls.id] || []).length > 1 ? h('p.muted.small', 'ซับคลาสอื่น: ' + D.subs[cls.id].slice(1).map(x => x.name + (x.stub ? ' (ต้องเติมข้อมูล)' : ' 📦')).join(', ')) : null),
       [{ label: c.classId === cls.id ? 'เลือกอยู่แล้ว' : 'เลือกคลาสนี้', primary: true, onClick: () => pickClass(cls.id) }]);
   }
   function pickClass(id) {
@@ -226,16 +226,18 @@ export function renderWizard(root, c, stepId, nav) {
     }
 
     const subs = D.subs?.[cls.id] || [cls.subclass], cur = subOf(c, cls.id);
+    const isCur = sb => cur === sb || (!!cur.phb && cur.phb === sb.phb);
     out.push(h('div.block.sub-info',
       h('h3', `ซับคลาส: ${cur.name}`),
       h('p', L >= 3 ? 'ได้รับแล้วที่เลเวล 3' : 'จะได้ตอนเลเวล 3 (เลือกไว้ก่อนได้)'),
-      subs.length > 1 ? h('div.grid.grid-2', subs.map(sb => choiceCard({
-        id: sb.id, iconName: cls.id, title: sb.name, sub: sb.pack ? '📦 ' + sb.pack : 'SRD',
-        desc: sb.pack ? sb.th?.s : thc(cls.id).sub?.desc, selected: cur.id === sb.id,
-        onClick: () => { const v = sb.id === cls.subclass.id ? null : sb.id; if (primary) c.subclassId = v; else mcOf(c, cls.id).subclassId = v; changed(); },
-      }))) : null,
+      h('div.grid.grid-2', [...subs, ...(subs.some(isCur) ? [] : [cur])].map(sb => choiceCard({
+        id: sb.id, iconName: cls.id, title: sb.name, sub: sb.stub ? '🟡 ต้องเติมข้อมูล' : sb.pack ? '📦 ' + sb.pack : 'SRD',
+        desc: sb.stub ? null : sb.pack ? sb.th?.s : thc(cls.id).sub?.desc, selected: isCur(sb),
+        onClick: () => { setSub(c, cls.id, sb); changed(); },
+      }))),
+      cur.stub ? stubSubBox(cur, cls.id) : null,
       cur.pack && L >= 3 ? cur.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, f, true)) : null,
-      h('p.muted.small', 'ข้อมูลฟรี (SRD) มีซับคลาสละ 1 แบบ — ซับคลาสอื่นเพิ่มเองได้ที่ ', h('a', { href: '#/packs' }, 'Content Pack'))));
+      h('p.muted.small', 'ข้อมูลฟรี (SRD) มีซับคลาสละ 1 แบบ — อันที่ขึ้น 🟡 เลือกไว้ได้ แล้วเติมข้อมูลเองที่ ', h('a', { href: '#/packs' }, 'Content Pack'))));
     return out;
   }
 

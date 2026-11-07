@@ -1,6 +1,6 @@
 // กฎและการคำนวณค่าตัวละคร (D&D 2024 / SRD 5.2.1) — ทุกอย่างคำนวณจากข้อมูลตัวละครดิบ
 import { D } from './data.js';
-import { featIdOf } from './packs.js';
+import { featIdOf, normName, stubSub } from './packs.js';
 
 export const MAX_LEVEL = 20;
 export const ABIL = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
@@ -87,8 +87,25 @@ export function parseMdTables(text) {
 export function subOf(c, id = c.classId) {
   const cls = D.cls[id];
   if (!cls) return null;
-  const sid = id === c.classId ? c.subclassId : c.mc?.[id]?.subclassId;
-  return D.subs?.[cls.id]?.find(s => s.id === sid) || cls.subclass;
+  const o = id === c.classId ? c : c.mc?.[id];
+  const sid = o?.subclassId;
+  if (!sid) return cls.subclass;
+  const list = D.subs?.[cls.id] || [];
+  const hit = list.find(s => s.id === sid || s.phb === sid);
+  if (hit) return hit;
+  // ไม่มีในเครื่อง (แพ็กถูกปิด/ลบ) → เก็บชื่อเดิมไว้เป็นซับคลาสว่าง (ถ้าชื่อตรงรายชื่อ PHB ก็ใช้อันนั้น)
+  const base = String(sid).replace(/^phb:/, '').replace(/-[a-z0-9]{4}$/, '');
+  const named = list.find(s => s.phb && (s.phb === 'phb:' + base || (o.subName && normName(s.name) === normName(o.subName))));
+  if (named) return named;
+  const nm = o.subName || base.split('-').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ');
+  return { ...stubSub(cls.id, nm, sid), lost: true };
+}
+/** ตั้งซับคลาส (null หรือ SRD = ซับคลาส SRD) — ซับคลาสที่อยู่ในรายชื่อ PHB เก็บเป็น phb:<slug> เพื่อให้ผูกกับแพ็กชื่อตรงกันเอง */
+export function setSub(c, id, sb) {
+  const o = id === c.classId ? c : mcOf(c, id);
+  if (!sb || sb === D.cls[id]?.subclass) { o.subclassId = null; delete o.subName; return; }
+  o.subclassId = sb.phb || sb.id;
+  o.subName = sb.name;
 }
 /** เลือกซับคลาส SRD อยู่หรือเปล่า (ตัวเลือกพิเศษอย่าง Land / Hunter's Prey ใช้เฉพาะซับคลาส SRD) */
 export const srdSub = (c, id = c.classId) => !!D.cls[id] && subOf(c, id) === D.cls[id].subclass;
@@ -419,7 +436,7 @@ export function compute(c) {
   const L = LI.length, CL = CLs[c.classId] || L, pb = pbOf(L), ch = c.choices || {}, so = c.speciesOpt || {};
   const warn = [];
   const sub = subOf(c), isSrdSub = srdSub(c);
-  if (cls && c.subclassId && sub?.id !== c.subclassId) warn.push('ซับคลาสที่เลือกไว้ไม่มีในเครื่องนี้ (แพ็กถูกปิดหรือลบ) — แสดงซับคลาส SRD แทน');
+  if (cls && sub?.lost) warn.push(`ซับคลาส ${sub.name} ไม่มีข้อมูลในเครื่องนี้ (แพ็กถูกปิดหรือลบ) — เก็บชื่อไว้ให้ เปิดแพ็กหรือนำเข้าใหม่แล้วข้อมูลจะกลับมาเอง`);
 
   // ค่าความสามารถ
   const score = {};
