@@ -50,3 +50,14 @@ export function attackBody(a, x) {
     }),
   ];
 }
+
+/** คำอธิบายค่าบนใบจาก data/th/help.json → [ความหมาย, ใช้ตอนไหน] */
+export function helpBody(key) {
+  const t = D.th.help?.terms?.[key];
+  if (!t) return [];
+  return [h('p.th', t.what), t.use ? h('p.help-use', h('b', 'ใช้ยังไง: '), t.use) : null];
+}
+/** ปุ่ม ⓘ เล็ก ๆ ข้างหัวข้อ เปิดคำอธิบายค่านั้น */
+export function infoBtn(key, extra = []) {
+  return h('button.info-btn', { 'aria-label': 'ความหมาย', onclick: e => { e.stopPropagation(); explain(D.th.help?.terms?.[key]?.t || key, [...helpBody(key), ...extra]); } }, 'ⓘ');
+}

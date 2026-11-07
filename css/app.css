@@ -637,3 +637,19 @@ div.titem { cursor: default; }
 .roll-inputs .inp { text-align: center; }
 .sp-filter { position: sticky; top: calc(var(--topbar-h, 53px) + var(--stepper-h, 58px)); z-index: 8; background: var(--bg); padding: 4px 0 2px; }
 .pack-toggles { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+
+/* ---------- คำอธิบาย + หน้าเล่นยังไง (เฟส 4C) ---------- */
+.info-btn { width: 22px; height: 22px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: var(--card2); color: var(--muted); font: inherit; font-size: .78rem; line-height: 1; cursor: pointer; letter-spacing: 0; }
+.hp-top .info-btn { margin-left: 4px; }
+.help-use, .help-ex { font-size: .92rem; }
+.help-ex { color: var(--muted); }
+.help-btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; flex: none; font-size: 1rem; }
+.sh-head .icon-btn { width: 36px; height: 40px; flex: none; }
+.rest-btn { width: 42px; }
+.help-link { display: block; text-align: center; margin: 18px 0 6px; }
+.help .acc .md { font-size: .95rem; }
+.help .acc-body > .btn { margin-top: 6px; }
+.help-tips { padding-left: 20px; }
+.sp-help { margin: 2px 0 6px; }
+.explain h4 { margin: 14px 0 2px; }
+.help .acc { scroll-margin-top: calc(var(--topbar-h, 53px) + 10px); }

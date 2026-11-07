@@ -108,7 +108,7 @@ export function linkTerms(el) {
   }
 }
 
-const TARGETS = '.md, p.th, p.tip, .opt p, .mastery-list li';
+const TARGETS = '.md, p.th, p.tip, .opt p, .mastery-list li, .explain p, .help p, .help li';
 /** เฝ้าดู DOM แล้วลิงก์คำให้อัตโนมัติ + จับการแตะ */
 export function initGlossaryLinks() {
   let queued = false;

@@ -7,6 +7,7 @@ import * as S from './store.js';
 import { renderHome, renderImport, renderCredits } from './views/home.js';
 import { renderWizard } from './views/wizard.js';
 import { renderSheet } from './views/sheet.js';
+import { renderHelp } from './views/help.js';
 import { renderGlossary, initGlossaryLinks } from './views/glossary.js';
 
 const app = $('#app');
@@ -29,6 +30,7 @@ function route() {
   if (page === 'import' && a) return renderImport(app, parts.slice(1).join('/'), nav);
   if (page === 'credits') return renderCredits(app);
   if (page === 'glossary') return renderGlossary(app, a);
+  if (page === 'help') return renderHelp(app, a, b);
   if (page === 'packs') return renderPacks(app, parts.slice(1), nav);
   renderHome(app, nav);
 }

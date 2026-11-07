@@ -2,7 +2,7 @@
 export const D = {};
 
 const SRD = ['classes', 'spells', 'species', 'backgrounds', 'feats', 'weapons', 'weaponProps', 'mastery', 'armor', 'gear', 'legal', 'glossary'];
-const TH = ['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc', 'glossary'];
+const TH = ['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc', 'glossary', 'help'];
 
 const get = p => fetch(p).then(r => { if (!r.ok) throw new Error(p); return r.json(); });
 

@@ -3,10 +3,10 @@
 import { D } from '../data.js';
 import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
 import * as S from '../store.js';
-import { ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, compute, missing, rebuildEquipment, levelInfo, chOf } from '../rules.js';
+import { ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, compute, missing, rebuildEquipment, levelInfo, chOf, hitDieAvg } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
 import { classFeatureCard, featureCard, spellRow, LEVEL_TH, stubSubBox, TYPE_LABEL, detailGroups, detailField } from './parts.js';
-import { formula, explain, attackBody, dmgText } from './explain.js';
+import { formula, explain, attackBody, dmgText, helpBody, infoBtn } from './explain.js';
 import { showTerm } from './glossary.js';
 import * as T from './turn.js';
 
@@ -89,6 +89,7 @@ export function renderSheet(root, c, tab, nav) {
       h('div.sh-title', h('h1', c.name || 'Character ไร้ชื่อ'), h('p', subtitle)),
       h('button.rest-btn', { onclick: () => shortRest(x), 'aria-label': 'พักสั้น' }, h('span', { html: iconSvg('short') }), h('small', 'พักสั้น')),
       h('button.rest-btn', { onclick: () => longRest(x), 'aria-label': 'พักยาว' }, h('span', { html: iconSvg('long') }), h('small', 'พักยาว')),
+      h('a.icon-btn.help-btn', { href: `#/help/${c.id}`, 'aria-label': 'เล่นยังไง' }, '❓'),
       h('button.icon-btn', { 'aria-label': 'เมนู', onclick: menu }, '⋯'));
   }
   function mini(x) {
@@ -141,51 +142,48 @@ export function renderSheet(root, c, tab, nav) {
         h('small', ABIL_EN[a].toUpperCase()), h('b', sign(x.m[a])), h('span.oval', String(x.score[a]))))),
       h('div.box3',
         box('PROFICIENCY', 'โบนัสชำนาญ', sign(x.pb), null, () => explain('Proficiency Bonus', [
-          h('p', `ตอนนี้เลเวลรวม ${x.L} ได้ Proficiency Bonus ${sign(x.pb)} (เริ่มที่ +2 แล้วเพิ่มขึ้นทุก 4 เลเวล)`),
-          h('p', 'เราจะบวกเลขนี้ทุกครั้งที่ทอยสิ่งที่เราชำนาญ เช่น โจมตีด้วยอาวุธที่ชำนาญ สกิลที่ติดจุด Saving Throw ของคลาส และการร่ายเวท')])),
+          h('div.formula', h('div.f-main', h('span', `เลเวลรวม ${x.L}`), h('b', sign(x.pb))), h('div.f-parts', h('span', 'Lv 1–4 +2 · 5–8 +3 · 9–12 +4 · 13–16 +5 · 17–20 +6'))),
+          ...helpBody('pb')])),
         box('SPEED', 'ความเร็ว', String(x.speed), 'ft', () => explain('Speed', [
-          h('p', `เทิร์นหนึ่งเราเดินได้ไกลสุด ${x.speed} ฟุต (ตารางละ 5 ฟุต = ${Math.floor(x.speed / 5)} ช่อง) จะแบ่งเดินก่อนและหลังโจมตีก็ได้`),
-          h('p.muted.small', 'ใช้ Dash เพื่อเดินได้อีกเท่าตัว · พื้นที่ขรุขระ (Difficult Terrain) เดิน 1 ฟุตเสีย 2 ฟุต')])),
-        box('HEROIC', 'Inspiration', P.inspiration ? '✨' : '—', null, () => {
-          P.inspiration = !P.inspiration; done();
-          toast(P.inspiration ? '✨ ได้ Heroic Inspiration — ทอยอะไรออกมาไม่ถูกใจ ทอยใหม่ได้ 1 ครั้ง' : 'ใช้ Heroic Inspiration ไปแล้ว');
-        }, P.inspiration ? '.lit' : '')),
+          h('div.formula', h('div.f-main', h('span', 'เดินได้ต่อเทิร์น'), h('b', `${x.speed} ft`)), h('div.f-parts', h('span', `= ${Math.floor(x.speed / 5)} ช่องบนแผนที่ (ช่องละ 5 ฟุต)`), x.sp ? h('span', `${x.sp.name} เริ่มต้น ${x.sp.speed} ft`) : null)),
+          ...helpBody('speed')])),
+        box('HEROIC', 'Inspiration', P.inspiration ? '✨' : '—', null, () => explain('Heroic Inspiration', [
+          h('p.formula', P.inspiration ? '✨ ตอนนี้มีอยู่ 1 ครั้ง' : 'ตอนนี้ยังไม่มี'), ...helpBody('insp')], [
+          { label: P.inspiration ? 'ใช้ไปแล้ว (เอาออก)' : 'ได้รับ Heroic Inspiration', primary: true, onClick: () => { P.inspiration = !P.inspiration; done(); } }]), P.inspiration ? '.lit' : '')),
       hpBox(x),
       P.hp === 0 ? deathBox() : null,
       h('div.box4',
         box('INITIATIVE', 'ลำดับเริ่ม', sign(x.init), null, () => explain('Initiative', [
-          formula('ทอย Initiative', x.init, x.initParts),
-          h('p', 'ทอยตอนเริ่มการต่อสู้ ใครได้เลขสูงกว่าได้เล่นก่อน (DM จะเป็นคนบอกให้ทอย)')])),
+          formula('ทอย Initiative', x.init, x.initParts), ...helpBody('init')])),
         box('ARMOR', 'Class (AC)', String(x.ac), null, () => explain('Armor Class (AC)', [
           h('div.formula', h('div.f-main', h('span', 'AC'), h('b', String(x.ac))), h('div.f-parts', h('span', x.acNote))),
-          h('p', 'ยิ่ง AC สูง ศัตรูยิ่งตีโดนยาก — ศัตรูต้องทอยโจมตีให้ได้เท่ากับหรือมากกว่า AC ถึงจะโดน'),
-          h('p.muted.small', 'ใส่/ถอดเกราะและโล่ได้ที่แท็บ INVENTORY')])),
+          ...helpBody('ac'), h('p.muted.small', 'เปลี่ยนเกราะหรือโล่ได้ที่ขั้น EQUIPMENT ในหน้าแก้ไข')])),
         box('DEFENSES', 'ต้านทาน', '—', null, () => explain('Defenses', [
-          h('p', 'ช่องนี้รวมดาเมจที่เราทนได้เป็นพิเศษ:'),
-          h('ul', h('li', 'Resistance — โดนดาเมจชนิดนั้นแค่ครึ่งเดียว'), h('li', 'Immunity — ไม่โดนดาเมจชนิดนั้นเลย'), h('li', 'Vulnerability — โดนดาเมจชนิดนั้นเป็น 2 เท่า')),
+          ...helpBody('defenses'),
           h('p.muted.small', 'ตอนนี้ยังไม่มีอะไรที่คำนวณให้อัตโนมัติ ถ้าฟีเจอร์ของเราบอกว่าได้ Resistance ให้จำไว้ก่อนนะ')])),
         box('CONDITIONS', 'สถานะ', P.conditions.length ? String(P.conditions.length) : '—', null, () => condSheet(), P.conditions.length ? '.bad' : '')),
       P.conditions.length ? h('p.cond-line', '⚠ ติดอยู่: ', P.conditions.map(k => h('button.link', { onclick: () => showTerm(k.toLowerCase()) }, k)).flatMap((b, i) => (i ? [', ', b] : [b]))) : null,
-      head('SAVING THROWS', 'การทอยเซฟ'),
+      head('SAVING THROWS', 'การทอยเซฟ', infoBtn('save')),
       h('div.saves6', x.saves.map(sv => h('button.save6', { onclick: () => explain(`${ABIL_EN[sv.ab]} Saving Throw`, [
         formula('ทอยเซฟ', sv.bonus, sv.parts),
-        h('p', 'DM จะสั่งให้ทอยเซฟเวลาเราต้องต้านอะไรบางอย่าง เช่น หลบระเบิด (DEX) ทนพิษ (CON) หรือต้านเวทสะกดจิต (WIS) — ได้เท่ากับหรือมากกว่าตัวเลขที่ DM ตั้งไว้ถือว่าผ่าน'),
+        D.th.help?.abilities?.[sv.ab] ? h('p.th', h('b', `เซฟ ${ABIL_SHORT[sv.ab]} ใช้ตอน: `), D.th.help.abilities[sv.ab].save) : null,
+        ...helpBody('save').slice(1),
         sv.prof ? h('p.muted.small', '● เราชำนาญเซฟนี้ จึงได้บวก Proficiency ด้วย') : null]) },
         h('span.dot' + (sv.prof ? '.prof' : '')), h('small', ABIL_SHORT[sv.ab]), h('b', sign(sv.bonus))))),
-      head('SENSES', 'ประสาทสัมผัส'),
+      head('SENSES', 'ประสาทสัมผัส', infoBtn('passive')),
       h('div.card.list.senses',
         senseRow(`Passive Perception`, 'WIS · สังเกตเห็นอะไรโดยไม่ต้องทอย', sk('Perception'), 'Perception'),
         senseRow(`Passive Insight`, 'WIS · จับได้ว่าใครโกหก', sk('Insight'), 'Insight'),
         senseRow(`Passive Investigation`, 'INT · หากับดัก ของซ่อน', sk('Investigation'), 'Investigation'),
-        x.darkvision ? h('button.sense', { onclick: () => showTerm('darkvision') }, h('div', h('b', 'Darkvision'), h('small', 'มองในที่มืดได้เหมือนแสงสลัว (เห็นเป็นขาวดำ)')), h('span.sv', `${x.darkvision} ft`)) : null,
-        x.truesight ? h('button.sense', { onclick: () => showTerm('truesight') }, h('div', h('b', 'Truesight'), h('small', 'มองทะลุภาพลวง ความมืดเวท และร่างแปลง')), h('span.sv', `${x.truesight} ft`)) : null),
+        x.darkvision ? h('button.sense', { onclick: () => explain('Darkvision', [h('p.formula', `ระยะ ${x.darkvision} ฟุต`), ...helpBody('darkvision')]) }, h('div', h('b', 'Darkvision'), h('small', 'มองในที่มืดได้เหมือนแสงสลัว (เห็นเป็นขาวดำ)')), h('span.sv', `${x.darkvision} ft`)) : null,
+        x.truesight ? h('button.sense', { onclick: () => explain('Truesight', [h('p.formula', `ระยะ ${x.truesight} ฟุต`), ...helpBody('truesight')]) }, h('div', h('b', 'Truesight'), h('small', 'มองทะลุภาพลวง ความมืดเวท และร่างแปลง')), h('span.sv', `${x.truesight} ft`)) : null),
       head('PROFICIENCIES & TRAINING', 'สิ่งที่เราชำนาญ'),
       h('dl.kv.profs',
         h('dt', 'Armor'), h('dd', x.training.join(', ') || '—'),
         h('dt', 'Weapons'), h('dd', x.cls?.core['Weapon Proficiencies'] + (x.weaponRule === 'all' && !/Martial/.test(x.cls?.core['Weapon Proficiencies']) ? ' + Martial' : '') || '—'),
         h('dt', 'Tools'), h('dd', [x.cls?.core['Tool Proficiencies'], x.bg?.tool].filter(t => t && t !== 'None').join(', ').replace(/\s*\(see.*?\)/g, '') || '—'),
         h('dt', 'Languages'), h('dd', x.langs.join(', '))),
-      head('SKILLS', 'สกิล'),
+      head('SKILLS', 'สกิล', infoBtn('pb')),
       h('div.card.list.skills-tb',
         h('div.sk-row.sk-head', h('small', 'PROF'), h('small', 'MOD'), h('small', 'SKILL'), h('small', 'BONUS')),
         x.skills.map(s => h('button.sk-row', { onclick: () => skillInfo(s) },
@@ -196,25 +194,32 @@ export function renderSheet(root, c, tab, nav) {
   function senseRow(name, sub, v, skill) {
     return h('button.sense', { onclick: () => explain(name, [
       h('div.formula', h('div.f-main', h('span', name), h('b', String(v))), h('div.f-parts', h('span', '10 + ', h('b', sign(v - 10)), ` (โบนัส ${skill})`))),
-      h('p', `เป็นค่าที่ใช้แทนการทอย ${skill} — DM จะเอาไปเทียบเองเวลามีอะไรให้สังเกตแต่เราไม่ได้ตั้งใจหา ถ้าอยากตั้งใจหาจริง ๆ ให้ทอย ${skill} แทน`)]) },
+      ...helpBody('passive'), D.th.help?.skills?.[skill] ? h('p.small', h('b', `${skill}: `), D.th.help.skills[skill].what) : null]) },
       h('div', h('b', name), h('small', sub)), h('span.sv', String(v)));
   }
   function abilInfo(a, x) {
     const sv = x.saves.find(s => s.ab === a);
-    const sks = x.skills.filter(s => s.ab === a);
+    const sks = x.skills.filter(s => s.ab === a), H = D.th.help?.abilities?.[a];
     explain(`${ABIL_EN[a]} (${ABIL_SHORT[a]})`, [
-      h('p', `ค่าพลัง ${x.score[a]} → ตัวบวก ${sign(x.m[a])} (คำนวณจาก (ค่าพลัง − 10) ÷ 2 ปัดลง)`),
-      h('p.th', `${ABIL_SHORT[a]} คือ ${ABIL_TH[a]}`),
+      h('p.th', H?.what || `${ABIL_SHORT[a]} คือ ${ABIL_TH[a]}`),
+      h('p.small', `ค่าพลัง ${x.score[a]} → ตัวบวก ${sign(x.m[a])} (คิดจาก ค่าพลังลบ 10 แล้วหาร 2 ปัดลง)`),
       formula(`ทอย ${ABIL_SHORT[a]} Check เปล่า ๆ`, x.m[a], [[ABIL_SHORT[a], x.m[a]]]),
+      H?.check ? h('p.help-use', h('b', 'Check ใช้ตอน: '), H.check) : null,
       formula(`ทอย ${ABIL_SHORT[a]} Saving Throw`, sv.bonus, sv.parts),
-      sks.length ? h('p.small', h('b', 'สกิลที่ใช้ค่านี้: '), sks.map(s => `${s.name} ${sign(s.bonus)}`).join(' · ')) : h('p.small', 'ไม่มีสกิลที่ใช้ค่านี้โดยตรง แต่ CON ช่วยให้ HP เยอะขึ้นทุกเลเวล'),
+      H?.save ? h('p.help-use', h('b', 'เซฟใช้ตอน: '), H.save) : null,
+      sks.length ? h('p.small', h('b', 'สกิลที่ใช้ค่านี้: '), sks.map(s => `${s.name} ${sign(s.bonus)}`).join(' · ')) : null,
+      H?.extra ? h('p.small', '💡 ' + H.extra) : null,
+      H?.classes ? h('p.muted.small', '🎭 ' + H.classes) : null,
     ]);
   }
   function skillInfo(s) {
+    const H = D.th.help?.skills?.[s.name];
     explain(`${s.name} (${ABIL_SHORT[s.ab]})`, [
-      D.th.misc?.skills?.[s.name] ? h('p.th', `${s.name} ใช้ตอน: ${D.th.misc.skills[s.name]}`) : null,
+      H ? h('p.th', H.what) : null,
       formula(`ทอย ${s.name}`, s.bonus, s.parts),
-      h('p', 'เราบอก DM ว่าจะทำอะไร แล้ว DM จะสั่งให้ทอยสกิลที่เหมาะ — ทอย d20 แล้วบวกเลขนี้ บอกผลรวมให้ DM'),
+      H ? h('p.help-use', h('b', 'ใช้ตอน: '), H.when) : null,
+      H ? h('p.help-ex', h('b', 'ตัวอย่าง: '), H.ex) : null,
+      h('p.muted.small', 'เราบอก DM ว่าจะทำอะไร แล้ว DM จะบอกว่าให้ทอยสกิลไหน — ทอย d20 บวกเลขนี้ แล้วบอกผลรวมให้ DM'),
     ]);
   }
 
@@ -223,7 +228,7 @@ export function renderSheet(root, c, tab, nav) {
     const val = () => Math.max(0, parseInt(amt.value, 10) || 0);
     const hdLeft = c.level - hdUsedAll();
     return h('div.hp-box',
-      h('div.hp-top', h('small.en', 'HIT POINTS'), h('small.th', 'พลังชีวิต')),
+      h('div.hp-top', h('small.en', 'HIT POINTS'), h('small.th', 'พลังชีวิต'), infoBtn('hp', [hpFormula(x), h('h4', 'Temp HP'), ...helpBody('temp')])),
       h('div.hp-nums',
         h('div', h('small', 'CURRENT'), h('b', String(P.hp))), h('span.slash', '/'),
         h('div', h('small', 'MAX'), h('b', String(x.hpMax))),
@@ -235,11 +240,19 @@ export function renderSheet(root, c, tab, nav) {
         h('button.btn.dmg', { onclick: () => { let n = val(); if (!n) return toast('ใส่ดาเมจที่โดนก่อน แล้วค่อยกด'); const t = Math.min(P.temp, n); P.temp -= t; n -= t; P.hp = Math.max(0, P.hp - n); done(); } }, 'DAMAGE', h('small', 'โดนตี'))),
       h('div.hp-sub',
         h('button.link', { onclick: () => { const n = val(); P.temp = Math.max(P.temp, n); done(); toast(n ? `ได้ Temp HP ${P.temp} (Temp HP ไม่ทบกัน เก็บค่าที่สูงกว่าไว้)` : 'ใส่จำนวน Temp HP ก่อนแล้วกดอีกที'); } }, '+ ตั้ง Temp HP'),
-        h('small.muted', `Hit Dice เหลือ ${hdLeft}/${c.level} (${x.hitDice.map(d => `${d.n}d${d.die}`).join(' + ') || 'd8'})`)));
+        h('button.link.small', { onclick: () => explain('Hit Dice', [h('p.formula', `เหลือ ${hdLeft} จาก ${c.level} ลูก`), ...helpBody('hd')]) }, `Hit Dice เหลือ ${hdLeft}/${c.level} (${x.hitDice.map(d => `${d.n}d${d.die}`).join(' + ') || 'd8'})`)));
+  }
+  function hpFormula(x) {
+    let dice = 0;
+    for (const li of levelInfo(c)) { const d = li.cls?.hitDie; if (d) dice += li.i === 0 ? d : li.e.hp || hitDieAvg(d); }
+    const con = x.m.con * c.level, other = x.hpMax - dice - con;
+    return h('div.formula', h('div.f-main', h('span', 'HP สูงสุด'), h('b', String(x.hpMax))),
+      h('div.f-parts', h('span', 'Hit Die ทุกเลเวล ', h('b', '+' + dice)), h('span', `CON ×${c.level} `, h('b', (con < 0 ? '−' : '+') + Math.abs(con))), other ? h('span', 'ฟีเจอร์อื่น ', h('b', (other < 0 ? '−' : '+') + Math.abs(other))) : null),
+      h('p.muted.small', 'เลเวลแรกได้ Hit Die เต็มลูก เลเวลต่อ ๆ ไปได้ค่าเฉลี่ยหรือผลที่ทอยไว้'));
   }
   function deathBox() {
     const pips = (k, label) => h('div.death-row', h('span', label), [0, 1, 2].map(i => h('button.pip' + (P.death[k] > i ? '.on' : ''), { 'aria-label': `${label} ${i + 1}`, onclick: () => { P.death[k] = P.death[k] > i ? i : i + 1; done(); } })));
-    return h('div.card.death', h('h3.sec2', h('span', 'DEATH SAVES'), h('small', 'ทอยกันตาย')),
+    return h('div.card.death', h('h3.sec2', h('span', 'DEATH SAVES'), h('small', 'ทอยกันตาย'), infoBtn('death')),
       h('p.small', 'HP เหลือ 0 = หมดสติ ทุกต้นเทิร์นให้ทอย d20 เปล่า ๆ: ได้ 10 ขึ้นไปนับสำเร็จ ต่ำกว่า 10 นับล้มเหลว · ได้ 20 ฟื้นขึ้นมามี HP 1 · ได้ 1 นับล้มเหลว 2 ครั้ง · สำเร็จครบ 3 = อาการคงที่ ล้มเหลวครบ 3 = ตาย'),
       pips('s', 'สำเร็จ'), pips('f', 'ล้มเหลว'));
   }
@@ -288,7 +301,7 @@ export function renderSheet(root, c, tab, nav) {
     fill();
     sheet('พักสั้น (1 ชั่วโมง)', h('div',
       h('p', 'ระหว่างพักสั้นใช้ Hit Dice ฟื้น HP ได้: ทอยเต๋าจริงทีละลูก แล้วพิมพ์เลขที่ได้ เว็บจะบวก CON ให้เอง จะใช้กี่ลูกก็ได้เท่าที่เหลือ'), rows, log),
-      [{ label: 'พักเสร็จ', primary: true, onClick: () => {
+      [{ label: 'พักสั้นกับพักยาวต่างกันยังไง', onClick: () => { nav(`#/help/${c.id}/rest`); } }, { label: 'พักเสร็จ', primary: true, onClick: () => {
         for (const r of x.res) if (r.reset === 'short') P.res[r.id] = 0; else if (r.reset === 'short1') P.res[r.id] = Math.max(0, (P.res[r.id] || 0) - 1);
         for (const k of Object.keys(P.slots)) if (k.startsWith('p')) delete P.slots[k]; // Pact Magic คืนตอนพักสั้น
         P.turn = null; done(); toast('พักสั้นเรียบร้อย ความสามารถที่คืนตอนพักสั้นกลับมาแล้ว');
@@ -359,31 +372,10 @@ export function renderSheet(root, c, tab, nav) {
             : boxes(r.max, used, v => setUse(P.res, r.id, v, () => T.resUsed(P, r.id)), r.name));
       })));
     }
-    if (F === 'all') out.push(howTo(x));
+    if (F === 'all') out.push(h('a.btn.ghost.help-link', { href: `#/help/${c.id}/turn` }, '🎓 เล่นยังไง — เทิร์นหนึ่งทำอะไรได้ ตีกี่ที ทอยอะไรบ้าง'));
     return out;
   }
   function go2(f) { ui.act = f; redraw(); }
-
-  // วิธีเล่น: เทิร์นหนึ่งทำอะไรได้ + ทิปมือใหม่ของทุกคลาสที่มี
-  function howTo(x) {
-    return h('details.orig.howto', h('summary', '🎓 วิธีเล่นเบื้องต้น'),
-      h('div.md',
-        h('p', h('b', 'ในเทิร์นของเรา ทำอะไรได้บ้าง')),
-        h('ul',
-          h('li', 'เดินได้ไกลสุดเท่ากับ Speed — จะเดินก่อน ระหว่าง หรือหลังทำอย่างอื่นก็ได้'),
-          h('li', '1 Action — เช่น โจมตี ร่ายเวท Dash หรือ Dodge'),
-          h('li', '1 Bonus Action — ใช้ได้เฉพาะตอนมีความสามารถหรือเวทที่เขียนว่าใช้ Bonus Action'),
-          h('li', '1 Reaction ต่อรอบ — ใช้ตอนไม่ใช่เทิร์นเราก็ได้ เช่น Opportunity Attack'),
-          h('li', 'ทำเรื่องเล็ก ๆ ได้ฟรี 1 อย่าง เช่น เปิดประตู ชักอาวุธ หรือพูดสั้น ๆ')),
-        h('p.muted.small', 'กด ⚔️ เริ่มต่อสู้ ที่แถบด้านบน แล้วเว็บจะช่วยนับว่าเทิร์นนี้ใช้อะไรไปแล้ว และยังเหลืออะไรให้ใช้อีก')),
-      Object.keys(x.CLs).map(id => {
-        const t = D.th.classes?.[id];
-        if (!t) return null;
-        return h('div.howto-cls', h('h4', `${D.cls[id]?.name} — ${t.tag || ''}`), t.desc ? h('p', t.desc) : null,
-          t.abilityTip ? h('p.tip', '📊 ' + t.abilityTip) : null,
-          t.tips?.length ? h('ul', t.tips.map(z => h('li', z))) : null);
-      }));
-  }
 
   // ---------- SPELLS ----------
   function spells(x) {
@@ -398,19 +390,20 @@ export function renderSheet(root, c, tab, nav) {
       apply();
     } }, l)));
     out.push(q, chipBar([['all', 'ทุกเลเวล'], ...lvs.map(l => [String(l), l ? `Lv ${l}` : 'Cantrip'])], 'spLv'),
-      chipBar([['c', 'Concentration'], ['r', 'Ritual'], ['a', 'Action'], ['b', 'Bonus Action'], ['re', 'Reaction']], 'spF'));
+      chipBar([['c', 'Concentration'], ['r', 'Ritual'], ['a', 'Action'], ['b', 'Bonus Action'], ['re', 'Reaction']], 'spF'),
+      h('p.muted.small.sp-help', 'ⓘ ', h('button.link', { onclick: () => explain('Concentration', helpBody('conc')) }, 'Concentration (C) คืออะไร'), ' · ', h('button.link', { onclick: () => nav(`#/help/${c.id}/slot`) }, 'ร่ายเวทใช้สลอตยังไง')));
     const empty = h('p.muted.small.sp-empty', 'ไม่เจอสเปลที่ตรงกับที่ค้นหา');
     for (const b of x.casting) {
       out.push(h('h2.sec', b.source), h('div.box3.spell-stats',
         box('SAVE DC', 'ความยากเซฟ', String(b.dc), null, () => explain('Spell Save DC', [
           h('div.formula', h('div.f-main', h('span', 'DC'), h('b', String(b.dc))), h('div.f-parts', h('span', '8 + ', h('b', sign(x.pb)), ' (Prof) + ', h('b', sign(x.m[b.ab])), ` (${ABIL_SHORT[b.ab]})`))),
-          h('p', 'เวลาเราร่ายเวทที่ให้ศัตรูทอยเซฟ ให้บอก DM ว่า DC เท่านี้ — ศัตรูต้องทอยให้ได้เท่านี้หรือมากกว่าถึงจะรอด')])),
+          ...helpBody('dc')])),
         box('SPELL ATTACK', 'โจมตีด้วยเวท', sign(b.atk), null, () => explain('Spell Attack', [
           formula('ทอยโจมตีด้วยเวท', b.atk, [['Proficiency', x.pb], [ABIL_SHORT[b.ab], x.m[b.ab]]]),
-          h('p', 'ใช้กับเวทที่เขียนว่า "make a spell attack" เช่น Fire Bolt — ทอยแล้วบอก DM ว่าได้เท่าไหร่ เหมือนการตีด้วยอาวุธ')])),
+          ...helpBody('spellatk')])),
         box('ABILITY', 'ค่าที่ใช้ร่าย', ABIL_SHORT[b.ab], null, () => abilInfo(b.ab, x))));
       if (Object.keys(b.slots).length) {
-        out.push(head('SPELL SLOTS', 'ช่องเวท · กดแล้ว = ใช้ไปแล้ว'));
+        out.push(head('SPELL SLOTS', 'ช่องเวท · กดแล้ว = ใช้ไปแล้ว', infoBtn('slot')));
         if (b.casterLv) out.push(h('p.muted.small', `สลอตรวมจาก Multiclass (caster level ${b.casterLv}) — ทุกคลาสใช้สลอตกองเดียวกัน`));
         out.push(h('div.card.list', Object.entries(b.slots).map(([lv0, n]) => {
           const lv = (b.pact ? 'p' : '') + lv0, used = P.slots[lv] || 0;

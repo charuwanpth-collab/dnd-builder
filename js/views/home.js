@@ -17,7 +17,8 @@ export function renderHome(root, nav) {
     h('section.hero',
       h('h1', 'Character ของคุณ'),
       h('p', 'สร้างตัวละครภาษาไทย ใช้กฎ D&D 2024 (SRD 5.2.1) — เซฟในเครื่องอัตโนมัติ ไม่ต้องล็อกอิน'),
-      h('button.btn.primary.big', { onclick: () => { const c = newCharacter(); S.save(c); nav(`#/edit/${c.id}/basic`); } }, '+ สร้างตัวละครใหม่')),
+      h('button.btn.primary.big', { onclick: () => { const c = newCharacter(); S.save(c); nav(`#/edit/${c.id}/basic`); } }, '+ สร้างตัวละครใหม่'),
+      h('p', h('a', { href: '#/help' }, '🎓 เพิ่งเล่นครั้งแรก? อ่าน "เล่นยังไง" ก่อนได้'))),
     stale ? h('div.banner', '💾 ข้อมูลอยู่ในเครื่องนี้เท่านั้น ถ้าล้างข้อมูลเบราว์เซอร์จะหาย — ',
       h('button.link', { onclick: () => { S.exportFile(chars); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); renderHome(root, nav); } }, 'สำรองไว้ตอนนี้')) : null,
     chars.length ? h('div.char-list', chars.map(c => {
