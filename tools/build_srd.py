@@ -166,6 +166,7 @@ for title, body in split_sections(read('07_Spells/Spells_All.md'), 1):
         if m2: fl['Casting Time'] = m2.group(1).replace('**', '').strip(' :')
     desc = body[body.find(fl.get('Duration', '')) + len(fl.get('Duration', '')):] if fl.get('Duration') else body
     dur = fl.get('Duration', '')
+    dur = re.split(r'\s+conditions to take effect', dur)[0]   # Control Water: ซอร์สมีข้อความ Control Weather ติดมาในช่อง Duration
     spells.append({
         'id': slug(title), 'name': title, 'level': lvl, 'school': school, 'classes': cls,
         'time': fl.get('Casting Time', ''), 'range': fl.get('Range', ''),
