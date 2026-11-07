@@ -3,7 +3,7 @@ import { D } from '../data.js';
 import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
 import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, compute, missing, rebuildEquipment } from '../rules.js';
-import { classFeatureCard, featureCard, spellRow, statBox, original, LEVEL_TH } from './parts.js';
+import { classFeatureCard, featureCard, spellRow, statBox, original, LEVEL_TH, fullTh } from './parts.js';
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
 const TABS = [['main', 'หลัก', 'hp'], ['skills', 'สกิล', 'skill'], ['spells', 'เวท', 'spell'], ['features', 'ความสามารถ', 'feat'], ['gear', 'ของ', 'gear'], ['notes', 'โน้ต', 'note']];
@@ -98,6 +98,13 @@ export function renderSheet(root, c, tab, nav) {
     out.push(h('h3', 'โจมตี'), h('div.card.list', x.attacks.map(a => h('div.atk', { onclick: () => roll(`${a.name} (attack)`, a.hit) },
       h('div', h('b', a.name), a.mastery ? h('i.tag.mastery', { title: D.th.mastery?.[a.mastery.toLowerCase()] || '' }, a.mastery) : null, h('small', a.props || (a.name === 'Unarmed Strike' ? 'ต่อย เตะ โขก' : ''))),
       h('span.atk-hit', sign(a.hit)), h('span.atk-dmg', a.dmg)))));
+    // ความหมาย Mastery + คุณสมบัติอาวุธที่ตัวละครใช้อยู่
+    const wTerms = [...new Set(x.attacks.flatMap(a => [
+      ...(a.mastery ? [a.mastery.toLowerCase()] : []),
+      ...D.weaponProps.filter(p => new RegExp(`\\b${p.name}\\b`, 'i').test(a.props || '')).map(p => p.id)]))];
+    if (wTerms.length) out.push(h('details.orig', h('summary', 'ความหมาย Mastery / คุณสมบัติอาวุธ'),
+      wTerms.map(id => { const it = D.masteryById[id] || D.weaponProps.find(p => p.id === id);
+        return h('div.wterm', h('b', it.name), D.th.mastery?.[id] ? h('p.th', D.th.mastery[id]) : null, fullTh('mastery', id)); })));
     if (x.cls?.id === 'barbarian') out.push(h('p.muted.small', `💡 ตอน Rage: ดาเมจ ${x.cls.table.rows[c.level - 1][4]} กับการโจมตีที่ใช้ STR`));
     // ทรัพยากร
     if (x.res.length) {
@@ -215,7 +222,7 @@ export function renderSheet(root, c, tab, nav) {
       for (const f of x.feats) out.push(classFeatureCard(x.cls, f, f.src === 'sub'));
       const ch = c.choices || {};
       const opts = [...(ch.metamagic || []).map(id => x.cls.options['metamagic-options']?.items.find(i => i.id === id)), ...(ch.invocations || []).map(id => x.cls.options['eldritch-invocation-options']?.items.find(i => i.id === id))].filter(Boolean);
-      if (opts.length) { out.push(h('h3', 'ตัวเลือกที่เลือกไว้')); opts.forEach(o => out.push(featureCard({ name: o.name, text: o.text, th: { s: D.th.options?.[o.id] } }))); }
+      if (opts.length) { out.push(h('h3', 'ตัวเลือกที่เลือกไว้')); opts.forEach(o => out.push(featureCard({ name: o.name, text: o.text, th: { s: D.th.options?.[o.id] }, full: ['options', o.id] }))); }
       if (ch.huntersPrey) out.push(h('p', h('b', "Hunter's Prey: "), ch.huntersPrey));
       if (ch.divineOrder || ch.primalOrder) out.push(h('p', h('b', 'บทบาท: '), ch.divineOrder || ch.primalOrder));
       if (ch.mastery?.length) out.push(h('p', h('b', 'Weapon Mastery: '), ch.mastery.map(id => `${D.weapon[id]?.name} (${D.weapon[id]?.mastery})`).join(', ')));
@@ -223,7 +230,7 @@ export function renderSheet(root, c, tab, nav) {
     const feats = [...x.featIds];
     if (feats.length) {
       out.push(h('h2.sec', 'Feats'));
-      for (const id of new Set(feats)) { const f = D.feat[id]; if (f) out.push(featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category })); }
+      for (const id of new Set(feats)) { const f = D.feat[id]; if (f) out.push(featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id] })); }
     }
     if (x.sp) {
       out.push(h('h2.sec', x.sp.name));

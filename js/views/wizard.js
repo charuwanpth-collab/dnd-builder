@@ -7,7 +7,7 @@ import {
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
   compute, missing, col, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod,
 } from '../rules.js';
-import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox } from './parts.js';
+import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh } from './parts.js';
 
 const STEPS = [
   { id: 'basic', label: 'เริ่ม', icon: 'edit' },
@@ -159,7 +159,7 @@ export function renderWizard(root, c, stepId, nav) {
         chips(ws.map(w => w.id), ch.mastery || [], n, v => { ch.mastery = v; changed(); },
           { labels: Object.fromEntries(ws.map(w => [w.id, `${w.name} · ${w.mastery}`])) }),
         h('details.orig', h('summary', 'ท่าพิเศษ (Mastery) แต่ละแบบทำอะไร'),
-          h('ul.mastery-list', D.mastery.map(mm => h('li', h('b', mm.name + ': '), D.th.mastery?.[mm.id] || mm.text))))));
+          h('ul.mastery-list', D.mastery.map(mm => h('li', h('b', mm.name + ': '), D.th.mastery?.[mm.id] || mm.text, fullTh('mastery', mm.id)))))));
     }
 
     for (const [lv, n, only] of EXPERTISE[cls.id] || []) {
@@ -226,7 +226,7 @@ export function renderWizard(root, c, stepId, nav) {
       return h('div.opt' + (on ? '.on' : ''),
         h('div.opt-main',
           h('b', it.name), it.prereq ? h('small.muted', ' · ' + it.prereq) : null,
-          h('p', D.th.options?.[it.id] || ''), original(it.text)),
+          h('p', D.th.options?.[it.id] || ''), fullTh('options', it.id), original(it.text)),
         h('button.check', {
           'aria-pressed': on ? 'true' : 'false', disabled: !on && set.size >= max,
           onclick: () => { on ? set.delete(it.id) : set.add(it.id); onChange([...set]); },
@@ -263,7 +263,7 @@ export function renderWizard(root, c, stepId, nav) {
     const feat = D.feat[fid];
     out.push(section('ได้รับ',
       h('dl.kv', h('dt', 'Skills'), h('dd', bg.skills.join(', ')), h('dt', 'Tool'), h('dd', bg.tool.replace(/\s*\(see.*\)/, '')), h('dt', 'Origin Feat'), h('dd', bg.feat)),
-      feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat' }) : null));
+      feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: ['feats', fid] }) : null));
     if (fid === 'magic-initiate') out.push(miAbility());
     if (bg.id === 'soldier') out.push(section('Gaming Set', chips(['Dice Set', 'Dragonchess Set', 'Playing Card Set', 'Three-Dragon Ante Set'], c.choices.gamingSet ? [c.choices.gamingSet] : [], 1, v => { c.choices.gamingSet = v[0]; changed(); })));
     return out;

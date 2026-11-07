@@ -374,3 +374,10 @@ select.inp { width: auto; min-width: 90px; }
   #app { padding: 0; max-width: none; }
   .feat, .card, .spell-row { break-inside: avoid; }
 }
+/* แปลเต็ม (ไทย) */
+.full { margin-top: 6px; font-size: .92rem; }
+.full summary { cursor: pointer; color: var(--gold); padding: 4px 0; font-weight: 600; }
+.full .md { border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 6px; }
+.full .md blockquote { margin: 6px 0; padding-left: 8px; border-left: 3px solid var(--line); color: var(--muted); font-size: .85rem; }
+.wterm { padding: 6px 0; border-top: 1px solid var(--line); }
+.wterm .th { margin: 2px 0; }

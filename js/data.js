@@ -29,6 +29,12 @@ export async function loadData() {
   return D;
 }
 
+/** คำแปลเต็ม (data/th/full/<กลุ่ม>.json) — โหลดตอนกดเปิดครั้งแรก */
+const FULL = {};
+export function loadFull(g) {
+  return (FULL[g] ||= get(`data/th/full/${g}.json`).catch(() => { delete FULL[g]; return {}; }));
+}
+
 /** คำอธิบายไทยของฟีเจอร์คลาส/ซับคลาส */
 export function thFeature(classId, featId, sub = false) {
   const c = D.th.classes?.[classId];

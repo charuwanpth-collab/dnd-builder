@@ -1,5 +1,5 @@
 // ชิ้นส่วน UI ที่ใช้ร่วมกัน: การ์ดฟีเจอร์, แถวสเปล, รายละเอียดสเปล, ตัวเลือก
-import { D, thFeature } from '../data.js';
+import { D, thFeature, loadFull } from '../data.js';
 import { h, icon, iconSvg, sheet, sign } from '../util.js';
 import { md } from '../md.js';
 
@@ -13,8 +13,24 @@ export function original(text) {
   return h('details.orig', h('summary', 'ต้นฉบับ (EN) — SRD 5.2.1'), h('div.md', { html: md(text) }));
 }
 
-/** การ์ดฟีเจอร์ — th = {t, s, tip} */
-export function featureCard({ name, level, text, th, tag }) {
+/** กล่อง "แปลเต็ม (ไทย)" พับได้ — โหลดไฟล์กลุ่ม g ตอนเปิดครั้งแรก */
+export function fullTh(g, id) {
+  if (!g || !id) return null;
+  const body = h('div.md', h('p.muted.small', 'กำลังโหลด…'));
+  let done = false;
+  return h('details.full', {
+    ontoggle: e => {
+      if (done || !e.currentTarget.open) return;
+      done = true;
+      loadFull(g).then(d => {
+        body.innerHTML = d[id] ? md(d[id]) : '<p class="muted small">ยังไม่มีคำแปลเต็ม — ดูต้นฉบับด้านล่าง</p>';
+      });
+    },
+  }, h('summary', 'แปลเต็ม (ไทย)'), body);
+}
+
+/** การ์ดฟีเจอร์ — th = {t, s, tip}, full = [กลุ่ม, id] สำหรับคำแปลเต็ม */
+export function featureCard({ name, level, text, th, tag, full }) {
   const t = th?.t || 'passive';
   return h('article.feat.t-' + t,
     h('header',
@@ -22,6 +38,7 @@ export function featureCard({ name, level, text, th, tag }) {
       h('div.feat-title', h('b', name), h('small', [level ? `Lv ${level}` : null, tag, TYPE_LABEL[t]].filter(Boolean).join(' · ')))),
     th?.s ? h('p.th', th.s) : h('p.th.muted', 'ยังไม่มีคำอธิบายภาษาไทย — ดูต้นฉบับด้านล่าง'),
     th?.tip ? h('p.tip', '💡 ' + th.tip) : null,
+    full ? fullTh(...full) : null,
     original(text));
 }
 
