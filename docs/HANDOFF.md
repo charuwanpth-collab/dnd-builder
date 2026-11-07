@@ -30,8 +30,13 @@
 **สไตล์แปล**: แปลครบทุกประโยค ตัวเลขตรงต้นฉบับ คงคำเฉพาะเป็นอังกฤษ (Action, Bonus Action, Reaction, Magic action, Advantage/Disadvantage, Saving Throw, ชื่อค่าพลัง STR/DEX…, ชนิดดาเมจ, Conditions, ชื่อสเปล/ฟีเจอร์, Short/Long Rest, Proficiency, Spell Slot, Concentration, Attunement) ส่วนอื่นเป็นไทยพูดง่าย
 
 **ลำดับ (แบ่งแชต)**
-- A (~60 อัน): Invocations ทั้งหมด, Metamagic, Feats ทั้งหมด, Weapon Mastery + Weapon Properties → `full/options.json`, `full/feats.json`, `full/mastery.json`
-- B (~160 อัน): ฟีเจอร์คลาส+ซับคลาส Lv1–3, trait ทุก species, background → `full/classes.json` (`{classId:{f:{},sub:{}}}`), `full/species.json`
+- ✅ **A เสร็จแล้ว (2026-11-07)** — 73 อัน: Invocations 28 (รวม Lv5+), Metamagic 10 → `full/options.json` · Feats 17 → `full/feats.json` · Mastery 8 + Weapon Properties 10 (คีย์แบบแบน ไม่ชนกัน) → `full/mastery.json`
+  - โค้ด: `loadFull(g)` ใน `js/data.js` (แคช promise), `fullTh(g,id)` ใน `parts.js` (กล่อง `details.full` โหลดตอนเปิดครั้งแรก), `featureCard({..., full:[กลุ่ม,id]})`
+  - จุดที่แสดง: wizard → optionList (Invocation/Metamagic), รายการ Mastery, Origin Feat ของ background · sheet → ตัวเลือกที่เลือกไว้, feats, และกล่องใหม่ "ความหมาย Mastery / คุณสมบัติอาวุธ" ใต้ตารางโจมตี
+  - `sw.js` → `hh-v2` + เพิ่มไฟล์ full ลงแคชออฟไลน์ (B/C ต้องเพิ่มชื่อกลุ่มในลิสต์นี้ด้วย)
+  - เช็คความครบ: `python3 tools/check_full.py` (B/C ให้เพิ่มกลุ่มในสคริปต์นี้)
+  - ข้อสังเกต SRD: Careful Spell ต้นฉบับถูกตัดท้ายประโยค (แปลเติมให้ครบ+หมายเหตุ), Vex มีหัวข้อ Improvised Weapons ติดมา (แปลเฉพาะ Vex)
+- ⏭️ **ถัดไป: B** (~160 อัน): ฟีเจอร์คลาส+ซับคลาส Lv1–3, trait ทุก species, background → `full/classes.json` (`{classId:{f:{},sub:{}}}`), `full/species.json`
 - C (141 อัน): สเปล Cantrip / Lv1 / Lv2 แยกทีละเลเวลต่อแชต → `full/spells.json`
 
 **ของแถม (เสนอแล้ว)**: หน้าอภิธานศัพท์ `#/glossary` + คำในคำอธิบายแตะดูความหมายได้ (Attunement, Advantage, Concentration, Proficiency, Saving Throw, Cover ฯลฯ) — ข้อมูลอยู่ใน SRD `08_Rules_Glossary`
