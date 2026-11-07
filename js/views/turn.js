@@ -70,12 +70,13 @@ export function slot(P) {
 }
 
 /** กดใช้ทรัพยากร (จุด) — ถ้าเป็นของที่กิน Bonus Action / Action Surge ให้มาร์คแถบเทิร์นเอง */
-export function resUsed(P, id) {
+export function resUsed(P, id, x) {
   const i = id.indexOf('-');
   const k = i > 0 && D.cls[id.slice(0, i)] ? id.slice(i + 1) : id;
   if (k === 'rage') addFx(P, { key: 'rage' });
   if (!P.turn) return '';
-  return spend(P, RES_ECON[k]);
+  const econ = RES_ECON[k] || (x && featureActions(x).find(f => f.r?.id === id)?.k);
+  return spend(P, econ);
 }
 
 export const castKind = s => (/^Bonus Action/i.test(s.time) ? 'b' : /^Reaction/i.test(s.time) ? 'r' : /^Action/i.test(s.time) ? 'a' : null);
@@ -92,6 +93,7 @@ const canCast = (s, pools) => !s.level || pools.some(p => p.lv >= s.level && p.l
 
 /** ปุ่มใต้การ์ดสเปล: ร่ายแล้วหักสลอต + มาร์คแถบเทิร์น */
 export function castActions(s, x, P, done) {
+  if (x.noCast) return [{ label: '🐾 ร่ายไม่ได้ตอนอยู่ในร่างสัตว์', onClick: () => false }];
   const go = key => {
     const k0 = castKind(s);
     if (P.turn) {
@@ -127,6 +129,8 @@ export function castActions(s, x, P, done) {
 export function onceItems(x) {
   const L = [];
   if (x.CLs.rogue) { const d = col(D.cls.rogue, 'Sneak Attack', x.CLs.rogue) || `${Math.ceil(x.CLs.rogue / 2)}d6`; L.push(['sneak', 'Sneak Attack', `+${d} (${dmgRange(d)}) — ต้องมี Advantage หรือเพื่อนอยู่ข้างเป้า`]); }
+  if (x.picks?.blessedStrikes === 'Divine Strike') L.push(['divine-strike', 'Divine Strike', `+${x.CLs.cleric >= 14 ? '2d8' : '1d8'} Necrotic/Radiant ตอนตีโดนด้วยอาวุธ`]);
+  if (x.picks?.elementalFury === 'Primal Strike') L.push(['primal-strike', 'Primal Strike', `+${x.CLs.druid >= 15 ? '2d8' : '1d8'} Cold/Fire/Lightning/Thunder ตอนตีโดนด้วยอาวุธหรือร่างสัตว์`]);
   if (x.featIds.includes('savage-attacker')) L.push(['savage', 'Savage Attacker', 'ทอยดาเมจอาวุธ 2 รอบ เลือกอันสูง']);
   if (x.featIds.includes('boon-of-combat-prowess')) L.push(['prowess', 'Peerless Aim', 'ตีพลาด → เปลี่ยนเป็นโดน']);
   return L;
@@ -225,7 +229,7 @@ function collect(c, x, P, save, redraw) {
 
   // สเปลที่ร่ายได้ตอนนี้ (Cantrip เสมอ · สเปลมีเลเวลต้องมีสลอตเหลือ)
   const pools = slotPools(x, P);
-  for (const b of x.casting) for (const id of [...(b.cantrips || []), ...(b.always || []), ...(b.prepared || [])]) {
+  if (!x.noCast) for (const b of x.casting) for (const id of [...(b.cantrips || []), ...(b.always || []), ...(b.prepared || [])]) {
     const s = D.spell[id], k = s && castKind(s);
     if (!k || seen.has('sp:' + id) || !canCast(s, pools)) continue;
     seen.add('sp:' + id);
@@ -502,5 +506,25 @@ export function hotbar(c, x, P, save, redraw) {
   const done = () => { save(); closeAll(); redraw(); };
   const L = bar(P).map(r => resolveRef(r, x, P, done)).filter(Boolean);
   if (!L.length) return null;
-  return h('div.hotbar.no-swipe', L.map(r => h('button.hb' + (r.off ? '.off' : ''), { onclick: r.open }, h('i', r.icon), r.label)));
+  return h('div.hotbar.no-swipe', L.map(r => h('button.hb' + (r.off ? '.off' : ''), { onclick: r.open }, h('i', r.icon), r.label)),
+    h('button.hb.hb-edit', { onclick: () => editBar(x, P, save, redraw), 'aria-label': 'จัดแถบของโปรด' }, '✎'));
+}
+
+/** จัดลำดับ / เอาออก */
+function editBar(x, P, save, redraw) {
+  const list = h('div.card.list');
+  const fill = () => {
+    const B = bar(P);
+    list.replaceChildren(...B.map((ref, i) => {
+      const r = resolveRef(ref, x, P, () => {});
+      const mv = d => { const j = i + d; [B[i], B[j]] = [B[j], B[i]]; save(); redraw(); fill(); };
+      return h('div.hb-row', h('span', r ? `${r.icon} ${r.label}` : `(หาไม่เจอ) ${ref.split(':')[1]}`),
+        h('button.icon-btn', { disabled: i === 0, 'aria-label': 'เลื่อนขึ้น', onclick: () => mv(-1) }, '↑'),
+        h('button.icon-btn', { disabled: i === B.length - 1, 'aria-label': 'เลื่อนลง', onclick: () => mv(1) }, '↓'),
+        h('button.icon-btn', { 'aria-label': 'เอาออก', onclick: () => { B.splice(i, 1); save(); redraw(); fill(); } }, '✕'));
+    }));
+    if (!B.length) list.replaceChildren(h('p.muted.small', 'ไม่มีอะไรปักไว้แล้ว — กด 📌 ปักหมุด ในการ์ดอาวุธ เวท หรือความสามารถ'));
+  };
+  fill();
+  sheet('จัดแถบของโปรด', h('div', h('p.muted.small', 'ซ้ายสุดคืออันแรก · เพิ่มได้จากปุ่ม 📌 ในการ์ด'), list));
 }

@@ -740,3 +740,8 @@ ul.cond-fx li { margin: 2px 0; }
 .preview { display: grid; gap: 6px; }
 ul.preview-list { margin: 0; padding-left: 18px; font-size: .9rem; }
 ul.preview-list li { margin: 3px 0; }
+/* ---------- เฟส 5 ---------- */
+.hb-edit { border-style: dashed; color: var(--muted); }
+.hb-row { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.hb-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wild-chip small { color: var(--muted); }

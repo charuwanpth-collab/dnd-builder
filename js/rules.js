@@ -31,6 +31,18 @@ export const EXPERTISE = { // [ระดับ, จำนวน, รายกา
 };
 
 /** จำนวน Expertise / Metamagic ทั้งหมดที่ได้ถึงเลเวลคลาสนั้น */
+// ฟีเจอร์ SRD ที่ต้องเลือก 1 จาก 2 (เฟส 5) — เก็บใน chOf(c, cls)[key]
+export const SRD_PICKS = [
+  { cls: 'cleric', at: 7, key: 'blessedStrikes', feat: 'Blessed Strikes', opts: [
+    ['Divine Strike', 'ตีโดนด้วยอาวุธ 1 ครั้งต่อเทิร์น ได้ดาเมจ Necrotic หรือ Radiant เพิ่ม 1d8 (Lv14 เพิ่มเป็น 2d8)'],
+    ['Potent Spellcasting', 'บวก WIS เข้าไปในดาเมจของ Cantrip สาย Cleric (Lv14 ร่ายแล้วให้ Temp HP เท่ากับ 2 เท่าของ WIS แก่ตัวเองหรือเพื่อน)']] },
+  { cls: 'druid', at: 7, key: 'elementalFury', feat: 'Elemental Fury', opts: [
+    ['Potent Spellcasting', 'บวก WIS เข้าไปในดาเมจของ Cantrip สาย Druid (Lv15 Cantrip ที่ระยะ 10 ฟุตขึ้นไป ไกลขึ้นอีก 300 ฟุต)'],
+    ['Primal Strike', 'ตีโดนด้วยอาวุธหรือท่าของร่างสัตว์ 1 ครั้งต่อเทิร์น ได้ดาเมจ Cold / Fire / Lightning / Thunder เพิ่ม 1d8 (Lv15 เพิ่มเป็น 2d8)']] },
+  { cls: 'ranger', at: 7, key: 'defTactics', feat: 'Defensive Tactics', srdSub: true, opts: [
+    ['Escape the Horde', 'Opportunity Attack ที่ศัตรูตีเรามี Disadvantage'],
+    ['Multiattack Defense', 'ครีเจอร์ที่ตีโดนเรา การโจมตีอื่นของมันใส่เราในเทิร์นนั้นมี Disadvantage']] },
+];
 export const expertiseCount = (id, L) => (EXPERTISE[id] || []).filter(([lv]) => L >= lv).reduce((t, [, n]) => t + n, 0);
 export const metamagicCount = L => (L >= 17 ? 6 : L >= 10 ? 4 : L >= 2 ? 2 : 0);
 /** Prepared spells ของ 1/3 caster (Eldritch Knight / Arcane Trickster แบบ 2024) ตามเลเวลคลาส */
@@ -759,8 +771,61 @@ export function compute(c) {
   };
   // ป้าย Advantage / Disadvantage บนสูตร (เฟส 4E) — อ่าน c.play ตอนเรียก จึงตรงกับสถานะล่าสุดเสมอ
   out.rf = (kind, ab, skill) => rollFlags(c.play, out, kind, ab, skill);
+  out.picks = {};
+  for (const q of SRD_PICKS) if ((CLs[q.cls] || 0) >= q.at && (!q.srdSub || srdSub(c, q.cls))) out.picks[q.key] = chOf(c, q.cls)[q.key] || null;
+  if (c.play?.wild) applyWild(c, out);
   return out;
 }
+
+// ---------- Wild Shape (เฟส 5): ใช้ STR/DEX/CON, AC, Speed, การโจมตี, Senses ของร่างสัตว์ (กฎ 2024) ----------
+const WORD_N = { one: 1, two: 2, three: 3, four: 4 };
+/** อ่านท่าโจมตีจาก md ของสัตว์ SRD → [{name, hit, reach, dmg, extra}] + จำนวนโจมตีจาก Multiattack */
+export function beastAttacks(a) {
+  const t = String(a.md || '').replace(/(\w)- (\w)/g, '$1$2').replace(/\*\*\*\s*\*\*\*\s*\.\s*\*\*\*/g, '.***');
+  const list = [];
+  const re = /\*\*\*([^*]+?)\.?\*\*\*\s*\*(Melee|Ranged|Melee or Ranged) Attack Roll:\*\s*([+-]\d+)(?:\s*\([^)]*\))?,\s*([^.*]+?)\.\s*\*Hit:\*\s*(?:\d+\s*\(([^)]+)\)|(\d+))\s*(\w+) damage([^\n]*)/g;
+  let m;
+  while ((m = re.exec(t))) {
+    const extra = m[8].replace(/^\s*plus\s*\d+\s*\(([^)]+)\)\s*(\w+) damage/, (z, d, k) => `+ ${d.replace(/\s/g, '')} ${k}`).replace(/^[.\s]+/, '');
+    list.push({ name: m[1].trim(), kind: m[2], hit: +m[3], reach: m[4].trim(), dmg: `${(m[5] || m[6]).replace(/\s/g, '')} ${m[7]}`, extra: extra.trim() });
+  }
+  const ma = t.match(/\*\*\*Multiattack\.\*\*\*\s*([^\n]+)/)?.[1] || '';
+  const per = (ma.match(/\b(one|two|three|four)\b/gi) || []).reduce((n, w) => n + (WORD_N[w.toLowerCase()] || 0), 0);
+  return { list, per: per || 1, multi: ma };
+}
+
+function applyWild(c, x) {
+  const w = (c.extras || []).find(z => z.id === c.play.wild), a = w && D.animal?.[w.animal];
+  if (!a) return;
+  const exh = c.play.exh || 0;
+  x.wild = { name: w.name, animal: a.id, from: { ac: x.ac, speed: x.speed, str: x.score.str, dex: x.score.dex, con: x.score.con, atkPer: x.atkPer } };
+  for (const ab of ['str', 'dex', 'con']) { x.score[ab] = a.abil[ab]; x.m[ab] = mod(a.abil[ab]); }
+  const fix = (parts, ab) => parts.map(([l, n]) => (l === ABIL_SHORT[ab] && ['str', 'dex', 'con'].includes(ab) ? [l + ' (ร่าง)', x.m[ab]] : [l, n]));
+  const listed = {};
+  for (const [, k, v] of String(a.info || '').matchAll(/(\w+(?: of Hand)?) ([+-]\d+)/g)) listed[k] = +v;
+  for (const s of x.skills) {
+    s.parts = fix(s.parts, s.ab);
+    s.bonus = s.parts.reduce((t, q) => t + q[1], 0);
+    if (listed[s.name] != null && listed[s.name] - 2 * exh > s.bonus) { s.parts = [[`ค่าของ ${a.name}`, listed[s.name]], ...(exh ? [['Exhaustion', -2 * exh]] : [])]; s.bonus = listed[s.name] - 2 * exh; }
+  }
+  for (const s of x.saves) { s.parts = fix(s.parts, s.ab); s.bonus = s.parts.reduce((t, q) => t + q[1], 0); }
+  x.initParts = fix(x.initParts, 'dex'); x.init = x.initParts.reduce((t, q) => t + q[1], 0);
+  const P = x.skills.find(s => s.name === 'Perception'); if (P) x.perception = 10 + P.bonus;
+  x.ac = a.ac; x.acNote = `AC ของร่าง ${a.name}`;
+  const sp = String(a.speed || '');
+  x.speed = Math.max(0, (parseInt(sp, 10) || 0) - 5 * exh);
+  x.speeds = { climb: 0, swim: 0, fly: 0 };
+  for (const [, k, n] of sp.matchAll(/(Climb|Swim|Fly) (\d+)/gi)) x.speeds[k.toLowerCase()] = +n;
+  const dv = String(a.info || '').match(/Darkvision (\d+)/); if (dv) x.darkvision = Math.max(x.darkvision, +dv[1]);
+  const bs = String(a.info || '').match(/Blindsight (\d+)/); if (bs) x.blindsight = Math.max(x.blindsight || 0, +bs[1]);
+  const B = beastAttacks(a);
+  x.attacks = B.list.map((q, i) => ({ id: `wild-${i}`, name: q.name, ab: q.kind === 'Ranged' ? 'dex' : 'str', hit: q.hit - 2 * exh,
+    hitParts: [[`ค่าของ ${a.name}`, q.hit], ...(exh ? [['Exhaustion', -2 * exh]] : [])], dmg: q.dmg, props: [q.reach, q.extra].filter(Boolean).join(' · '), prof: true, wild: true }));
+  x.atkPer = Math.max(B.per, x.atkPer);
+  x.wild.multi = B.multi;
+  x.noCast = true;
+}
+
 
 /** รายการตัวเลือกที่ผู้เล่นยังไม่ได้เลือก (ใช้ทั้งในวิซาร์ดและใบตัวละคร) */
 export function missing(c) {
@@ -781,6 +846,7 @@ export function missing(c) {
     if (id === 'bard' && L >= 3 && isSrdSub && (ch.loreSkills || []).length < 3) out.push('เลือกสกิล 3 อย่าง (Bonus Proficiencies)' + tag);
     if (id === 'druid' && L >= 3 && isSrdSub && !ch.land) out.push('เลือกชนิดดินแดน (Circle of the Land)' + tag);
     if (id === 'ranger' && L >= 3 && isSrdSub && !ch.huntersPrey) out.push("เลือก Hunter's Prey" + tag);
+    for (const q of SRD_PICKS) if (q.cls === id && L >= q.at && (!q.srdSub || isSrdSub) && !ch[q.key]) out.push(`เลือก ${q.feat}` + tag);
     if (id === 'sorcerer' && (ch.metamagic || []).length < metamagicCount(L)) out.push(`เลือก Metamagic ${metamagicCount(L)} อย่าง` + tag);
     if (id === 'warlock' && (ch.invocations || []).includes('pact-of-the-tome') && ((ch.tomeCantrips || []).length < 3 || (ch.tomeRituals || []).length < 2)) out.push('เลือกเวทใน Book of Shadows (Pact of the Tome)');
     if (id === 'warlock' && (ch.invocations || []).length < num(col(k, 'Eldritch Invocations', L))) out.push('เลือก Eldritch Invocations' + tag);

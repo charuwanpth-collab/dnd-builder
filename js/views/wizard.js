@@ -5,7 +5,7 @@ import * as S from '../store.js';
 import {
   ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, SKILLS, SKILL_AB, LANGS, STANDARD_ARRAY, POINT_COST, MAX_LEVEL,
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
-  compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub, setSub,
+  SRD_PICKS, compute, missing, col, expertiseCount, metamagicCount, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub, setSub,
 } from '../rules.js';
 import { featIdOf, listPacks, savePack } from '../packs.js';
 import { levelEditor, levelSummary } from './levelup.js';
@@ -262,6 +262,8 @@ export function renderWizard(root, c, stepId, nav) {
     if (cls.id === 'druid' && L >= 3 && isSrdSub) put('Circle of the Land Spells', 'ดินแดนของ Circle of the Land', 'เลือกชนิดดินแดน (เปลี่ยนได้ทุกครั้งที่พักยาว) — แต่ละแบบได้สเปลติดตัวไม่เหมือนกัน', !ch.land,
       chips(['Arid', 'Polar', 'Temperate', 'Tropical'], ch.land ? [ch.land[0].toUpperCase() + ch.land.slice(1)] : [], 1, v => { ch.land = v[0]?.toLowerCase(); changed(); },
         { labels: { Arid: 'Arid (ทะเลทราย)', Polar: 'Polar (ขั้วโลก)', Temperate: 'Temperate (เขตอบอุ่น)', Tropical: 'Tropical (เขตร้อน)' } }));
+    for (const q of SRD_PICKS) if (q.cls === cls.id && L >= q.at && (!q.srdSub || isSrdSub)) put(q.feat, q.feat, 'เลือก 1 แบบ', !ch[q.key],
+      h('div.grid.grid-2', q.opts.map(([n, d]) => choiceCard({ id: n, iconName: 'eye', title: n, desc: d, selected: ch[q.key] === n, onClick: () => { ch[q.key] = n; changed(); } }))));
     if (cls.id === 'ranger' && L >= 3 && isSrdSub) put("Hunter's Prey", "Hunter's Prey", 'เลือกสไตล์การล่า (สลับได้ทุกครั้งที่พักสั้นหรือพักยาว)', !ch.huntersPrey,
       h('div.grid.grid-2', [['Colossus Slayer', 'ตีศัตรูที่เลือดไม่เต็ม ได้ดาเมจเพิ่ม 1d8 (ครั้งเดียวต่อเทิร์น) — เหมาะกับการล่าตัวใหญ่'], ['Horde Breaker', 'ตีแล้วได้ตีเพิ่มอีกทีใส่ศัตรูอีกตัวที่ยืนใกล้กัน — เหมาะกับการเจอศัตรูเป็นฝูง']].map(([n, d]) =>
         choiceCard({ id: n, iconName: 'eye', title: n, desc: d, selected: ch.huntersPrey === n, onClick: () => { ch.huntersPrey = n; changed(); } }))));

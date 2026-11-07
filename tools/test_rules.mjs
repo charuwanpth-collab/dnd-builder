@@ -152,3 +152,22 @@ console.log('\n== 4E ป้าย Advantage/Disadvantage จาก Condition / �
   c.play.conditions = ['Stunned']; ok(flagSum(R.compute(c).rf('save', 'str')) === 'fail', '4E Stunned → เซฟ STR ล้มเหลว');
   ok(roundsOf('Concentration, up to 1 minute') === 10 && roundsOf('1 hour') === 0 && roundsOf('1 round') === 1, '4E นับรอบจาก Duration');
 }
+
+console.log('\n== 5 Wild Shape / ตัวเลือก A/B ของ SRD / Potent Spellcasting');
+{
+  const ok = (cond, label) => console.log(`  ${cond ? '✓' : '✗'} ${label}`);
+  D.animals = rd('animals'); D.animal = idx(D.animals);
+  const c = Object.assign(R.newCharacter(), { classId: 'druid', speciesId: 'human', bgId: 'sage', level: 8, levels: Array.from({ length: 8 }, () => ({ c: 'druid' })) });
+  c.abilities.base = { str: 8, dex: 14, con: 13, int: 10, wis: 16, cha: 10 };
+  const x0 = R.compute(c);
+  c.extras = [{ id: 'w1', kind: 'wild', name: 'Brown Bear', animal: 'brown-bear' }]; c.play = { wild: 'w1', conditions: [] };
+  const x = R.compute(c);
+  ok(x.ac === 11 && x.speed === 40 && x.speeds.climb === 30 && x.score.str === 17 && x.score.wis === x0.score.wis, '5 หมี: AC 11, Speed 40/ปีน 30, STR 17, WIS เดิม');
+  ok(x.attacks.length === 2 && x.attacks[0].hit === 5 && x.attacks[0].dmg === '1d8+3 Piercing' && x.atkPer === 2 && x.noCast, '5 หมี: Bite +5 1d8+3, Multiattack 2, ร่ายเวทไม่ได้');
+  ok(x.hpMax === x0.hpMax && x.skills.find(s => s.name === 'Athletics').bonus === 3, '5 HP เดิม · Athletics ใช้ STR ร่าง');
+  ok(R.missing(c).some(m => /Elemental Fury/.test(m)), '5 Druid 8 ยังไม่เลือก Elemental Fury → missing');
+  R.chOf(c, 'druid').elementalFury = 'Potent Spellcasting'; c.play.wild = null;
+  ok(R.compute(c).picks.elementalFury === 'Potent Spellcasting' && !R.missing(c).some(m => /Elemental Fury/.test(m)), '5 เลือก Potent Spellcasting แล้ว');
+  const { beastAttacks } = R;
+  ok(D.animals.filter(a => !beastAttacks(a).list.length).map(a => a.id).join() === 'seahorse', '5 อ่านท่าโจมตีสัตว์ได้ครบ (ยกเว้น seahorse ที่ไม่มีท่าโจมตี)');
+}

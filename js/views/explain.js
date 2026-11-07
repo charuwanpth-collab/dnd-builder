@@ -62,7 +62,7 @@ export function attackBody(a, x) {
     formula('ทอยโจมตี', a.hit, a.hitParts || [], x.rf?.('atk', a.ab)),
     h('div.formula',
       h('div.f-main', h('span', 'ดาเมจ'), h('b', ...dmgText(a.dmg))),
-      h('div.f-parts', /\d+d\d+/.test(a.dmg) ? [h('span', 'ลูกเต๋าอาวุธ'), h('span', `${ABIL_SHORT[a.ab]} `, h('b', (mod < 0 ? '−' : '+') + Math.abs(mod)))] : h('span', `1 + ${ABIL_SHORT[a.ab]} (ไม่มีลูกเต๋า)`))),
+      h('div.f-parts', a.wild ? h('span', 'ตามค่าสถานะของร่างสัตว์ (รวมค่าพลังแล้ว)') : /\d+d\d+/.test(a.dmg) ? [h('span', 'ลูกเต๋าอาวุธ'), h('span', `${ABIL_SHORT[a.ab]} `, h('b', (mod < 0 ? '−' : '+') + Math.abs(mod)))] : h('span', `1 + ${ABIL_SHORT[a.ab]} (ไม่มีลูกเต๋า)`))),
     h('p.muted.small', 'ทอยได้ 20 = Critical Hit: ทอยลูกเต๋าดาเมจ 2 เท่า (ตัวบวกไม่คูณ) · DM บอกเองว่าโดนหรือไม่'),
     a.prof === false ? h('p.tip', '⚠ ยังไม่ชำนาญอาวุธนี้ — ไม่ได้บวก Proficiency') : null,
     x.atkPer > 1 ? h('p.small', `⚔️ Extra Attack: ใช้ Attack action แล้วตีได้ ${x.atkPer} ครั้ง`) : null,
@@ -115,6 +115,8 @@ export function spellMath(s, b, x) {
       if (lv && tier) { n = +lv[tier]; note = `เลเวลตัวละคร ${x.L} → ลูกเต๋าเพิ่มเป็น ${n}d${eff.d}`; }
       else if (beams) note = `เลเวลตัวละคร ${x.L} → ยิงได้ ${tier + 1} ลำ (ทอยโจมตีแยกทีละลำ ลำละ ${dice(eff.n, eff.d, eff.k)})`;
     }
+    const potent = s.level === 0 && /^ดาเมจ/.test(eff.label) && ((b.cid === 'cleric' && x.picks?.blessedStrikes === 'Potent Spellcasting') || (b.cid === 'druid' && x.picks?.elementalFury === 'Potent Spellcasting'));
+    if (potent) { eff.k += x.m.wis || 0; note = [note, `Potent Spellcasting: บวก WIS ${x.m.wis >= 0 ? '+' : ''}${x.m.wis}`].filter(Boolean).join(' · '); }
     const str = dice(n, eff.d, eff.k);
     out.push(h('div.formula', h('div.f-main', h('span', eff.label), h('b', ...dmgText(str))), note ? h('div.f-parts', h('span', note)) : null));
     // อัปสลอต
@@ -168,6 +170,18 @@ export function featureMath(name, x, clsId) {
       h('span', 'Fire\'s Burn ', h('b', '1d10'), h('small.rng', ' (1–10) Fire')), h('span', 'Frost\'s Chill ', h('b', '1d6'), h('small.rng', ' (1–6) Cold')),
       h('span', 'Storm\'s Thunder ', h('b', '1d8'), h('small.rng', ' (1–8) Thunder')), h('span', 'Stone\'s Endurance ลดดาเมจ ', h('b', `1d12${plus(M('con'))}`), h('small.rng', ` (${dmgRange(`1d12${plus(M('con'))}`)})`)),
       h('span', `Hill's Tumble: ตีโดนแล้วทำเป้าขนาด Large ลงไปล้ม (Prone)`)))); break;
+    case 'Blessed Strikes': case 'Improved Blessed Strikes': case 'Elemental Fury': case 'Improved Elemental Fury': case 'Defensive Tactics': {
+      const key = { 'Blessed Strikes': 'blessedStrikes', 'Improved Blessed Strikes': 'blessedStrikes', 'Elemental Fury': 'elementalFury', 'Improved Elemental Fury': 'elementalFury', 'Defensive Tactics': 'defTactics' }[name];
+      const v = x.picks?.[key];
+      if (!v) { out.push(h('p.tip', `⚠ ยังไม่ได้เลือกแบบของ ${name.replace('Improved ', '')} — ไปเลือกที่หน้าแก้ไข ขั้น CLASS`)); break; }
+      const two = n >= (clsId === 'cleric' ? 14 : 15);
+      if (v === 'Divine Strike') out.push(dieBlock('Divine Strike: ดาเมจเพิ่ม', two ? '2d8' : '1d8', ['1 ครั้งต่อเทิร์น ตอนตีโดนด้วยอาวุธ', 'เลือก Necrotic หรือ Radiant']));
+      else if (v === 'Primal Strike') out.push(dieBlock('Primal Strike: ดาเมจเพิ่ม', two ? '2d8' : '1d8', ['1 ครั้งต่อเทิร์น ตอนตีโดนด้วยอาวุธหรือท่าของร่างสัตว์', 'เลือก Cold / Fire / Lightning / Thunder']));
+      else if (v === 'Potent Spellcasting') out.push(valBlock('Potent Spellcasting', `+${x.m.wis || 0} ดาเมจ Cantrip`, ['บวก WIS เข้าไปในดาเมจ Cantrip ของคลาสนี้ (สูตรในแท็บ SPELLS รวมให้แล้ว)',
+        two && clsId === 'cleric' ? `Lv14: ร่ายโดนแล้วให้ Temp HP ${2 * (x.m.wis || 0)} แก่ตัวเองหรือเพื่อนในระยะ 60 ฟุต` : null, two && clsId === 'druid' ? 'Lv15: Cantrip ที่ระยะ 10 ฟุตขึ้นไป ไกลขึ้นอีก 300 ฟุต' : null]));
+      else out.push(valBlock('ที่เลือกไว้', v, 'เปลี่ยนได้ทุกครั้งที่พักสั้นหรือพักยาว (แก้ที่หน้าแก้ไข ขั้น CLASS)'));
+      break;
+    }
     case 'Adrenaline Rush': out.push(valBlock('Temp HP ที่ได้', x.pb, 'เท่ากับ Proficiency Bonus')); break;
     case 'Arcane Recovery': out.push(valBlock('คืนสลอตรวมได้ไม่เกิน', `${Math.ceil(n / 2)} เลเวล`, 'ครึ่งหนึ่งของเลเวล Wizard (ปัดขึ้น) · สลอตแต่ละอันต้องไม่เกิน Lv 5')); break;
   }

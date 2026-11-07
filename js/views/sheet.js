@@ -7,8 +7,8 @@ import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, compute, missing, rebuildEquipment, levelInfo, chOf, hitDieAvg, itemWeight, carry } from '../rules.js';
 import { openLevelUp, levelSummary, previewNext } from './levelup.js';
 import { classFeatureCard, featureCard, spellRow, LEVEL_TH, stubSubBox, TYPE_LABEL, detailGroups, detailField } from './parts.js';
-import { formula, explain, attackBody, dmgText, helpBody, infoBtn, spellMath, fxMark, featureMath } from './explain.js';
-import { COND_FX } from '../fx.js';
+import { formula, explain, attackBody, dmgText, helpBody, infoBtn, spellMath, fxMark, fxNode, featureMath } from './explain.js';
+import { COND_FX, flagSum } from '../fx.js';
 import { showTerm } from './glossary.js';
 import * as T from './turn.js';
 
@@ -169,7 +169,7 @@ export function renderSheet(root, c, tab, nav) {
   const box = (en, th, val, unit, onclick, cls = '') => h('button.box' + cls, { onclick }, h('small.en', en), h('b', val, unit ? h('span.unit', unit) : null), th ? h('small.th', th) : null);
 
   function top(x) {
-    const sk = n => 10 + (x.skills.find(s => s.name === n)?.bonus || 0);
+    const sk = n => 10 + (x.skills.find(s => s.name === n)?.bonus || 0) + passAdj(x, n);
     const spdTxt = [['climb', 'ปีน'], ['swim', 'ว่าย'], ['fly', 'บิน']].filter(([k]) => x.speeds[k]).map(([k, l]) => `${l} ${x.speeds[k]}`).join(' · ');
     const DEF_TH = { res: 'Resistance (โดนครึ่งเดียว)', imm: 'Immunity (ไม่โดนเลย)', vul: 'Vulnerability (โดน 2 เท่า)' };
     const defMain = x.defenses.filter(d => !d.when);
@@ -207,7 +207,7 @@ export function renderSheet(root, c, tab, nav) {
       nCond ? h('p.cond-line', '⚠ ติดอยู่: ', [...P.conditions.map(k => h('button.link', { onclick: () => showTerm(k.toLowerCase()) }, k)),
         P.exh ? h('button.link', { onclick: () => condSheet() }, `Exhaustion ${P.exh}`) : null].filter(Boolean).flatMap((b, i) => (i ? [', ', b] : [b]))) : null,
       condFx(),
-      wildBanner(),
+      wildBanner(x),
       P.conc ? h('div.conc-chip', h('span', '🧠 Concentration: ', h('b', D.spell[P.conc]?.name || P.conc)),
         h('button.link', { onclick: () => explain('Concentration', helpBody('conc')) }, 'คืออะไร'),
         h('button.btn.small', { onclick: () => { dropConc('เลิกเอง'); done(); } }, 'เลิกใช้สมาธิ')) : null,
@@ -242,11 +242,18 @@ export function renderSheet(root, c, tab, nav) {
           h('div', h('b', s.name), h('small', D.th.misc?.skills?.[s.name] || '')), h('span.skill-bonus', sign(s.bonus), fxMark(x.rf('check', s.ab, s.name)))))),
       h('p.muted.small', '● ชำนาญ (บวก Proficiency) · ◉ Expertise (บวก Proficiency 2 เท่า) · แตะแถวไหนก็ได้เพื่อดูสูตร'));
   }
-  function senseRow(name, sub, v, skill) {
+  // Passive ตอนมี Advantage +5 / Disadvantage −5 (กฎ 2024)
+  function passAdj(x, n) {
+    const s = x.skills.find(z => z.name === n), k = s ? flagSum(x.rf('check', s.ab, n)) : '';
+    return k === 'adv' ? 5 : k === 'dis' ? -5 : 0;
+  }
+  function senseRow(name, sub, v, skill, x = curX) {
+    const adj = passAdj(x, skill), fl = x.rf('check', x.skills.find(z => z.name === skill)?.ab, skill);
     return h('button.sense', { onclick: () => explain(name, [
-      h('div.formula', h('div.f-main', h('span', name), h('b', String(v))), h('div.f-parts', h('span', '10 + ', h('b', sign(v - 10)), ` (โบนัส ${skill})`))),
+      h('div.formula', h('div.f-main', h('span', name), h('b', String(v))), h('div.f-parts', h('span', '10 + ', h('b', sign(v - 10 - adj)), ` (โบนัส ${skill})`),
+        adj ? h('span', adj > 0 ? 'Advantage ' : 'Disadvantage ', h('b', sign(adj))) : null), adj ? fxNode(fl) : null),
       ...helpBody('passive'), D.th.help?.skills?.[skill] ? h('p.small', h('b', `${skill}: `), D.th.help.skills[skill].what) : null]) },
-      h('div', h('b', name), h('small', sub)), h('span.sv', String(v)));
+      h('div', h('b', name), h('small', sub)), h('span.sv', String(v), adj ? fxMark(fl) : null));
   }
   function abilInfo(a, x) {
     const sv = x.saves.find(s => s.ab === a);
@@ -442,11 +449,12 @@ export function renderSheet(root, c, tab, nav) {
       h('span.atk-hit', sign(a.hit), fxMark(x.rf('atk', a.ab))), h('span.atk-dmg', ...dmgText(a.dmg)));
     if (show('attack')) out.push(head('ATTACKS', 'การโจมตี', x.atkPer > 1 ? h('i.tag', `Extra Attack ×${x.atkPer}`) : null),
       h('div.card.list', h('div.atk.atk-head', h('small', 'อาวุธ'), h('small', 'HIT'), h('small', 'DAMAGE')), x.attacks.map(atk)),
+      x.wild ? h('p.small', `🐾 ท่าโจมตีของร่าง ${x.wild.name}${x.wild.multi ? ` · Multiattack: ${x.wild.multi}` : ''}`) : null,
       h('p.muted.small', x.atkPer > 1 ? `ใช้ Attack action หนึ่งครั้ง ตีได้ ${x.atkPer} ที · แตะอาวุธเพื่อดูสูตรทอยแบบละเอียด` : 'แตะอาวุธเพื่อดูสูตรทอยแบบละเอียด'));
     if (show('a')) {
       out.push(head('ACTION', 'ทำได้ 1 อย่างต่อเทิร์น'), h('div.titems',
         item({ name: 'Attack', tag: 'Action', s: x.atkPer > 1 ? `โจมตีด้วยอาวุธหรือมือเปล่า ${x.atkPer} ครั้ง` : 'โจมตีด้วยอาวุธหรือมือเปล่า 1 ครั้ง', open: () => go2('attack') }),
-        x.casting.length ? item({ name: 'Magic', tag: 'Action', s: 'ร่ายเวทที่ใช้เวลาร่าย 1 Action — ดูได้ที่แท็บ SPELLS', open: () => go('spells') }) : null,
+        x.casting.length && !x.noCast ? item({ name: 'Magic', tag: 'Action', s: 'ร่ายเวทที่ใช้เวลาร่าย 1 Action — ดูได้ที่แท็บ SPELLS', open: () => go('spells') }) : null,
         fItems('a')),
       h('details.orig', h('summary', 'Action พื้นฐานที่ทุกคนทำได้ (Dash, Dodge, Hide…)'), h('div.titems', T.BASIC.map(b => item({ name: b[1], s: b[2], open: () => T.basicSheet(P, b, done) })))));
     }
@@ -478,10 +486,10 @@ export function renderSheet(root, c, tab, nav) {
           h('span.res-ico', { html: iconSvg(r.icon) }),
           h('div.res-name', h('b', r.name), h('small', `${r.reset === 'long' ? 'คืนตอนพักยาว' : r.reset === 'short' ? 'คืนตอนพักสั้นหรือพักยาว' : 'พักสั้นคืน 1 · พักยาวคืนหมด'} · เหลือ ${r.max - used}/${r.max}`)),
           r.max > 8 ? h('div.res-num',
-            h('button.icon-btn', { onclick: () => setUse(P.res, r.id, Math.min(r.max, used + 1), () => T.resUsed(P, r.id)), 'aria-label': 'ใช้ 1' }, '−'),
+            h('button.icon-btn', { onclick: () => setUse(P.res, r.id, Math.min(r.max, used + 1), () => T.resUsed(P, r.id, x)), 'aria-label': 'ใช้ 1' }, '−'),
             h('b', `${r.max - used}`), h('small', `/${r.max}`),
             h('button.icon-btn', { onclick: () => { P.res[r.id] = Math.max(0, used - 1); done(); }, 'aria-label': 'คืน 1' }, '+'))
-            : boxes(r.max, used, v => setUse(P.res, r.id, v, () => T.resUsed(P, r.id)), r.name));
+            : boxes(r.max, used, v => setUse(P.res, r.id, v, () => T.resUsed(P, r.id, x)), r.name));
       })));
     }
     if (F === 'all') out.push(h('a.btn.ghost.help-link', { href: `#/help/${c.id}/turn` }, '🎓 เล่นยังไง — เทิร์นหนึ่งทำอะไรได้ ตีกี่ที ทอยอะไรบ้าง'));
@@ -493,6 +501,7 @@ export function renderSheet(root, c, tab, nav) {
   function spells(x) {
     if (!x.casting.length) return [h('p.muted', 'ตัวละครนี้ยังไม่ได้ใช้เวท')];
     const out = [];
+    if (x.noCast) out.push(h('p.tip', `🐾 อยู่ในร่าง ${x.wild?.name || 'สัตว์'} — ร่ายเวทไม่ได้จนกว่าจะกลับร่าง (เวทที่ใช้สมาธิอยู่ก่อนแปลงร่างยังคงอยู่)`));
     const all = x.casting.flatMap(b => [...b.cantrips, ...b.always, ...b.prepared, ...(b.book || [])]).map(id => D.spell[id]).filter(Boolean);
     const lvs = [...new Set(all.map(s => s.level))].sort((a, b) => a - b);
     const q = h('input.inp.sp-q', { type: 'search', placeholder: 'ค้นหาสเปล (ชื่ออังกฤษหรือคำไทย)', value: ui.spQ, oninput: e => { ui.spQ = e.target.value; apply(); } });
@@ -717,11 +726,13 @@ export function renderSheet(root, c, tab, nav) {
   if (P.wild && !D.animals) loadAnimals().then(() => redraw()).catch(() => {});
   const wildOf = () => (c.extras || []).find(z => z.id === P.wild);
   const crTxt = n => (n === 0.125 ? '1/8' : n === 0.25 ? '1/4' : n === 0.5 ? '1/2' : String(n));
-  function wildBanner() {
+  function wildBanner(x) {
     const w = wildOf();
     if (!P.wild || !w) return null;
-    const a = D.animal?.[w.animal];
-    return h('div.conc-chip.wild-chip', h('span', '🐾 อยู่ในร่าง ', h('b', w.name), a ? ` — AC ${a.ac} · Speed ${a.speed}` : ''),
+    const a = D.animal?.[w.animal], f = x?.wild?.from;
+    const ch = (l, o, n) => (o !== n ? `${l} ${o}→${n}` : null);
+    return h('div.conc-chip.wild-chip', h('span', '🐾 อยู่ในร่าง ', h('b', w.name),
+      f ? h('small', ' — ' + [ch('AC', f.ac, x.ac), ch('Speed', f.speed, x.speed), ch('STR', f.str, x.score.str), ch('DEX', f.dex, x.score.dex), ch('CON', f.con, x.score.con)].filter(Boolean).join(' · ') + ' · ร่ายเวทไม่ได้') : a ? '' : ' (กำลังโหลดค่าสถานะ…)'),
       a ? h('button.link', { onclick: () => statSheet(a) }, 'ค่าสถานะ') : null,
       h('button.btn.small', { onclick: () => { P.wild = null; done(); toast(`กลับร่างเดิมแล้ว`); } }, 'กลับร่าง'));
   }
@@ -755,7 +766,7 @@ export function renderSheet(root, c, tab, nav) {
       out.push(head('WILD SHAPE', 'แปลงร่างเป็นสัตว์'),
         h('p.small', `รู้ร่างได้ ${nF} แบบ (ตอนนี้ ${forms.length}) · เลือกได้ถึง CR ${crTxt(maxCR)} · ${fly ? 'ร่างที่บินได้ก็ได้' : 'ยังใช้ร่างที่บินได้ไม่ได้'}${left != null ? ` · ใช้ได้อีก ${left} ครั้ง` : ''}`),
         h('p.muted.small', `แปลงร่างใช้ Bonus Action · อยู่ได้ ${Math.floor(dl / 2)} ชั่วโมง · ได้ Temp HP เท่ากับเลเวล Druid (${dl}) · HP, INT, WIS, CHA และสกิลยังเป็นของเราเอง ส่วน STR, DEX, CON, AC และ Speed ใช้ของสัตว์`),
-        wildBanner(),
+        wildBanner(x),
         h('div.titems', forms.map(f => { const a = D.animal[f.animal]; return h('div.titem.extra', h('div', h('b', f.name), a ? h('i.tag', `CR ${a.cr}`) : null, a ? h('small', `AC ${a.ac} · ${a.speed}`) : null),
           h('div.ex-btns', a ? h('button.btn.small', { onclick: () => statSheet(a) }, 'ค่าสถานะ') : null,
             P.wild === f.id ? null : h('button.btn.small.primary', { onclick: () => {
