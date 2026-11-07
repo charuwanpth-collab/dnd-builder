@@ -25,7 +25,7 @@ export function renderSheet(root, c, tab, nav) {
     root.replaceChildren(...[
       h('header.sh-head',
         h('span.sh-ico', { html: iconSvg(c.classId || 'd20') }),
-        h('div.sh-title', h('h1', c.name || 'ฮีโร่ไร้นาม'), h('p', subtitle)),
+        h('div.sh-title', h('h1', c.name || 'Character ไร้ชื่อ'), h('p', subtitle)),
         h('button.icon-btn', { 'aria-label': 'เมนู', onclick: menu }, '⋯')),
       h('div.stats-row.sticky-stats',
         statBox('AC', x.ac, null, 'ac'),
@@ -48,8 +48,8 @@ export function renderSheet(root, c, tab, nav) {
       h('button.menu-item', { onclick: async () => { close(); await share(); } }, '🔗 แชร์ลิงก์ตัวละคร'),
       h('button.menu-item', { onclick: () => { close(); S.exportFile([c]); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); } }, '💾 ดาวน์โหลดไฟล์สำรอง'),
       h('button.menu-item', { onclick: () => { close(); window.print(); } }, '🖨️ ปริ้น / เซฟเป็น PDF'),
-      h('button.menu-item', { onclick: () => { close(); const copy = structuredClone(c); delete copy.id; copy.name = (c.name || 'ฮีโร่') + ' (สำเนา)'; S.save(copy); nav(`#/c/${copy.id}`); toast('ทำสำเนาแล้ว'); } }, '📄 ทำสำเนา'),
-      h('button.menu-item.danger', { onclick: async () => { close(); if (await confirmSheet('ลบตัวละคร?', `ลบ "${c.name || 'ฮีโร่ไร้นาม'}" ออกจากเครื่องนี้ (กู้คืนไม่ได้ ถ้าไม่ได้สำรองไว้)`, 'ลบเลย')) { S.remove(c.id); nav('#/'); } } }, '🗑️ ลบตัวละคร')));
+      h('button.menu-item', { onclick: () => { close(); const copy = structuredClone(c); delete copy.id; copy.name = (c.name || 'Character ') + ' (สำเนา)'; S.save(copy); nav(`#/c/${copy.id}`); toast('ทำสำเนาแล้ว'); } }, '📄 ทำสำเนา'),
+      h('button.menu-item.danger', { onclick: async () => { close(); if (await confirmSheet('ลบตัวละคร?', `ลบ "${c.name || 'Character ไร้ชื่อ'}" ออกจากเครื่องนี้ (กู้คืนไม่ได้ ถ้าไม่ได้สำรองไว้)`, 'ลบเลย')) { S.remove(c.id); nav('#/'); } } }, '🗑️ ลบตัวละคร')));
     const close = () => document.querySelector('.bs-wrap:last-child .bs-backdrop')?.click();
   }
 

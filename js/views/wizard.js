@@ -73,7 +73,7 @@ export function renderWizard(root, c, stepId, nav) {
   // ---------- 1. เริ่ม ----------
   function basic() {
     return [
-      intro('มาสร้างฮีโร่กัน', 'ตั้งชื่อแล้วเลือกเลเวลเริ่มต้น ถ้าเพิ่งเริ่มเล่นครั้งแรก DM ส่วนใหญ่จะให้เริ่มที่เลเวล 1'),
+      intro('มาสร้าง Character กัน', 'ตั้งชื่อแล้วเลือกเลเวลเริ่มต้น ถ้าเพิ่งเริ่มเล่นครั้งแรก DM ส่วนใหญ่จะให้เริ่มที่เลเวล 1'),
       section('ชื่อตัวละคร', h('input.inp', { value: c.name, placeholder: 'เช่น Jerk', maxlength: 40, oninput: e => { c.name = e.target.value; changed(false); } })),
       section('ชื่อผู้เล่น', h('input.inp', { value: c.player, placeholder: 'ไม่ใส่ก็ได้', maxlength: 40, oninput: e => { c.player = e.target.value; changed(false); } })),
       section('เลเวล',
@@ -118,7 +118,7 @@ export function renderWizard(root, c, stepId, nav) {
   }
 
   function klass() {
-    const out = [intro('เลือกคลาส', 'คลาสคือ "อาชีพ" ของฮีโร่ กำหนดว่าสู้ยังไง ใช้เวทไหม และเก่งเรื่องอะไร แตะการ์ดเพื่ออ่านรายละเอียด')];
+    const out = [intro('เลือกคลาส', 'คลาสคือ "อาชีพ" ของCharacter กำหนดว่าสู้ยังไง ใช้เวทไหม และเก่งเรื่องอะไร แตะการ์ดเพื่ออ่านรายละเอียด')];
     out.push(h('div.grid', D.classes.map(cls => choiceCard({
       id: cls.id, iconName: cls.id, title: cls.name, sub: `d${cls.hitDie} · ${cls.core['Primary Ability']}`,
       desc: thc(cls.id).tag, selected: c.classId === cls.id, onClick: () => classSheet(cls),
@@ -236,7 +236,7 @@ export function renderWizard(root, c, stepId, nav) {
 
   // ---------- 3. Background ----------
   function background() {
-    const out = [intro('เลือก Background', 'อดีตของฮีโร่ก่อนออกผจญภัย ให้โบนัสค่าพลัง สกิล 2 อย่าง เครื่องมือ 1 อย่าง และ Origin Feat 1 อย่าง')];
+    const out = [intro('เลือก Background', 'อดีตของCharacter ก่อนออกผจญภัย ให้โบนัสค่าพลัง สกิล 2 อย่าง เครื่องมือ 1 อย่าง และ Origin Feat 1 อย่าง')];
     out.push(h('div.grid', D.backgrounds.map(bg => choiceCard({
       id: bg.id, iconName: 'background', title: bg.name, sub: bg.abilities.map(a => ABIL_SHORT[a]).join(' · '),
       desc: D.th.backgrounds?.[bg.id]?.desc, selected: c.bgId === bg.id,
@@ -275,7 +275,7 @@ export function renderWizard(root, c, stepId, nav) {
 
   // ---------- 4. Species ----------
   function species() {
-    const out = [intro('เลือก Species', 'เผ่าพันธุ์ของฮีโร่ ให้ความสามารถพิเศษติดตัว เช่น มองในที่มืด หรือพ่นไฟ')];
+    const out = [intro('เลือก Species', 'เผ่าพันธุ์ของCharacter ให้ความสามารถพิเศษติดตัว เช่น มองในที่มืด หรือพ่นไฟ')];
     out.push(h('div.grid', D.species.map(s => choiceCard({
       id: s.id, iconName: s.id, title: s.name, sub: `${s.size.split(' ')[0]} · Speed ${s.speed}`,
       desc: ths(s.id).tag, selected: c.speciesId === s.id,
@@ -319,7 +319,7 @@ export function renderWizard(root, c, stepId, nav) {
     const A = c.abilities;
     const method = A.method || 'standard';
     const cls = D.cls[c.classId];
-    const out = [intro('ค่าพลัง (Ability Scores)', 'ตัวเลข 6 ตัวที่บอกว่าฮีโร่เก่งด้านไหน ค่ายิ่งสูงโบนัสยิ่งเยอะ (10 = +0, 12 = +1, 14 = +2, 16 = +3)')];
+    const out = [intro('ค่าพลัง (Ability Scores)', 'ตัวเลข 6 ตัวที่บอกว่าCharacter เก่งด้านไหน ค่ายิ่งสูงโบนัสยิ่งเยอะ (10 = +0, 12 = +1, 14 = +2, 16 = +3)')];
     if (cls) out.push(h('p.hint', `💡 ${cls.name} ใช้ ${cls.core['Primary Ability']} เป็นหลัก — ใส่ค่าสูงสุดไว้ตรงนั้น` + (thc(cls.id).abilityTip ? ` · ${thc(cls.id).abilityTip}` : '')));
     out.push(h('div.seg', [['standard', 'ชุดมาตรฐาน'], ['pointbuy', 'ซื้อแต้ม'], ['roll', 'ทอยเต๋า']].map(([k, l]) => h('button.seg-btn' + (method === k ? '.on' : ''), {
       type: 'button', onclick: () => { A.method = k; A.assign = {}; if (k === 'pointbuy') ABIL.forEach(a => (A.base[a] = 8)); else ABIL.forEach(a => (A.base[a] = 8)); changed(); },
@@ -443,7 +443,7 @@ export function renderWizard(root, c, stepId, nav) {
     const x = compute(c);
     const miss = missing(c);
     return [
-      intro(c.name || 'ฮีโร่ไร้นาม', [x.sp?.name, x.cls?.name, `Lv ${c.level}`, x.bg?.name].filter(Boolean).join(' · ')),
+      intro(c.name || 'Character ไร้ชื่อ', [x.sp?.name, x.cls?.name, `Lv ${c.level}`, x.bg?.name].filter(Boolean).join(' · ')),
       h('div.stats-row', statBox('AC', x.ac, null, 'ac'), statBox('HP', x.hpMax, null, 'hp'), statBox('Speed', `${x.speed} ft`, null, 'speed'), statBox('Initiative', sign(x.init), null, 'init')),
       h('div.ab-mini', ABIL.map(a => h('div', h('small', ABIL_SHORT[a]), h('b', sign(x.m[a])), h('span', String(x.score[a]))))),
       miss.length ? h('div.block.warn-box', h('h3', 'ยังเลือกไม่ครบ'), h('ul', miss.map(m => h('li', m))), h('p.muted.small', 'เปิดใบตัวละครได้เลย แล้วค่อยกลับมาแก้ทีหลังก็ได้')) : h('p.ok', '✓ เลือกครบแล้ว พร้อมลุย!'),
