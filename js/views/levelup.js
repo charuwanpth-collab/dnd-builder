@@ -72,7 +72,8 @@ export function levelEditor(c, i, changed) {
       out.push(h('label.lbl', `HP เลเวลนี้ (d${d})`),
         h('div.seg',
           h('button.seg-btn' + (!e.hp ? '.on' : ''), { type: 'button', onclick: () => { delete e.hp; changed(); } }, `ค่าเฉลี่ย ${avg}`),
-          h('button.seg-btn' + (e.hp ? '.on' : ''), { type: 'button', onclick: () => { e.hp = 1 + Math.floor(Math.random() * d); changed(); } }, e.hp ? `🎲 ทอยได้ ${e.hp}` : `🎲 ทอย d${d}`)),
+          h('label.seg-btn.hp-roll' + (e.hp ? '.on' : ''), `ทอย d${d} เอง ได้`, h('input.inp.num', { type: 'number', inputmode: 'numeric', min: 1, max: d, value: e.hp || '', placeholder: `1–${d}`, 'aria-label': `ผลทอย d${d}`,
+            onchange: ev => { const v = parseInt(ev.target.value, 10); if (v >= 1 && v <= d) e.hp = v; else delete e.hp; changed(); } }))),
         h('p.muted.small', `ได้ HP +${Math.max(1, (e.hp || avg) + con)} (เต๋า ${e.hp || avg} ${sign(con)} CON) · ถ้าอัป CON ทีหลัง HP จะเพิ่มย้อนหลังให้อัตโนมัติ`));
     }
   }

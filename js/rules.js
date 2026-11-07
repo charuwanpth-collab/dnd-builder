@@ -479,19 +479,23 @@ export function compute(c) {
   const exp = new Set(expList.filter(s => prof.has(s)));
   const thaum = !!CLs.cleric && chOf(c, 'cleric').divineOrder === 'Thaumaturge', magi = !!CLs.druid && chOf(c, 'druid').primalOrder === 'Magician';
   const skills = SKILLS.map(([name, ab]) => {
-    let bonus = m[ab];
-    const p = prof.has(name), e = exp.has(name);
-    if (e) bonus += pb * 2; else if (p) bonus += pb;
-    else if ((CLs.bard || 0) >= 2) bonus += Math.floor(pb / 2);
-    if ((thaum && ['Arcana', 'Religion'].includes(name)) || (magi && ['Arcana', 'Nature'].includes(name))) bonus += Math.max(1, m.wis);
-    return { name, ab, bonus, prof: p, exp: e };
+    const p = prof.has(name), e = exp.has(name), parts = [[ABIL_SHORT[ab], m[ab]]];
+    if (e) parts.push(['Expertise (Prof×2)', pb * 2]); else if (p) parts.push(['Proficiency', pb]);
+    else if ((CLs.bard || 0) >= 2) parts.push(['Jack of All Trades (½ Prof)', Math.floor(pb / 2)]);
+    if ((thaum && ['Arcana', 'Religion'].includes(name)) || (magi && ['Arcana', 'Nature'].includes(name))) parts.push([thaum && name !== 'Nature' ? 'Thaumaturge' : 'Magician', Math.max(1, m.wis)]);
+    return { name, ab, bonus: parts.reduce((t, q) => t + q[1], 0), prof: p, exp: e, parts };
   });
 
   const saveProf = new Set(cls?.saves || []);
   if ((CLs.monk || 0) >= 14) ABIL.forEach(a => saveProf.add(a)); // Disciplined Survivor
   if ((CLs.rogue || 0) >= 15) ['wis', 'cha'].forEach(a => saveProf.add(a)); // Slippery Mind
   const aura = (CLs.paladin || 0) >= 6 ? Math.max(1, m.cha) : 0; // Aura of Protection
-  const saves = ABIL.map(a => ({ ab: a, prof: saveProf.has(a), bonus: m[a] + (saveProf.has(a) ? pb : 0) + aura }));
+  const saves = ABIL.map(a => {
+    const parts = [[ABIL_SHORT[a], m[a]]];
+    if (saveProf.has(a)) parts.push(['Proficiency', pb]);
+    if (aura) parts.push(['Aura of Protection', aura]);
+    return { ab: a, prof: saveProf.has(a), bonus: parts.reduce((t, q) => t + q[1], 0), parts };
+  });
 
   // เกราะและ AC
   const training = cls ? armorTraining(c) : new Set();
@@ -543,7 +547,8 @@ export function compute(c) {
   if ((CLs.ranger || 0) >= 6 && !heavy) speed += 10; // Roving
   if (worn?.strength?.match(/\d+/) && score.str < +worn.strength.match(/\d+/)[0]) speed -= 10;
 
-  const init = m.dex + (featIds.includes('alert') ? pb : 0);
+  const initParts = [['DEX', m.dex], ...(featIds.includes('alert') ? [['Alert', pb]] : [])];
+  const init = initParts.reduce((t, q) => t + q[1], 0);
   const perception = skills.find(s => s.name === 'Perception').bonus;
   let darkvision = { dragonborn: 60, dwarf: 120, elf: 60, gnome: 60, orc: 120, tiefling: 60 }[c.speciesId] || 0;
   if (so.lineage === 'Drow') darkvision = 120;
@@ -562,15 +567,15 @@ export function compute(c) {
     let ab = ranged ? 'dex' : finesse ? (m.dex > m.str ? 'dex' : 'str') : 'str';
     if (monkL && !ranged && (/^Simple Melee/.test(w.group) || /\bLight\b/.test(w.properties)) && m.dex > m[ab]) ab = 'dex';
     const p = weaponProficient(w, rule);
-    let hit = m[ab] + (p ? pb : 0);
-    if (ranged && featIds.includes('archery')) hit += 2;
+    const hitParts = [[ABIL_SHORT[ab], m[ab]], ...(p ? [['Proficiency', pb]] : []), ...(ranged && featIds.includes('archery') ? [['Archery', 2]] : [])];
+    const hit = hitParts.reduce((t, q) => t + q[1], 0);
     let dmg = w.damage.replace(/^(\S+)/, `$1${m[ab] ? (m[ab] > 0 ? '+' : '') + m[ab] : ''}`);
     if (monkL && ab === 'dex') {
       const ma = col(monk, 'Martial Arts', monkL);
       const [d] = w.damage.split(' ');
       if (parseInt(ma.slice(2)) > parseInt(d.split('d')[1])) dmg = w.damage.replace(d, ma + (m.dex ? (m.dex > 0 ? '+' : '') + m.dex : ''));
     }
-    attacks.push({ name: w.name, hit, dmg, props: w.properties, mastery: masteries.has(w.id) ? w.mastery : null, prof: p, ranged });
+    attacks.push({ id: w.id, name: w.name, hit, hitParts, dmg, ab, props: w.properties, mastery: masteries.has(w.id) ? w.mastery : null, prof: p, ranged });
   }
   const unarmedDie = monkL ? col(monk, 'Martial Arts', monkL) : null;
   let atkPer = 1;
@@ -579,7 +584,7 @@ export function compute(c) {
   if (inv.includes('devouring-blade') && CLs.warlock >= 12) atkPer = Math.max(atkPer, 3);
   else if (inv.includes('thirsting-blade') && CLs.warlock >= 5) atkPer = Math.max(atkPer, 2);
   const uAb = monkL && m.dex > m.str ? 'dex' : 'str';
-  attacks.push({ name: 'Unarmed Strike', hit: m[uAb] + pb, dmg: unarmedDie ? `${unarmedDie}${m[uAb] >= 0 ? '+' : ''}${m[uAb]} Bludgeoning` : `${Math.max(0, 1 + m.str)} Bludgeoning`, props: '', prof: true });
+  attacks.push({ id: 'unarmed', name: 'Unarmed Strike', ab: uAb, hit: m[uAb] + pb, hitParts: [[ABIL_SHORT[uAb], m[uAb]], ['Proficiency', pb]], dmg: unarmedDie ? `${unarmedDie}${m[uAb] >= 0 ? '+' : ''}${m[uAb]} Bludgeoning` : `${Math.max(0, 1 + m.str)} Bludgeoning`, props: '', prof: true });
 
   // เวท
   const casting = [];
@@ -684,7 +689,7 @@ export function compute(c) {
 
   return {
     cls, sub, sp, bg, L, CL, CLs, masteryIds: [...masteries], classLine: classLine(c), hitDice, atkPer, mcFeats, levelFeats, aura,
-    pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, perception, darkvision, truesight: featIds.includes('boon-of-truesight') ? 60 : 0,
+    pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, initParts, perception, darkvision, truesight: featIds.includes('boon-of-truesight') ? 60 : 0,
     attacks, casting, feats, res, featIds, originFeats: originFeats.filter(Boolean), langs: [...langs],
     training: [...training], weaponRule: rule, warn,
   };
@@ -739,7 +744,7 @@ export function newCharacter() {
     equipment: { classOpt: 'A', bgOpt: 'A', items: [], gp: 0, armor: null, shield: false },
     spells: { cantrips: [], prepared: [], book: [] },
     play: { hp: null, temp: 0, hdUsed: 0, slots: {}, res: {}, conditions: [], death: { s: 0, f: 0 }, inspiration: false },
-    notes: '', look: '',
+    notes: '', details: {},
   };
 }
 

@@ -3,10 +3,11 @@ import { D, thFeature } from '../data.js';
 import { h, sheet, toast, sign } from '../util.js';
 import { featureCard, classFeatureCard, spellDetail, TYPE_LABEL, LEVEL_TH } from './parts.js';
 import { showTerm } from './glossary.js';
+import { dmgRange } from './explain.js';
 
 const INCAP = ['Incapacitated', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious'];
 const NO_MOVE = ['Grappled', 'Restrained', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious'];
-const BASIC = [
+export const BASIC = [
   ['dash', 'Dash', 'ได้ Movement เพิ่มอีกเท่าของ Speed'],
   ['disengage', 'Disengage', 'เดินออกจากระยะศัตรูโดยไม่โดน Opportunity Attack'],
   ['dodge', 'Dodge', 'ศัตรูตีเรามี Disadvantage · เซฟ DEX มี Advantage (จนถึงต้นเทิร์นหน้า)'],
@@ -20,10 +21,10 @@ const BASIC = [
 ];
 // ทรัพยากรที่ใช้แล้วกิน Bonus Action / ให้ Action เพิ่ม (id ไม่รวม prefix คลาสที่ 2)
 const RES_ECON = { rage: 'b', sw: 'b', surge: 'surge', bardic: 'b', wild: 'b', fe: 'b', innate: 'b', adrenaline: 'b' };
-const KIND_TH = { a: 'Action', b: 'Bonus Action', r: 'Reaction' };
+export const KIND_TH = { a: 'Action', b: 'Bonus Action', r: 'Reaction' };
 
 const fresh = round => ({ round, a: 0, aMax: 1, b: 0, r: 0, move: 0, dash: 0, atk: 0, slot: 0, once: {} });
-const incap = P => P.conditions.some(k => INCAP.includes(k));
+export const incap = P => P.conditions.some(k => INCAP.includes(k));
 const speedMax = (P, x) => (P.conditions.some(k => NO_MOVE.includes(k)) ? 0 : x.speed * (1 + P.turn.dash));
 const closeAll = () => document.querySelectorAll('#sheet-root .bs-backdrop').forEach(b => b.click());
 
@@ -115,7 +116,7 @@ export function castActions(s, x, P, done) {
 }
 
 /** ของที่ต้องจำว่าใช้ไปแล้วในเทิร์นนี้ (1 ครั้งต่อเทิร์น) */
-function onceItems(x) {
+export function onceItems(x) {
   const L = [];
   if (x.CLs.rogue) L.push(['sneak', 'Sneak Attack', `+${Math.ceil(x.CLs.rogue / 2)}d6 (ต้องมี Advantage หรือเพื่อนอยู่ข้างเป้า)`]);
   if (x.featIds.includes('savage-attacker')) L.push(['savage', 'Savage Attacker', 'ทอยดาเมจอาวุธ 2 รอบ เลือกอันสูง']);
@@ -163,29 +164,53 @@ function moveSheet(x, P, ch) {
       P.conditions.includes('Prone') ? btn(`ลุกขึ้น (−${Math.floor(x.speed / 2)} ft)`, () => { t.move += Math.floor(x.speed / 2); P.conditions = P.conditions.filter(k => k !== 'Prone'); }) : null)));
 }
 
-// ---------- แผง "เหลืออะไรทำได้อีก" ----------
-function collect(c, x, P, save, redraw) {
-  const items = { a: [], b: [], r: [] }, seen = new Set();
-  const resOf = name => { const r = x.res.find(r => r.name.split(' (')[0] === name); return r ? { r, left: r.max - (P.res[r.id] || 0) } : null; };
-  const addF = (name, th, card) => {
+// ---------- ฟีเจอร์ที่ใช้ Action / Bonus / Reaction ----------
+/** ทุกฟีเจอร์ (คลาส ซับคลาส แพ็ก feat species) ที่ th.t เป็น action|magic|bonus|reaction — ไม่สนว่าเหลือใช้ไหม */
+export function featureActions(x) {
+  const out = [], seen = new Set();
+  const add = (name, th, card) => {
     const k = { action: 'a', magic: 'a', bonus: 'b', reaction: 'r' }[th?.t];
     if (!k || seen.has(name)) return;
     seen.add(name);
-    const rl = resOf(name);
-    if (rl && rl.left <= 0) return;
-    items[k].push({ name, s: th.s, note: rl ? `เหลือ ${rl.left}` : null, tag: TYPE_LABEL[th.t], open: () => featSheet(name, k, card, rl) });
+    out.push({ k, name, th, card, r: x.res.find(r => r.name.split(' (')[0] === name) || null });
   };
-  const featSheet = (name, k, card, rl) => sheet(name, card(), [{ label: `ใช้ (${KIND_TH[k]})`, primary: true, onClick: () => {
-    const m = spend(P, k);
-    if (!m.startsWith('⚠') && rl) P.res[rl.r.id] = (P.res[rl.r.id] || 0) + 1;
-    toast(`${name} · ${m}`); done();
-  } }]);
-  const done = () => { save(); closeAll(); redraw(); };
+  if (x.cls) for (const f of x.feats) add(f.name, f.pack ? f.th : thFeature(x.cls.id, f.id, f.src === 'sub'), () => classFeatureCard(x.cls, f, f.src === 'sub'));
+  for (const mc of x.mcFeats) for (const f of mc.feats) add(f.name, f.pack ? f.th : thFeature(mc.cls.id, f.id, f.src === 'sub'), () => classFeatureCard(mc.cls, f, f.src === 'sub'));
+  for (const id of new Set(x.featIds)) { const f = D.feat[id]; if (f) add(f.name, D.th.feats?.[id], () => featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id], pack: f.pack })); }
+  if (x.sp) for (const tr of x.sp.traits) { const th = D.th.species?.[x.sp.id]?.f?.[tr.id]; add(tr.name, th, () => featureCard({ name: tr.name, text: tr.text, th, full: ['species', [x.sp.id, tr.id]] })); }
+  return out;
+}
+export const resLeft = (P, r) => (r ? r.max - (P.res[r.id] || 0) : null);
 
-  if (x.cls) for (const f of x.feats) addF(f.name, f.pack ? f.th : thFeature(x.cls.id, f.id, f.src === 'sub'), () => classFeatureCard(x.cls, f, f.src === 'sub'));
-  for (const mc of x.mcFeats) for (const f of mc.feats) addF(f.name, f.pack ? f.th : thFeature(mc.cls.id, f.id, f.src === 'sub'), () => classFeatureCard(mc.cls, f, f.src === 'sub'));
-  for (const id of new Set(x.featIds)) { const f = D.feat[id]; if (f) addF(f.name, D.th.feats?.[id], () => featureCard({ name: f.name, text: f.text, th: D.th.feats?.[id], tag: f.category, full: ['feats', id], pack: f.pack })); }
-  if (x.sp) for (const tr of x.sp.traits) { const th = D.th.species?.[x.sp.id]?.f?.[tr.id]; addF(tr.name, th, () => featureCard({ name: tr.name, text: tr.text, th, full: ['species', [x.sp.id, tr.id]] })); }
+/** เปิดการ์ดฟีเจอร์ + ปุ่ม "ใช้" (หักจำนวนครั้ง + มาร์คแถบเทิร์นถ้ากำลังสู้) */
+export function useFeature(P, it, done) {
+  const left = resLeft(P, it.r);
+  const acts = [];
+  if (left === 0) acts.push({ label: 'ใช้ครบแล้ว — รอพักก่อน', onClick: () => false });
+  else if (it.r || P.turn) acts.push({ label: `ใช้ (${KIND_TH[it.k]})`, primary: true, onClick: () => {
+    const m = P.turn ? spend(P, it.k) : '';
+    if (!m.startsWith('⚠') && it.r) P.res[it.r.id] = (P.res[it.r.id] || 0) + 1;
+    toast([it.name, m, it.r ? `เหลือ ${resLeft(P, it.r)}/${it.r.max}` : ''].filter(Boolean).join(' · ')); done();
+  } });
+  sheet(it.name, it.card(), acts);
+}
+
+/** การ์ด Action พื้นฐานที่ทุกคนทำได้ */
+export function basicSheet(P, [id, name, s], done) {
+  sheet(name + ' action', h('p.th', s), [
+    { label: 'ความหมายเต็ม', onClick: () => { showTerm(id); } },
+    ...(P.turn ? [{ label: 'ใช้ (Action)', primary: true, onClick: () => { const m = spend(P, 'a'); if (id === 'dash' && !m.startsWith('⚠')) P.turn.dash++; toast(`${name} · ${m}`); done(); } }] : [])]);
+}
+
+// ---------- แผง "เหลืออะไรทำได้อีก" ----------
+function collect(c, x, P, save, redraw) {
+  const items = { a: [], b: [], r: [] }, seen = new Set();
+  const done = () => { save(); closeAll(); redraw(); };
+  for (const it of featureActions(x)) {
+    const left = resLeft(P, it.r);
+    if (left === 0) continue;
+    items[it.k].push({ name: it.name, s: it.th.s, note: it.r ? `เหลือ ${left}` : null, tag: TYPE_LABEL[it.th.t], open: () => useFeature(P, it, done) });
+  }
 
   // สเปลที่ร่ายได้ตอนนี้ (Cantrip เสมอ · สเปลมีเลเวลต้องมีสลอตเหลือ)
   const pools = slotPools(x, P);
@@ -198,14 +223,14 @@ function collect(c, x, P, save, redraw) {
   return { items, done };
 }
 
-function attackSheet(x, P, kind, title, done) {
+export function attackSheet(x, P, kind, title, done) {
   let close;
   close = sheet(title, h('div.card.list', x.attacks.map(a => h('div.atk', { onclick: () => {
-    const r = 1 + Math.floor(Math.random() * 20);
     const m = kind === 'a' ? attack(P, x) : spend(P, kind);
-    toast(`🎲 ${a.name}: ${r} ${sign(a.hit)} = ${r + a.hit}${r === 20 ? ' 🔥 คริ!' : r === 1 ? ' 💀' : ''} · ดาเมจ ${a.dmg}${m ? ' · ' + m : ''}`);
+    const r = dmgRange(a.dmg);
+    toast(`⚔️ ${a.name}: ทอย d20 ${sign(a.hit)} · ดาเมจ ${a.dmg}${r ? ` (${r})` : ''}${m ? ' · ' + m : ''}`);
     close(); done();
-  } }, h('div', h('b', a.name), h('small', a.props || '')), h('span.atk-hit', sign(a.hit)), h('span.atk-dmg', a.dmg)))));
+  } }, h('div', h('b', a.name), h('small', a.props || '')), h('span.atk-hit', sign(a.hit)), h('span.atk-dmg', a.dmg, dmgRange(a.dmg) ? h('small.rng', ` (${dmgRange(a.dmg)})`) : null)))));
 }
 
 export function openPanel(c, x, P, save, redraw) {
@@ -221,11 +246,7 @@ export function openPanel(c, x, P, save, redraw) {
     if (t.atk > 0) head.push({ name: `⚔️ โจมตีต่อ (เหลือ ${x.atkPer - t.atk} ครั้ง)`, s: 'ยังอยู่ใน Attack action เดิม', open: () => attackSheet(x, P, 'a', 'โจมตีต่อ', done) });
     if (L.a > 0) head.push({ name: 'โจมตี (Attack action)', s: x.atkPer > 1 ? `ตีได้ ${x.atkPer} ครั้ง (Extra Attack)` : 'ตีด้วยอาวุธ 1 ครั้ง', open: () => attackSheet(x, P, 'a', 'เลือกอาวุธ', done) });
     out.push(h('h3.tsec.t-a', `🟢 Action${t.aMax > 1 ? ` (เหลือ ${L.a})` : ''}`), h('div.titems', [...head, ...(L.a > 0 ? items.a : [])].map(row)));
-    if (L.a > 0) out.push(h('details.orig', h('summary', 'Action พื้นฐาน (Dash, Dodge, Hide…)'), h('div.titems', BASIC.map(([id, name, s]) => row({
-      name, s, open: () => sheet(name + ' action', h('p.th', s), [
-        { label: 'ความหมายเต็ม', onClick: () => { showTerm(id); } },
-        { label: 'ใช้ (Action)', primary: true, onClick: () => { const m = spend(P, 'a'); if (id === 'dash' && !m.startsWith('⚠')) t.dash++; toast(`${name} · ${m}`); done(); } }]),
-    })))));
+    if (L.a > 0) out.push(h('details.orig', h('summary', 'Action พื้นฐาน (Dash, Dodge, Hide…)'), h('div.titems', BASIC.map(b => row({ name: b[1], s: b[2], open: () => basicSheet(P, b, done) })))));
     if (light && L.b > 0) items.b.unshift({ name: 'โจมตีมือรอง (Light)', s: 'หลังโจมตีด้วยอาวุธ Light ตีด้วยอาวุธ Light อีกอันได้ (ไม่บวกค่าพลังในดาเมจ)', open: () => attackSheet(x, P, 'b', 'โจมตีมือรอง', done) });
   }
   if (surge && surge.max - (P.res[surge.id] || 0) > 0 && !incap(P)) out.unshift(h('div.titems', row({ name: '⚡ Action Surge', s: 'ได้ Action เพิ่มอีก 1 ในเทิร์นนี้', note: `เหลือ ${surge.max - (P.res[surge.id] || 0)}`,
