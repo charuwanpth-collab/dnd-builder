@@ -3,7 +3,7 @@
 import { D } from '../data.js';
 import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
 import * as S from '../store.js';
-import { ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, compute, missing, rebuildEquipment, levelInfo, chOf, hitDieAvg } from '../rules.js';
+import { ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, compute, missing, rebuildEquipment, levelInfo, chOf, hitDieAvg, itemWeight, carry } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
 import { classFeatureCard, featureCard, spellRow, LEVEL_TH, stubSubBox, TYPE_LABEL, detailGroups, detailField } from './parts.js';
 import { formula, explain, attackBody, dmgText, helpBody, infoBtn } from './explain.js';
@@ -521,27 +521,64 @@ export function renderSheet(root, c, tab, nav) {
   // ---------- INVENTORY ----------
   function inventory(x) {
     const e = c.equipment;
-    const coin = (k, label) => h('label.coin', h('small', label), h('input.inp.num', { type: 'number', inputmode: 'numeric', value: e[k] || 0, onchange: ev => { e[k] = parseInt(ev.target.value, 10) || 0; save(); } }));
-    const name = h('input.inp', { placeholder: 'เพิ่มของ เช่น Potion of Healing', 'aria-label': 'ชื่อของ' });
+    const coin = (k, label) => h('label.coin', h('small', label), h('input.inp.num', { type: 'number', inputmode: 'numeric', value: e[k] || 0, onchange: ev => { e[k] = parseInt(ev.target.value, 10) || 0; done(); } }));
+    const name = h('input.inp', { placeholder: 'เพิ่มของ เช่น Potion of Healing', 'aria-label': 'ชื่อของ', list: 'dl-items' });
+    const cw = carry(c, x), att = e.items.filter(it => it.attuned).length;
+    const add = () => {
+      const n = name.value.trim(); if (!n) return;
+      const w = D.weapons.find(z => z.name.toLowerCase() === n.toLowerCase()), a = D.armor.find(z => z.name.toLowerCase() === n.toLowerCase());
+      e.items.push({ name: w?.name || a?.name || n, qty: 1, weapon: w?.id, armor: a?.id }); e.touched = true;
+      done();
+    };
+    const worn = it => (it.armor === 'shield' ? e.shield : it.armor && e.armor === it.armor);
+    const row = (it, i) => h('button.item-row.inv', { onclick: () => itemSheet(it, i, x) },
+      h('div.inv-main', h('b', it.name, it.qty > 1 ? h('small', ` ×${it.qty}`) : null),
+        h('small', [it.weapon ? (it.equipped === false ? 'อาวุธ · เก็บในกระเป๋า' : 'อาวุธ · ถืออยู่') : null, it.armor ? (worn(it) ? (it.armor === 'shield' ? 'ถือโล่อยู่' : 'สวมอยู่') : 'เกราะ · ไม่ได้สวม') : null,
+          it.magic ? '✨ ของวิเศษ' : null, it.attune ? (it.attuned ? 'Attune แล้ว' : 'ต้อง Attune') : null, itemWeight(it) ? `${+(itemWeight(it) * (it.qty || 1)).toFixed(2)} lb` : null].filter(Boolean).join(' · '))),
+      worn(it) || (it.weapon && it.equipped !== false) ? h('span.badge.on', '✓') : null);
     return [
       head('CURRENCY', 'เงิน'),
       h('div.coins', coin('pp', 'PP'), coin('gp', 'GP'), coin('ep', 'EP'), coin('sp', 'SP'), coin('cp', 'CP')),
-      head('EQUIPMENT', 'ของที่พกอยู่'),
-      h('p.muted.small', `ตอนนี้สวม: ${x.acNote} → AC ${x.ac}`),
-      h('div.card.list', e.items.map((it, i) => h('div.item-row',
-        h('b', it.name), it.weapon ? h('i.tag', 'อาวุธ') : null, it.armor ? h('i.tag', 'เกราะ') : null,
-        h('div.qty',
-          h('button.icon-btn', { 'aria-label': 'ลด', onclick: () => { it.qty--; if (it.qty <= 0) e.items.splice(i, 1); e.touched = true; done(); } }, '−'),
-          h('span', String(it.qty)),
-          h('button.icon-btn', { 'aria-label': 'เพิ่ม', onclick: () => { it.qty++; done(); } }, '+'))))),
-      h('div.row', name, h('button.btn.primary', { onclick: () => {
-        const n = name.value.trim(); if (!n) return;
-        const w = D.weapons.find(z => z.name.toLowerCase() === n.toLowerCase());
-        e.items.push({ name: w?.name || n, qty: 1, weapon: w?.id });
-        done();
-      } }, 'เพิ่ม')),
-      h('p.muted.small', '💡 ถ้าเป็นอาวุธ ให้พิมพ์ชื่อภาษาอังกฤษให้ตรง (เช่น Longsword) แล้วอาวุธจะขึ้นในช่องโจมตีให้เอง'),
+      h('div.box3.inv-stats',
+        box('WEIGHT', 'น้ำหนักที่แบก', `${cw.total}`, `/${cw.max}`, () => explain('น้ำหนักที่แบก', [
+          h('div.formula', h('div.f-main', h('span', 'แบกอยู่'), h('b', `${cw.total} lb`)), h('div.f-parts', h('span', `แบกได้สูงสุด STR ${x.score.str} × 15 = `, h('b', `${cw.max} lb`)), h('span', 'เหรียญ 50 เหรียญ = 1 lb'))),
+          h('p', 'ถ้าแบกเกินจากนี้ DM อาจให้เดินช้าลง น้ำหนักของมาจากตาราง SRD ถ้าของไหนไม่ตรง แตะของชิ้นนั้นแล้วใส่น้ำหนักเองได้')]), cw.total > cw.max ? '.bad' : ''),
+        box('ATTUNEMENT', 'ของวิเศษที่ผูกไว้', `${att}`, '/3', () => explain('Attunement', [
+          h('p.th', 'ของวิเศษบางชิ้นต้อง "Attune" (ผูกพลังกับตัวเรา) ก่อนถึงจะใช้พลังได้ — ใช้เวลาพักสั้น 1 ครั้งจับของชิ้นนั้นไว้'),
+          h('p', 'ผูกได้พร้อมกันสูงสุด 3 ชิ้น ถ้าอยากผูกชิ้นใหม่ต้องเลิกผูกชิ้นเก่าก่อน · ตั้งค่าได้โดยแตะที่ของชิ้นนั้น')]), att > 3 ? '.bad' : ''),
+        box('ARMOR', 'Class (AC)', String(x.ac), null, () => explain('Armor Class (AC)', [h('div.formula', h('div.f-main', h('span', 'AC'), h('b', String(x.ac))), h('div.f-parts', h('span', x.acNote))), ...helpBody('ac')]))),
+      head('EQUIPMENT', 'ของที่พกอยู่ · แตะเพื่อใส่/ถอด/แก้'),
+      h('div.card.list', e.items.length ? e.items.map(row) : h('p.muted.small', 'ยังไม่มีของ')),
+      h('div.row', name, h('button.btn.primary', { onclick: add }, 'เพิ่ม')),
+      h('datalist#dl-items', [...D.weapons, ...D.armor, ...Object.keys(D.weights || {}).map(n => ({ name: n.replace(/\b\w/g, ch => ch.toUpperCase()) }))].map(z => h('option', { value: z.name }))),
+      h('p.muted.small', '💡 พิมพ์ชื่อภาษาอังกฤษตรงกับ SRD (เช่น Longsword, Chain Mail) เว็บจะรู้ว่าเป็นอาวุธหรือเกราะ และใส่น้ำหนักให้เอง'),
     ];
+  }
+
+  // แก้ของหนึ่งชิ้น: ถือ/สวม, จำนวน, น้ำหนัก, ของวิเศษ + Attunement, คำอธิบาย
+  function itemSheet(it, i, x) {
+    const e = c.equipment;
+    let close;
+    const ch = (fn, keep) => () => { fn(); e.touched = true; done(); if (!keep) { close(); itemSheet(it, e.items.indexOf(it), x); } };
+    const chk = (label, val, fn) => h('label.row.check-row', h('input', { type: 'checkbox', checked: !!val, onchange: ch(fn) }), ' ' + label);
+    const w = D.weapon[it.weapon], a = D.armorById[it.armor];
+    const attN = e.items.filter(z => z.attuned && z !== it).length;
+    close = sheet(it.name, h('div.item-edit',
+      w ? h('p.small', `${w.damage} · ${w.properties || '—'}${w.mastery ? ` · Mastery: ${w.mastery}` : ''}`) : null,
+      a ? h('p.small', `AC ${a['armor class (ac)']} · ${a.group}${a.strength && a.strength !== '-' ? ` · ต้องมี ${a.strength}` : ''}${a.stealth === 'Disadvantage' ? ' · Stealth เสียเปรียบ' : ''}`) : null,
+      it.weapon ? chk('ถืออยู่ — ขึ้นในช่องโจมตี (เอาออก = เก็บในกระเป๋า)', it.equipped !== false, () => { it.equipped = it.equipped === false; }) : null,
+      it.armor === 'shield' ? chk('ถือโล่ (AC +2)', e.shield, () => { e.shield = !e.shield; }) : null,
+      it.armor && it.armor !== 'shield' ? chk('สวมเกราะนี้อยู่', e.armor === it.armor, () => { e.armor = e.armor === it.armor ? null : it.armor; }) : null,
+      h('div.cu-grid',
+        h('label.fld', h('small', 'จำนวน'), h('input.inp.num', { type: 'number', min: 0, value: it.qty, onchange: ev => { const q = parseInt(ev.target.value, 10) || 0; if (q <= 0) { e.items.splice(e.items.indexOf(it), 1); close(); } else it.qty = q; done(); } })),
+        h('label.fld', h('small', 'น้ำหนัก/ชิ้น (lb)'), h('input.inp.num', { type: 'number', step: '0.25', min: 0, value: it.weight ?? '', placeholder: String(itemWeight({ ...it, weight: null })), onchange: ev => { if (ev.target.value === '') delete it.weight; else it.weight = +ev.target.value; done(); } }))),
+      chk('✨ ของวิเศษ', it.magic, () => { it.magic = !it.magic; }),
+      it.magic ? chk('ต้อง Attune ก่อนใช้', it.attune, () => { it.attune = !it.attune; if (!it.attune) delete it.attuned; }) : null,
+      it.magic && it.attune ? chk(`Attune แล้ว (ตอนนี้ผูกอยู่ ${attN + (it.attuned ? 1 : 0)}/3)`, it.attuned, () => { if (!it.attuned && attN >= 3) return toast('ผูกครบ 3 ชิ้นแล้ว ต้องเลิกผูกชิ้นอื่นก่อน'); it.attuned = !it.attuned; }) : null,
+      it.magic ? h('p.muted.small', 'ของวิเศษที่ให้โบนัส (เช่น ดาบ +1, Cloak of Protection) ใส่ตัวเลขได้ที่เมนู ⋯ → ปรับค่าเอง') : null,
+      h('label.fld', h('small', 'คำอธิบาย / โน้ต'), h('textarea.inp', { rows: 3, placeholder: 'ใส่ความสามารถของของชิ้นนี้ หรือจดว่าได้มาจากไหน', oninput: ev => { it.desc = ev.target.value; save(); } }, it.desc || ''))),
+      [{ label: '🗑️ ทิ้ง', onClick: () => { e.items.splice(e.items.indexOf(it), 1); if (it.armor === e.armor) e.armor = null; if (it.armor === 'shield' && !e.items.some(z => z.armor === 'shield')) e.shield = false; e.touched = true; done(); } },
+        { label: 'เสร็จ', primary: true }]);
   }
 
   // ---------- FEATURES & TRAITS ----------

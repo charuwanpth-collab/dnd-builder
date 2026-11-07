@@ -292,6 +292,19 @@ export function equipOptions(text) {
 }
 
 const singular = n => n.replace(/ies$/, 'y').replace(/(?<!s)s$/, '');
+/** น้ำหนักต่อชิ้น (ปอนด์) — ใช้ค่าที่ผู้เล่นใส่เองก่อน ไม่งั้นหาจากตาราง SRD */
+export function itemWeight(it) {
+  if (it.weight != null && it.weight !== '') return +it.weight || 0;
+  const W = D.weights || {}, n = (it.name || '').toLowerCase().replace(/\s*\(.*\)$/, '');
+  return W[n] ?? W[singular(n)] ?? W[D.weapon[it.weapon]?.name.toLowerCase()] ?? W[D.armorById[it.armor]?.name.toLowerCase()] ?? 0;
+}
+/** น้ำหนักรวม (ของ + เหรียญ 50 เหรียญ = 1 ปอนด์) กับที่แบกได้ (STR × 15, ตัว Large ×2) */
+export function carry(c, x) {
+  const e = c.equipment || {};
+  const coins = ['pp', 'gp', 'ep', 'sp', 'cp'].reduce((t, k) => t + (+e[k] || 0), 0);
+  const total = (e.items || []).reduce((t, it) => t + itemWeight(it) * (it.qty || 1), 0) + coins / 50;
+  return { total: Math.round(total * 10) / 10, max: x.score.str * 15 };
+}
 export function parseItems(text) {
   const items = [];
   let gp = 0;
@@ -559,6 +572,7 @@ export function compute(c) {
   const attacks = [];
   const seen = new Set();
   for (const it of items) {
+    if (it.equipped === false) continue; // เก็บในกระเป๋า ไม่ได้ถือ
     const w = D.weapon[it.weapon];
     if (!w || seen.has(w.id)) continue;
     seen.add(w.id);

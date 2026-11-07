@@ -670,3 +670,12 @@ div.titem { cursor: default; }
 .cu-def span { flex: 1; }
 .cu-def .inp { flex: 1; min-width: 0; }
 .custom h4 { margin: 14px 0 4px; color: var(--gold2); }
+.item-row.inv { width: 100%; background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.inv-main { flex: 1; min-width: 0; }
+.inv-main b small { color: var(--muted); font-weight: 400; }
+.inv-main > small { display: block; color: var(--dim); font-size: .74rem; }
+.badge.on { color: var(--green); border-color: var(--green); }
+.inv-stats { margin-top: 4px; }
+.item-edit .check-row { margin: 8px 0; }
+.item-edit .check-row { display: flex; gap: 10px; align-items: flex-start; flex-wrap: nowrap; }
+.item-edit .check-row input { flex: none; margin-top: 3px; }

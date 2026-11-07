@@ -249,10 +249,31 @@ for title, body in split_sections(read('08_Rules_Glossary/Rules_Glossary_All.md'
     name, tag = (m.group(1), m.group(2)) if m else (title, '')
     glossary.append({'id': slug(name), 'name': name, 'tag': tag, 'text': clean(body)})
 
+# ---------------- น้ำหนักของ (ทุกตารางที่มีคอลัมน์ Weight ในหมวด Equipment) ----------------
+def lb(v):
+    v = v.replace('lb.', '').strip()
+    m = re.match(r'^(\d+)?(\d)/(\d)$', v)  # "581/2" = 58½, "1/4" = ¼
+    if m:
+        return (int(m.group(1)) if m.group(1) else 0) + int(m.group(2)) / int(m.group(3))
+    try:
+        return float(v.replace(',', ''))
+    except ValueError:
+        return None
+weights = {}
+for blk in re.findall(r'((?:^\|.*\n?)+)', read('06_Equipment/Equipment_All.md'), re.M):
+    t = parse_table(blk)
+    if not t or 'Weight' not in t['head']:
+        continue
+    wi = t['head'].index('Weight')
+    for r in t['rows']:
+        if len(r) > wi and lb(r[wi]) is not None:
+            amt = int(r[t['head'].index('Amount')]) if 'Amount' in t['head'] and r[t['head'].index('Amount')].isdigit() else 1  # กระสุนคิดน้ำหนักต่อมัด
+            weights.setdefault(re.sub(r'\s*\(.*\)$', '', r[0]).strip().lower(), round(lb(r[wi]) / amt, 4))
+
 out = {
     'classes': classes, 'spells': spells, 'species': species, 'backgrounds': backgrounds,
     'feats': feats, 'weapons': weapons, 'weaponProps': props, 'mastery': mastery,
-    'armor': armor, 'gear': gear, 'legal': legal, 'glossary': glossary,
+    'armor': armor, 'gear': gear, 'legal': legal, 'glossary': glossary, 'weights': weights,
 }
 for k, v in out.items():
     (OUT / f'{k}.json').write_text(json.dumps(v, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
