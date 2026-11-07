@@ -1,0 +1,19 @@
+{
+  "alert": { "t": "passive", "s": "บวก Proficiency Bonus ในการทอย Initiative และหลังทอยแล้วสลับลำดับ Initiative กับเพื่อนที่ยินยอมได้" },
+  "magic-initiate": { "t": "passive", "s": "ได้ cantrip 2 อัน และเวทเลเวล 1 อีก 1 อัน (เตรียมไว้เสมอ ร่ายฟรีได้ 1 ครั้งต่อพักยาว หรือใช้ slot ร่ายก็ได้) จากรายการของ Cleric, Druid หรือ Wizard ร่ายด้วย INT, WIS หรือ CHA" },
+  "savage-attacker": { "t": "passive", "s": "ครั้งเดียวต่อเทิร์น ตีโดนด้วยอาวุธแล้ว ทอยลูกเต๋าดาเมจของอาวุธ 2 ครั้ง เลือกผลที่ดีกว่า" },
+  "skilled": { "t": "passive", "s": "ได้ชำนาญสกิลหรือเครื่องมือรวม 3 อย่าง" },
+  "ability-score-improvement": { "t": "passive", "s": "เพิ่มค่าพลัง 1 ค่า +2 หรือ 2 ค่า +1 (สูงสุด 20)" },
+  "grappler": { "t": "passive", "s": "STR หรือ DEX +1 ต่อยแล้วล็อคตัว (Grapple) ได้ในครั้งเดียว ได้เปรียบตีคนที่เราล็อค และลากเป้าที่ล็อคได้โดยไม่เสียความเร็วเพิ่ม" },
+  "archery": { "t": "passive", "s": "ทอยโจมตีด้วยอาวุธยิง +2" },
+  "defense": { "t": "passive", "s": "ตอนใส่เกราะ (Light/Medium/Heavy) AC +1" },
+  "great-weapon-fighting": { "t": "passive", "s": "ตีด้วยอาวุธสองมือ (หรือ Versatile ถือสองมือ) ลูกเต๋าดาเมจที่ทอยได้ 1 หรือ 2 นับเป็น 3" },
+  "two-weapon-fighting": { "t": "passive", "s": "ตอนตีด้วยอาวุธมือที่สอง (Light) ได้บวกค่าพลังเข้าไปในดาเมจด้วย" },
+  "boon-of-combat-prowess": { "t": "passive", "s": "Epic Boon (เลเวล 19): ตีพลาดเปลี่ยนเป็นโดนได้ 1 ครั้งต่อเทิร์น" },
+  "boon-of-dimensional-travel": { "t": "passive", "s": "Epic Boon (เลเวล 19): หลังใช้ Attack หรือ Magic action วาร์ปได้ 30 ฟุต" },
+  "boon-of-fate": { "t": "passive", "s": "Epic Boon (เลเวล 19): บวกหรือลบ 2d4 ในการทอย d20 ของใครก็ได้ในระยะ 60 ฟุต" },
+  "boon-of-irresistible-offense": { "t": "passive", "s": "Epic Boon (เลเวล 19): ดาเมจกายภาพเจาะการต้านทาน และทอย 20 ได้ดาเมจเพิ่ม" },
+  "boon-of-spell-recall": { "t": "passive", "s": "Epic Boon (เลเวล 19): ร่ายเวทเลเวล 1–4 ฟรีไม่เสีย slot ได้ 1 ครั้งต่อพักยาว" },
+  "boon-of-the-night-spirit": { "t": "passive", "s": "Epic Boon (เลเวล 19): ล่องหนในที่มืดสลัว และต้านทานดาเมจเกือบทุกชนิดในความมืด" },
+  "boon-of-truesight": { "t": "passive", "s": "Epic Boon (เลเวล 19): ได้ Truesight 60 ฟุต มองทะลุภาพลวงและการล่องหน" }
+}

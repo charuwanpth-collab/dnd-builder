@@ -1,0 +1,89 @@
+{
+  "dragonborn": {
+    "tag": "ลูกหลานมังกร พ่นลมหายใจได้",
+    "desc": "เผ่าที่สืบเชื้อสายมังกร เลือกสีมังกรเพื่อกำหนดธาตุของลมหายใจและธาตุที่ต้านทาน",
+    "f": {
+      "draconic-ancestry": { "t": "passive", "s": "เลือกบรรพบุรุษมังกร ซึ่งกำหนดธาตุของ Breath Weapon และ Damage Resistance (เช่น Red = Fire, Blue = Lightning)" },
+      "breath-weapon": { "t": "action", "s": "ตอนใช้ Attack action แทนการโจมตี 1 ครั้งด้วยการพ่นเป็นกรวย 15 ฟุต หรือเส้นตรง 30 ฟุต ทุกตัวในพื้นที่เซฟ DEX (DC 8 + CON + Prof) ไม่ผ่านโดน 1d10 (เพิ่มเป็น 2d10 ที่เลเวล 5) ผ่านโดนครึ่ง", "tip": "ใช้ได้เท่า Proficiency Bonus คืนตอนพักยาว" },
+      "damage-resistance": { "t": "passive", "s": "ต้านทานดาเมจธาตุตามบรรพบุรุษมังกร (โดนแค่ครึ่ง)" },
+      "darkvision": { "t": "passive", "s": "มองในที่มืดได้ 60 ฟุต (เห็นเป็นภาพขาวดำ)" },
+      "draconic-flight": { "t": "bonus", "s": "เลเวล 5: งอกปีกวิญญาณ บินได้เท่าความเร็ว 10 นาที 1 ครั้งต่อพักยาว" }
+    }
+  },
+  "dwarf": {
+    "tag": "คนแคระ อึด ทนพิษ",
+    "desc": "เผ่าทนทานแห่งขุนเขา HP เพิ่มทุกเลเวล ต้านพิษ และสัมผัสหินได้",
+    "f": {
+      "darkvision": { "t": "passive", "s": "มองในที่มืดได้ 120 ฟุต" },
+      "dwarven-resilience": { "t": "passive", "s": "ต้านทานดาเมจ Poison และได้เปรียบในการเซฟกันสถานะ Poisoned" },
+      "dwarven-toughness": { "t": "passive", "s": "HP สูงสุด +1 ทุกเลเวล (คำนวณให้อัตโนมัติแล้ว)" },
+      "stonecunning": { "t": "bonus", "s": "ยืนบนหรือแตะพื้นหิน ได้ Tremorsense (รับรู้แรงสั่นสะเทือน) 60 ฟุต นาน 10 นาที", "tip": "ใช้ได้เท่า Proficiency Bonus คืนตอนพักยาว" }
+    }
+  },
+  "elf": {
+    "tag": "เอลฟ์ ประสาทไว มีเวทในสายเลือด",
+    "desc": "เผ่าอายุยืนที่ผูกพันกับเวทมนตร์ เลือกสายเลือด Drow, High Elf หรือ Wood Elf",
+    "f": {
+      "darkvision": { "t": "passive", "s": "มองในที่มืดได้ 60 ฟุต (Drow ได้ 120 ฟุต)" },
+      "elven-lineage": { "t": "passive", "s": "เลือกสายเลือด: Drow (มองมืด 120 ฟุต + Dancing Lights), High Elf (Prestidigitation เปลี่ยน cantrip ได้หลังพักยาว), Wood Elf (ความเร็ว 35 + Druidcraft) เลเวล 3 และ 5 ได้เวทเพิ่ม ร่ายฟรีวันละครั้ง" },
+      "fey-ancestry": { "t": "passive", "s": "ได้เปรียบในการเซฟกันสถานะ Charmed (ถูกสะกดจิต)" },
+      "keen-senses": { "t": "passive", "s": "ชำนาญสกิล Insight, Perception หรือ Survival 1 อย่าง" },
+      "trance": { "t": "passive", "s": "ไม่ต้องนอน พักยาวด้วยการทำสมาธิ 4 ชั่วโมง และเวทมนตร์ทำให้หลับไม่ได้" }
+    }
+  },
+  "gnome": {
+    "tag": "โนม ฉลาด ต้านเวทจิตใจ",
+    "desc": "เผ่าตัวเล็กหัวไว นักประดิษฐ์และนักลวงตา ต้านเวทที่โจมตีจิตใจได้ดี",
+    "f": {
+      "darkvision": { "t": "passive", "s": "มองในที่มืดได้ 60 ฟุต" },
+      "gnomish-cunning": { "t": "passive", "s": "ได้เปรียบในการเซฟ INT, WIS และ CHA" },
+      "gnomish-lineage": { "t": "passive", "s": "เลือก: Forest Gnome (Minor Illusion + Speak with Animals ร่ายฟรีเท่า Prof ต่อพักยาว) หรือ Rock Gnome (Mending + Prestidigitation และสร้างของเล่นกลไกเล็ก ๆ ได้)" }
+    }
+  },
+  "goliath": {
+    "tag": "ลูกหลานยักษ์ ตัวใหญ่ แรงเยอะ",
+    "desc": "เผ่าร่างยักษ์ ได้พลังพิเศษจากบรรพบุรุษยักษ์ เดินเร็ว (35 ฟุต) และแบกของได้เยอะ",
+    "f": {
+      "giant-ancestry": { "t": "passive", "s": "เลือก 1 พลังจากยักษ์: Cloud (วาร์ป 30 ฟุตด้วย Bonus Action), Fire (ตีโดน +1d10 Fire), Frost (ตีโดน +1d6 Cold และลดความเร็ว 10 ฟุต), Hill (ตีโดนทำให้ล้ม Prone), Stone (Reaction ลดดาเมจ 1d12 + CON), Storm (Reaction สวน 1d8 Thunder)", "tip": "ใช้ได้เท่า Proficiency Bonus คืนตอนพักยาว" },
+      "large-form": { "t": "bonus", "s": "เลเวล 5: ขยายร่างเป็นขนาด Large 10 นาที ได้เปรียบเช็ค STR และความเร็ว +10 ฟุต 1 ครั้งต่อพักยาว" },
+      "powerful-build": { "t": "passive", "s": "ได้เปรียบในการเช็คเพื่อหลุดจาก Grappled และนับว่าตัวใหญ่ขึ้น 1 ขนาดเวลาคำนวณน้ำหนักที่แบกได้" }
+    }
+  },
+  "halfling": {
+    "tag": "ฮาล์ฟลิง ตัวเล็ก ดวงดี",
+    "desc": "เผ่าตัวเล็กใจกล้า โชคดีแบบไม่น่าเชื่อ ทอยได้ 1 ทอยใหม่ได้",
+    "f": {
+      "brave": { "t": "passive", "s": "ได้เปรียบในการเซฟกันสถานะ Frightened (กลัว)" },
+      "halfling-nimbleness": { "t": "passive", "s": "เดินผ่านช่องของสิ่งมีชีวิตที่ตัวใหญ่กว่าได้ (แต่หยุดยืนในช่องนั้นไม่ได้)" },
+      "luck": { "t": "passive", "s": "ทอย d20 ได้ 1 ในการทอยโจมตี เช็ค หรือเซฟ ทอยใหม่ได้ (ต้องใช้ผลใหม่)" },
+      "naturally-stealthy": { "t": "passive", "s": "ซ่อนตัว (Hide) หลังสิ่งมีชีวิตที่ตัวใหญ่กว่าเราได้" }
+    }
+  },
+  "human": {
+    "tag": "มนุษย์ ยืดหยุ่น ได้ Feat เพิ่ม",
+    "desc": "เผ่าที่ปรับตัวเก่งที่สุด ได้สกิลเพิ่ม Origin Feat เพิ่ม และ Heroic Inspiration ทุกวัน",
+    "f": {
+      "resourceful": { "t": "passive", "s": "ได้ Heroic Inspiration ทุกครั้งที่พักยาว (ใช้ทอย d20 ใหม่ได้ 1 ครั้ง)" },
+      "skillful": { "t": "passive", "s": "ชำนาญสกิลอะไรก็ได้เพิ่ม 1 อย่าง" },
+      "versatile": { "t": "passive", "s": "ได้ Origin Feat เพิ่ม 1 อย่าง (แนะนำ Skilled)" }
+    }
+  },
+  "orc": {
+    "tag": "ออร์ค ทนทาน ไม่ยอมล้ม",
+    "desc": "เผ่านักสู้ที่ไม่ยอมแพ้ ลุกขึ้นมาได้แม้โดนตีจนเหลือ 0 HP วิ่งเร็วพร้อมได้ HP ชั่วคราว",
+    "f": {
+      "adrenaline-rush": { "t": "bonus", "s": "ใช้ Dash ด้วย Bonus Action และได้ HP ชั่วคราวเท่า Proficiency Bonus", "tip": "ใช้ได้เท่า Proficiency Bonus คืนตอนพักสั้นหรือยาว" },
+      "darkvision": { "t": "passive", "s": "มองในที่มืดได้ 120 ฟุต" },
+      "relentless-endurance": { "t": "passive", "s": "เมื่อโดนลดเหลือ 0 HP แต่ไม่ตายทันที จะเหลือ 1 HP แทน 1 ครั้งต่อพักยาว" }
+    }
+  },
+  "tiefling": {
+    "tag": "ทีฟลิง เชื้อสายปีศาจ มีเวทติดตัว",
+    "desc": "เผ่าที่มีเลือดจากภพนรกหรืออเวจี ต้านทานธาตุและได้เวทตามมรดก",
+    "f": {
+      "darkvision": { "t": "passive", "s": "มองในที่มืดได้ 60 ฟุต" },
+      "fiendish-legacy": { "t": "passive", "s": "เลือกมรดก: Abyssal (ต้าน Poison + Poison Spray), Chthonic (ต้าน Necrotic + Chill Touch), Infernal (ต้าน Fire + Fire Bolt) เลเวล 3 และ 5 ได้เวทเพิ่ม ร่ายฟรีวันละครั้ง" },
+      "otherworldly-presence": { "t": "passive", "s": "รู้ cantrip Thaumaturgy (ทำเสียงก้อง เปลวไฟวูบ ประตูกระแทก ฯลฯ) ร่ายด้วยค่าพลังเดียวกับ Fiendish Legacy" }
+    }
+  }
+}

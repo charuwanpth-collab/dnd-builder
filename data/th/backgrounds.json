@@ -1,0 +1,6 @@
+{
+  "acolyte": { "desc": "เคยรับใช้ในวิหาร ได้ Magic Initiate (Cleric) — ร่ายเวทนักบวชเล็ก ๆ ได้" },
+  "criminal": { "desc": "อดีตโจร ได้ Alert (ทอย Initiative ดีขึ้น) และ Thieves' Tools" },
+  "sage": { "desc": "นักวิชาการ ได้ Magic Initiate (Wizard) — ร่ายเวทนักเวทเล็ก ๆ ได้" },
+  "soldier": { "desc": "อดีตทหาร ได้ Savage Attacker (ทอยดาเมจอาวุธซ้ำเลือกค่าสูง)" }
+}

@@ -1,0 +1,306 @@
+{
+  "barbarian": {
+    "tag": "นักรบคลั่ง ถึกที่สุดในทีม",
+    "desc": "สายบู๊แนวหน้า เลือดเยอะ (d12) เปิด Rage แล้วทั้งตีแรงขึ้นและโดนตีเจ็บน้อยลง เล่นง่าย เหมาะกับมือใหม่ที่อยากพุ่งเข้าใส่",
+    "abilityTip": "รองลงมาคือ CON (เลือดและ AC) แล้วค่อย DEX",
+    "tips": [
+      "เปิด Rage ด้วย Bonus Action ตั้งแต่เทิร์นแรกที่สู้ แล้วค่อยตีในเทิร์นเดียวกันได้เลย",
+      "Rage จะดับถ้าเทิร์นนั้นไม่ได้โจมตีหรือไม่ได้บังคับศัตรูเซฟ — อย่ามัวแต่เดินอย่างเดียว",
+      "ไม่ต้องใส่เกราะก็ได้ เพราะ Unarmored Defense ใช้ CON ช่วย AC (ถือโล่เพิ่มได้)",
+      "Reckless Attack แลกกันระหว่างตีโดนบ่อยขึ้นกับโดนตีบ่อยขึ้น ใช้ตอนเลือดยังเยอะ"
+    ],
+    "f": {
+      "rage": { "t": "bonus", "s": "เข้าโหมดคลั่ง (ห้ามใส่เกราะหนัก): ดาเมจ Bludgeoning/Piercing/Slashing ที่โดนลดครึ่ง, ตีด้วย STR ได้ดาเมจเพิ่มตามคอลัมน์ Rage Damage, ได้เปรียบ (Advantage) ทุกเช็คและเซฟ STR แต่ร่ายเวทและรักษาสมาธิไม่ได้ อยู่ถึงจบเทิร์นถัดไป ต่อเวลาได้ด้วยการโจมตีศัตรู บังคับศัตรูเซฟ หรือใช้ Bonus Action ต่อ (นานสุด 10 นาที)", "tip": "ใช้ได้ตามคอลัมน์ Rages — พักสั้นคืน 1 ครั้ง พักยาวคืนหมด" },
+      "unarmored-defense": { "t": "passive", "s": "ตอนไม่ใส่เกราะ AC = 10 + DEX + CON และยังถือโล่ได้" },
+      "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธประชิดที่เลือกได้ 2 ชนิด เปลี่ยนชนิดได้หลังพักยาว" },
+      "danger-sense": { "t": "passive", "s": "ได้เปรียบในการเซฟ DEX (หลบระเบิด กับดัก) ยกเว้นตอนติดสถานะ Incapacitated" },
+      "reckless-attack": { "t": "passive", "s": "ตอนโจมตีครั้งแรกของเทิร์น เลือก \"บ้าระห่ำ\" ได้: ได้เปรียบทุกการโจมตีที่ใช้ STR จนถึงต้นเทิร์นหน้า แต่ศัตรูก็ได้เปรียบเวลาโจมตีเราเช่นกัน" },
+      "primal-knowledge": { "t": "passive", "s": "ได้สกิลจากรายการ Barbarian เพิ่ม 1 อย่าง และระหว่าง Rage เช็ค Acrobatics, Intimidation, Perception, Stealth, Survival ใช้ STR แทนได้" }
+    },
+    "sub": {
+      "desc": "Path of the Berserker — สายคลั่งเลือด เน้นตีหนักแบบไม่ห่วงตัวเอง",
+      "f": {
+        "frenzy": { "t": "passive", "s": "ระหว่าง Rage ถ้าใช้ Reckless Attack การโจมตีด้วย STR ครั้งแรกที่โดนในเทิร์น ทอย d6 เพิ่มเท่ากับค่า Rage Damage (เช่น +2 = ทอย 2d6) แล้วบวกเข้าไปในดาเมจ" }
+      }
+    }
+  },
+  "bard": {
+    "tag": "นักดนตรีเวทมนตร์ เก่งรอบด้าน",
+    "desc": "สายซัพพอร์ตที่ทำได้ทุกอย่าง ทั้งเวท สกิล และการพูดจา ใช้ Bardic Inspiration ช่วยเพื่อนให้ทอยผ่าน",
+    "abilityTip": "รองลงมาคือ DEX (AC และอาวุธ) กับ CON",
+    "tips": [
+      "Bardic Inspiration ใช้ Bonus Action — แจกให้เพื่อนที่กำลังจะทำเรื่องสำคัญ",
+      "เลือกสกิลได้ 3 อย่างอะไรก็ได้ แนะนำสายพูด เช่น Persuasion, Deception, Insight",
+      "Healing Word ฮีลได้ไกลด้วย Bonus Action เหมาะชุบเพื่อนที่ล้ม",
+      "Vicious Mockery คือ cantrip ด่าจนศัตรูเจ็บและตีพลาดง่ายขึ้น"
+    ],
+    "f": {
+      "bardic-inspiration": { "t": "bonus", "s": "ให้เพื่อน 1 คนในระยะ 60 ฟุตได้ลูกเต๋า Bardic Die (d6) เก็บไว้ 1 ชั่วโมง เมื่อเพื่อนทอย D20 แล้วไม่ผ่าน ทอยลูกเต๋านี้บวกเพิ่มได้ อาจพลิกเป็นผ่าน", "tip": "ใช้ได้เท่ากับ CHA mod (อย่างน้อย 1) คืนตอนพักยาว" },
+      "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย CHA ใช้เครื่องดนตรีเป็น focus ได้ ขึ้นเลเวลเมื่อไหร่เปลี่ยนเวทที่เตรียมได้ 1 อัน" },
+      "expertise": { "t": "passive", "s": "เลือก 2 สกิลที่ชำนาญอยู่แล้ว ได้โบนัส Proficiency เป็นสองเท่า" },
+      "jack-of-all-trades": { "t": "passive", "s": "เช็คสกิลที่ไม่ได้ชำนาญ บวกครึ่งหนึ่งของ Proficiency Bonus (ปัดลง)" }
+    },
+    "sub": {
+      "desc": "College of Lore — กวีผู้รอบรู้ เก่งสกิลมาก ๆ และขัดขวางศัตรูด้วยคำพูด",
+      "f": {
+        "bonus-proficiencies": { "t": "passive", "s": "ได้ชำนาญสกิลเพิ่ม 3 อย่างอะไรก็ได้" },
+        "cutting-words": { "t": "reaction", "s": "เมื่อศัตรูในระยะ 60 ฟุตทอยดาเมจ หรือทอยโจมตี/เช็คผ่าน ใช้ Reaction เสีย Bardic Inspiration 1 ครั้ง ทอยลูกเต๋าแล้วลบออกจากผลของมัน อาจทำให้ไม่ผ่าน" }
+      }
+    }
+  },
+  "cleric": {
+    "tag": "นักบวช ฮีลเลอร์ที่สู้ได้",
+    "desc": "ผู้ใช้พลังเทพ ฮีลเก่ง ใส่เกราะได้ เปลี่ยนเวทที่เตรียมได้ทุกวัน เป็นหัวใจของทีม",
+    "abilityTip": "รองลงมาคือ CON และ STR หรือ DEX ตามเกราะที่ใส่",
+    "tips": [
+      "เลือก Protector ถ้าอยากยืนหน้า (ได้เกราะหนัก) หรือ Thaumaturge ถ้าอยากเน้นเวท",
+      "เปลี่ยนเวทที่เตรียมได้ทุกพักยาว — เลือกตามสถานการณ์ของวันนั้น",
+      "Bless + Healing Word เป็นคู่หูมือใหม่ที่ดีมาก",
+      "Guidance (cantrip) แตะเพื่อนก่อนเช็คสกิลให้ +1d4"
+    ],
+    "orders": {
+      "Protector": "สายรบ: ได้ชำนาญอาวุธ Martial และใส่เกราะหนักได้",
+      "Thaumaturge": "สายเวท: ได้ cantrip เพิ่ม 1 อัน และเช็ค Arcana/Religion บวก WIS เพิ่ม (อย่างน้อย +1)"
+    },
+    "f": {
+      "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย WIS ใช้ Holy Symbol เป็น focus เปลี่ยนเวทที่เตรียมได้ทุกครั้งที่พักยาว" },
+      "divine-order": { "t": "passive", "s": "เลือกบทบาท: Protector (อาวุธ Martial + เกราะหนัก) หรือ Thaumaturge (cantrip +1 และเช็ค Arcana/Religion บวก WIS)" },
+      "channel-divinity": { "t": "magic", "s": "พลังเทพ 2 แบบ: Divine Spark — ชี้เป้าในระยะ 30 ฟุต ฮีล 1d8 + WIS หรือให้เซฟ CON ไม่ผ่านโดน 1d8 + WIS (Necrotic หรือ Radiant ผ่านโดนครึ่ง) / Turn Undead — Undead ในระยะ 30 ฟุตเซฟ WIS ไม่ผ่านจะกลัว (Frightened) และขยับทำอะไรไม่ได้ 1 นาที", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" }
+    },
+    "sub": {
+      "desc": "Life Domain — สายฮีลแท้ ฮีลแรงขึ้นทุกครั้ง",
+      "f": {
+        "disciple-of-life": { "t": "passive", "s": "เวทฮีลที่ใช้ Spell Slot ฟื้น HP เพิ่มอีก 2 + เลเวลของ slot (เช่น slot เลเวล 1 = +3)" },
+        "life-domain-spells": { "t": "passive", "s": "เตรียม Aid, Bless, Cure Wounds, Lesser Restoration ไว้เสมอ (ไม่นับโควตา)" },
+        "preserve-life": { "t": "magic", "s": "ใช้ Channel Divinity ฮีลรวม 5 × เลเวล Cleric แบ่งให้คนในระยะ 30 ฟุตที่ HP ไม่ถึงครึ่ง (ฮีลแต่ละคนได้ไม่เกินครึ่งหลอดของเขา)" }
+      }
+    }
+  },
+  "druid": {
+    "tag": "ผู้พิทักษ์ธรรมชาติ แปลงร่างได้",
+    "desc": "ใช้เวทธรรมชาติ ควบคุมพื้นที่ และแปลงร่างเป็นสัตว์ ยืดหยุ่นมาก เปลี่ยนเวทได้ทุกวัน",
+    "abilityTip": "รองลงมาคือ CON (รักษาสมาธิเวท) และ DEX",
+    "tips": [
+      "Druid จะไม่ใส่เกราะโลหะ — Leather Armor กับโล่ไม้เหมาะที่สุด",
+      "Wild Shape แปลงร่างได้ HP ชั่วคราวเท่าเลเวล ใช้ลาดตระเวนหรือรับดาเมจแทน",
+      "Entangle กับ Faerie Fire เป็นเวทคุมสนามที่ดีมากตอนต้นเกม",
+      "Goodberry ทำผลไม้ฮีลได้ 10 ลูก แจกเพื่อนก่อนพัก"
+    ],
+    "orders": {
+      "Magician": "สายเวท: ได้ cantrip เพิ่ม 1 อัน และเช็ค Arcana/Nature บวก WIS เพิ่ม (อย่างน้อย +1)",
+      "Warden": "สายรบ: ได้ชำนาญอาวุธ Martial และใส่เกราะกลาง (Medium) ได้"
+    },
+    "f": {
+      "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย WIS ใช้ Druidic Focus (ไม้เท้า กิ่งไม้) เปลี่ยนเวทที่เตรียมได้ทุกครั้งที่พักยาว" },
+      "druidic": { "t": "passive", "s": "รู้ภาษาลับ Druidic และเตรียมเวท Speak with Animals ไว้เสมอ" },
+      "primal-order": { "t": "passive", "s": "เลือกบทบาท: Magician (cantrip +1 และเช็ค Arcana/Nature บวก WIS) หรือ Warden (อาวุธ Martial + เกราะกลาง)" },
+      "wild-shape": { "t": "bonus", "s": "แปลงร่างเป็นสัตว์ (Beast) ที่จำไว้ 4 แบบ (CR ไม่เกิน 1/4 และบินไม่ได้) อยู่ได้ชั่วโมงเท่าครึ่งเลเวล Druid ได้ HP ชั่วคราวเท่าเลเวล Druid ระหว่างแปลงร่ายเวทไม่ได้", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" },
+      "wild-companion": { "t": "magic", "s": "เสีย Wild Shape 1 ครั้ง (หรือ Spell Slot) เพื่อร่าย Find Familiar โดยไม่ต้องใช้วัสดุ สัตว์ติดตามเป็นภูต (Fey) อยู่จนพักยาว" }
+    },
+    "sub": {
+      "desc": "Circle of the Land — นักเวทแห่งผืนดิน ได้เวทเพิ่มตามดินแดนที่เลือก",
+      "f": {
+        "circle-of-the-land-spells": { "t": "passive", "s": "ทุกครั้งที่พักยาว เลือกดินแดน แล้วได้ 3 เวทเตรียมไว้เสมอ: Arid (Blur, Burning Hands, Fire Bolt) / Polar (Fog Cloud, Hold Person, Ray of Frost) / Temperate (Misty Step, Shocking Grasp, Sleep) / Tropical (Acid Splash, Ray of Sickness, Web)" },
+        "lands-aid": { "t": "magic", "s": "เสีย Wild Shape 1 ครั้ง เลือกจุดในระยะ 60 ฟุต วงกลม 10 ฟุต ศัตรูที่เลือกเซฟ CON ไม่ผ่านโดน 2d6 Necrotic (ผ่านโดนครึ่ง) และฮีลคนในวง 1 คน 2d6" }
+      }
+    }
+  },
+  "fighter": {
+    "tag": "นักรบมืออาชีพ ถนัดทุกอาวุธ",
+    "desc": "ใส่เกราะได้ทุกชนิด ใช้อาวุธได้ทุกแบบ ตีบ่อย ฟื้นตัวเองได้ เป็นคลาสที่เล่นง่ายที่สุดสำหรับมือใหม่",
+    "abilityTip": "เลือก STR (อาวุธหนัก) หรือ DEX (ธนู/ดาบเบา) อย่างใดอย่างหนึ่ง แล้วตามด้วย CON",
+    "tips": [
+      "Second Wind ฟื้นเลือดด้วย Bonus Action — ใช้ได้ไม่ต้องรอฮีลเลอร์",
+      "Action Surge (เลเวล 2) คือได้ Action เพิ่มอีกรอบ เก็บไว้ใช้ตอนสำคัญ",
+      "Defense (+1 AC) เป็น Fighting Style ที่ปลอดภัยสำหรับมือใหม่",
+      "Weapon Mastery 3 ชนิด — เลือกให้ตรงกับอาวุธที่พกจริง"
+    ],
+    "f": {
+      "fighting-style": { "t": "passive", "s": "ได้ Fighting Style feat 1 อย่าง (เปลี่ยนได้ทุกครั้งที่ขึ้นเลเวล)" },
+      "second-wind": { "t": "bonus", "s": "ฟื้น HP = 1d10 + เลเวล Fighter", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" },
+      "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธที่เลือกได้ 3 ชนิด เปลี่ยนได้หลังพักยาว" },
+      "action-surge": { "t": "passive", "s": "ในเทิร์นของเรา ได้ Action เพิ่มอีก 1 ครั้ง (ใช้กับ Magic action ไม่ได้) 1 ครั้งต่อพักสั้นหรือยาว" },
+      "tactical-mind": { "t": "passive", "s": "เช็คค่าพลังไม่ผ่าน ใช้ Second Wind 1 ครั้งแทนการฮีล เพื่อทอย 1d10 บวกเพิ่ม ถ้ายังไม่ผ่านจะไม่เสีย Second Wind" }
+    },
+    "sub": {
+      "desc": "Champion — นักรบที่เน้นพลังกายล้วน คริบ่อย เล่นง่าย",
+      "f": {
+        "improved-critical": { "t": "passive", "s": "โจมตีคริติคอลเมื่อทอยได้ 19 หรือ 20" },
+        "remarkable-athlete": { "t": "passive", "s": "ได้เปรียบในการทอย Initiative และเช็ค Athletics และหลังคริ เดินได้ครึ่งความเร็วโดยไม่โดน Opportunity Attack" }
+      }
+    }
+  },
+  "monk": {
+    "tag": "นักสู้มือเปล่า ไวที่สุด",
+    "desc": "ไม่ใส่เกราะ ต่อยรัวด้วยมือเปล่า วิ่งเร็ว หลบเก่ง ใช้ Focus Points ทำท่าพิเศษ",
+    "abilityTip": "DEX กับ WIS สำคัญพอกัน (ทั้งตีและ AC) แล้วค่อย CON",
+    "tips": [
+      "ทุกเทิร์น: Attack (ตี 1 ครั้ง) + Bonus Action ต่อยอีกครั้ง ได้ฟรี",
+      "Flurry of Blows ใช้ 1 Focus ต่อย 2 ครั้งแทน — ดาเมจสูงสุดของ Monk ช่วงต้น",
+      "ใช้ความเร็ววิ่งเข้าไปจัดการศัตรูที่ยืนหลัง เช่น นักเวท",
+      "Deflect Attacks (เลเวล 3) ลดดาเมจที่โดนได้เยอะมาก อย่าลืมใช้ Reaction"
+    ],
+    "f": {
+      "martial-arts": { "t": "bonus", "s": "ตอนมือเปล่าหรือถืออาวุธ Monk (และไม่ใส่เกราะ/ถือโล่): ต่อยด้วย Bonus Action ได้ทุกเทิร์น ใช้ DEX แทน STR ได้ และทอยลูกเต๋า Martial Arts (1d6) แทนดาเมจปกติ" },
+      "unarmored-defense": { "t": "passive", "s": "ไม่ใส่เกราะและไม่ถือโล่ AC = 10 + DEX + WIS" },
+      "monks-focus": { "t": "bonus", "s": "มี Focus Points: Flurry of Blows (1 แต้ม ต่อย 2 ครั้งด้วย Bonus Action), Patient Defense (Disengage ฟรี หรือ 1 แต้มได้ Disengage + Dodge), Step of the Wind (Dash ฟรี หรือ 1 แต้มได้ Disengage + Dash และกระโดดไกลสองเท่า)", "tip": "Focus Points คืนหมดตอนพักสั้นหรือยาว" },
+      "unarmored-movement": { "t": "passive", "s": "ไม่ใส่เกราะและไม่ถือโล่ ความเร็วเพิ่ม +10 ฟุต (เพิ่มอีกตามเลเวล)" },
+      "uncanny-metabolism": { "t": "passive", "s": "ตอนทอย Initiative คืน Focus Points ทั้งหมด และฟื้น HP = ลูกเต๋า Martial Arts + เลเวล Monk (1 ครั้งต่อพักยาว)" },
+      "deflect-attacks": { "t": "reaction", "s": "โดนโจมตีด้วยดาเมจ Bludgeoning/Piercing/Slashing ลดดาเมจ 1d10 + DEX + เลเวล Monk ถ้าลดเหลือ 0 ใช้ 1 Focus โยนกลับใส่ศัตรูอื่น (เซฟ DEX ไม่ผ่านโดน 2 ลูกเต๋า Martial Arts + DEX)" }
+    },
+    "sub": {
+      "desc": "Warrior of the Open Hand — ปรมาจารย์มือเปล่า ผลัก ล้ม ป่วนศัตรู",
+      "f": {
+        "open-hand-technique": { "t": "passive", "s": "ทุกครั้งที่ต่อยโดนจาก Flurry of Blows เลือกใส่ผลเพิ่ม: Addle (ศัตรูทำ Opportunity Attack ไม่ได้จนต้นเทิร์นของมัน), Push (เซฟ STR ไม่ผ่านถูกผลัก 15 ฟุต) หรือ Topple (เซฟ DEX ไม่ผ่านล้มลง Prone)" }
+      }
+    }
+  },
+  "paladin": {
+    "tag": "อัศวินศักดิ์สิทธิ์ ตีแรง ฮีลได้",
+    "desc": "นักรบใส่เกราะหนักที่มีพลังเทพ Smite ดาเมจระเบิด ฮีลด้วย Lay on Hands เป็นทั้งแทงก์และตัวทำดาเมจ",
+    "abilityTip": "STR กับ CHA สำคัญพอกัน แล้วตามด้วย CON",
+    "tips": [
+      "Lay on Hands ใช้ Bonus Action — ฮีลเพื่อนที่ล้มหรือตัวเองได้ทันที",
+      "Divine Smite (เลเวล 2) ประกาศหลังตีโดน เก็บไว้ใช้ตอนคริจะได้ดาเมจคูณสอง",
+      "Paladin ร่าย Divine Smite ฟรีได้ 1 ครั้งต่อพักยาว",
+      "ยืนหน้าทีมเสมอ AC สูงสุดในปาร์ตี้"
+    ],
+    "f": {
+      "lay-on-hands": { "t": "bonus", "s": "มีบ่อพลังฮีล = 5 × เลเวล Paladin แตะตัวเองหรือเพื่อนแล้วฮีลกี่แต้มก็ได้จากบ่อ หรือใช้ 5 แต้มเพื่อลบสถานะ Poisoned", "tip": "บ่อเต็มคืนตอนพักยาว" },
+      "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย CHA ใช้ Holy Symbol เป็น focus เปลี่ยนเวทที่เตรียมได้ 1 อันหลังพักยาว" },
+      "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธที่เลือกได้ 2 ชนิด เปลี่ยนได้หลังพักยาว" },
+      "fighting-style": { "t": "passive", "s": "ได้ Fighting Style feat 1 อย่าง หรือเลือก Blessed Warrior (ได้ cantrip ของ Cleric 2 อัน ร่ายด้วย CHA)" },
+      "paladins-smite": { "t": "bonus", "s": "เตรียมเวท Divine Smite ไว้เสมอ: หลังตีโดนด้วยอาวุธประชิดหรือหมัด ใช้ Bonus Action + Spell Slot ใส่ Radiant เพิ่ม 2d8 (+1d8 ต่อ slot ที่สูงขึ้น) ร่ายฟรีไม่ใช้ slot ได้ 1 ครั้งต่อพักยาว" },
+      "channel-divinity": { "t": "bonus", "s": "Divine Sense: 10 นาที รู้ตำแหน่ง Celestial, Fiend, Undead ในระยะ 60 ฟุต และที่ที่ถูกอวยพรหรือสาปไว้", "tip": "ใช้ได้ 2 ครั้ง พักสั้นคืน 1 พักยาวคืนหมด" }
+    },
+    "sub": {
+      "desc": "Oath of Devotion — อัศวินแห่งความดีงาม ทำให้อาวุธเปล่งแสงศักดิ์สิทธิ์",
+      "f": {
+        "oath-of-devotion-spells": { "t": "passive", "s": "เตรียม Protection from Evil and Good และ Shield of Faith ไว้เสมอ (ไม่นับโควตา)" },
+        "sacred-weapon": { "t": "passive", "s": "ตอนใช้ Attack action เสีย Channel Divinity 1 ครั้งปลุกพลังอาวุธ 10 นาที: บวก CHA (อย่างน้อย +1) ในการทอยโจมตี อาวุธส่องแสง และเปลี่ยนดาเมจเป็น Radiant ได้" }
+      }
+    }
+  },
+  "ranger": {
+    "tag": "พรานป่า สายธนูมีเวท",
+    "desc": "นักล่าที่ถนัดธนูหรือดาบคู่ ใช้เวทธรรมชาติเสริม ติด Hunter's Mark เพิ่มดาเมจใส่เป้าหมาย",
+    "abilityTip": "DEX สูงสุด รองลงมาคือ WIS (เวท) และ CON",
+    "tips": [
+      "เปิด Hunter's Mark ใส่ศัตรูตัวที่อึดที่สุด แล้วยิงใส่ตัวนั้นทุกตา",
+      "Hunter's Mark ต้องรักษาสมาธิ — ระวังโดนตีแล้วหลุด",
+      "Archery (+2 ยิง) เหมาะที่สุดถ้าใช้ธนู",
+      "Deft Explorer ได้ Expertise ใช้กับ Survival หรือ Perception"
+    ],
+    "f": {
+      "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย WIS เปลี่ยนเวทที่เตรียมได้ 1 อันหลังพักยาว" },
+      "favored-enemy": { "t": "passive", "s": "เตรียม Hunter's Mark ไว้เสมอ และร่ายได้ฟรีไม่ใช้ slot ตามคอลัมน์ Favored Enemy (2 ครั้ง) คืนตอนพักยาว" },
+      "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธที่เลือกได้ 2 ชนิด เปลี่ยนได้หลังพักยาว" },
+      "deft-explorer": { "t": "passive", "s": "ได้ Expertise 1 สกิลที่ชำนาญอยู่ และรู้ภาษาเพิ่ม 2 ภาษา" },
+      "fighting-style": { "t": "passive", "s": "ได้ Fighting Style feat 1 อย่าง หรือเลือก Druidic Warrior (ได้ cantrip ของ Druid 2 อัน ร่ายด้วย WIS)" }
+    },
+    "sub": {
+      "desc": "Hunter — นักล่าผู้เชี่ยวชาญ จัดการได้ทั้งตัวใหญ่และฝูง",
+      "f": {
+        "hunters-lore": { "t": "passive", "s": "ศัตรูที่ติด Hunter's Mark ของเรา — รู้ว่ามันมี Immunity, Resistance หรือ Vulnerability อะไรบ้าง" },
+        "hunters-prey": { "t": "passive", "s": "เลือก 1 แบบ (สลับได้หลังพัก): Colossus Slayer — ตีศัตรูที่ HP ไม่เต็มดาเมจ +1d8 (ครั้งเดียวต่อเทิร์น) หรือ Horde Breaker — ตีแล้วได้ตีอีกครั้งใส่ศัตรูอีกตัวที่อยู่ห่างเป้าแรกไม่เกิน 5 ฟุต (ครั้งเดียวต่อเทิร์น)" }
+      }
+    }
+  },
+  "rogue": {
+    "tag": "โจรนักฉวยโอกาส สกิลเยอะสุด",
+    "desc": "ลอบเร้น สะเดาะกุญแจ แก้กับดัก และ Sneak Attack ดาเมจก้อนใหญ่ครั้งเดียวต่อเทิร์น สกิลเยอะที่สุดในเกม",
+    "abilityTip": "DEX สูงสุด แล้วตามด้วย CON หรือ INT/WIS ตามสไตล์",
+    "tips": [
+      "Sneak Attack ติดง่ายมาก แค่มีเพื่อนยืนติดศัตรูตัวนั้น",
+      "ใช้ Cunning Action (Bonus Action) ซ่อนตัวหรือถอยหนีหลังโจมตี",
+      "ใช้ธนูสั้นยิงจากที่ซ่อนจะได้ทั้งเปรียบและปลอดภัย",
+      "Expertise ใส่ Stealth กับ Perception หรือ Sleight of Hand"
+    ],
+    "f": {
+      "expertise": { "t": "passive", "s": "เลือก 2 สกิลที่ชำนาญอยู่แล้ว ได้โบนัส Proficiency เป็นสองเท่า" },
+      "sneak-attack": { "t": "passive", "s": "ครั้งเดียวต่อเทิร์น: ตีโดนด้วยอาวุธ Finesse หรืออาวุธยิง และ (ได้เปรียบ หรือมีเพื่อนยืนติดเป้าโดยเราไม่เสียเปรียบ) ดาเมจเพิ่มตามคอลัมน์ Sneak Attack (1d6 ที่เลเวล 1)" },
+      "thieves-cant": { "t": "passive", "s": "รู้ภาษาลับของโจร Thieves' Cant และภาษาเพิ่มอีก 1 ภาษา" },
+      "weapon-mastery": { "t": "passive", "s": "ใช้ท่าพิเศษ (Mastery) ของอาวุธที่เลือกได้ 2 ชนิด เปลี่ยนได้หลังพักยาว" },
+      "cunning-action": { "t": "bonus", "s": "ใช้ Bonus Action ทำ Dash (วิ่ง), Disengage (ถอยไม่โดนตี) หรือ Hide (ซ่อนตัว)" },
+      "steady-aim": { "t": "bonus", "s": "ถ้ายังไม่ได้ขยับในเทิร์นนี้ ใช้ Bonus Action ให้ได้เปรียบการโจมตีครั้งถัดไป แต่หลังจากนั้นเดินไม่ได้อีกในเทิร์นนั้น" }
+    },
+    "sub": {
+      "desc": "Thief — โจรมืออาชีพ มือไว ปีนป่ายเก่ง",
+      "f": {
+        "fast-hands": { "t": "bonus", "s": "ใช้ Bonus Action ทำ Sleight of Hand, ใช้ Thieves' Tools สะเดาะกุญแจ/แก้กับดัก หรือใช้สิ่งของ (Utilize)" },
+        "second-story-work": { "t": "passive", "s": "ได้ความเร็วปีนเท่าความเร็วปกติ และกระโดดใช้ DEX แทน STR ได้" }
+      }
+    }
+  },
+  "sorcerer": {
+    "tag": "จอมเวทโดยกำเนิด บิดเวทได้",
+    "desc": "มีพลังเวทในสายเลือด รู้เวทน้อยกว่า Wizard แต่ใช้ Metamagic ดัดแปลงเวทได้ เช่น ร่ายเร็วขึ้น หรือร่ายใส่สองเป้า",
+    "abilityTip": "รองลงมาคือ CON (รักษาสมาธิ) และ DEX",
+    "tips": [
+      "Innate Sorcery (Bonus Action) เพิ่ม DC และได้เปรียบเวทโจมตี 1 นาที — เปิดก่อนสู้หนัก",
+      "Sorcerous Burst / Fire Bolt คือ cantrip โจมตีหลัก",
+      "Quickened Spell ร่ายเวทเป็น Bonus Action ได้ — ร่าย 2 อันในเทิร์นเดียว",
+      "Shield ช่วยชีวิตได้บ่อย ถ้ามีที่ว่างให้เตรียมไว้"
+    ],
+    "f": {
+      "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย CHA ใช้ Arcane Focus ขึ้นเลเวลเมื่อไหร่เปลี่ยนเวทที่เตรียมได้ 1 อัน" },
+      "innate-sorcery": { "t": "bonus", "s": "1 นาที: Spell Save DC ของ Sorcerer +1 และได้เปรียบการโจมตีด้วยเวท Sorcerer", "tip": "ใช้ได้ 2 ครั้ง คืนตอนพักยาว" },
+      "font-of-magic": { "t": "bonus", "s": "มี Sorcery Points = เลเวล Sorcerer แปลงแต้มเป็น Spell Slot ได้ (Bonus Action: slot เลเวล 1 = 2 แต้ม, เลเวล 2 = 3 แต้ม) หรือสลาย slot เป็นแต้มเท่าเลเวลของ slot", "tip": "Sorcery Points คืนตอนพักยาว" },
+      "metamagic": { "t": "passive", "s": "เลือก 2 วิธีดัดแปลงเวท (Metamagic) ใช้ Sorcery Points ตอนร่าย ใช้ได้ 1 แบบต่อเวท 1 อัน" }
+    },
+    "sub": {
+      "desc": "Draconic Sorcery — สายเลือดมังกร ถึกขึ้น เกล็ดมังกรเป็นเกราะ",
+      "f": {
+        "draconic-resilience": { "t": "passive", "s": "HP สูงสุดเพิ่ม 3 ตอนได้ซับคลาส และ +1 ทุกเลเวล Sorcerer ต่อจากนั้น ไม่ใส่เกราะ AC = 10 + DEX + CHA" },
+        "draconic-spells": { "t": "passive", "s": "เตรียม Alter Self, Chromatic Orb, Command, Dragon's Breath ไว้เสมอ (ไม่นับโควตา)" }
+      }
+    }
+  },
+  "warlock": {
+    "tag": "ผู้ทำสัญญากับสิ่งเหนือธรรมชาติ",
+    "desc": "ได้พลังจากผู้อุปถัมภ์ Spell Slot น้อยแต่คืนตอนพักสั้น มี Eldritch Invocations ปรับแต่งได้เยอะ",
+    "abilityTip": "รองลงมาคือ CON และ DEX",
+    "tips": [
+      "Eldritch Blast คือ cantrip หลัก ใช้ทุกเทิร์นได้",
+      "เลเวล 2 เลือก Agonizing Blast จะทำให้ Eldritch Blast แรงขึ้นมาก",
+      "Pact slot คืนตอนพักสั้น — ขอพักสั้นกับทีมบ่อย ๆ",
+      "Hex ติดเป้าแล้วย้ายได้ คุ้มกับ slot ที่มีน้อย"
+    ],
+    "f": {
+      "eldritch-invocations": { "t": "passive", "s": "เลือก Eldritch Invocations ตามคอลัมน์ (เลเวล 1 = 1 อัน) บางอันต้องเลเวลถึงหรือมี cantrip ก่อน เปลี่ยนได้ 1 อันตอนขึ้นเลเวล" },
+      "pact-magic": { "t": "passive", "s": "ร่ายเวทด้วย CHA Spell Slot มีน้อยแต่เป็นเลเวลสูงสุดเสมอ และคืนทั้งหมดตอนพักสั้นหรือยาว ขึ้นเลเวลเปลี่ยนเวทได้ 1 อัน" },
+      "magical-cunning": { "t": "passive", "s": "ทำพิธี 1 นาที คืน Pact Slot ครึ่งหนึ่งของที่มี (ปัดขึ้น) 1 ครั้งต่อพักยาว" }
+    },
+    "sub": {
+      "desc": "Fiend Patron — สัญญากับปีศาจ ได้ HP ชั่วคราวทุกครั้งที่ศัตรูล้ม",
+      "f": {
+        "dark-ones-blessing": { "t": "passive", "s": "เมื่อศัตรูลดเหลือ 0 HP (โดยเรา หรือในระยะ 10 ฟุตจากเรา) ได้ HP ชั่วคราว = CHA + เลเวล Warlock (อย่างน้อย 1)" },
+        "fiend-spells": { "t": "passive", "s": "เตรียม Burning Hands, Command, Scorching Ray, Suggestion ไว้เสมอ (ไม่นับโควตา)" }
+      }
+    }
+  },
+  "wizard": {
+    "tag": "นักเวทผู้ศึกษา รู้เวทมากที่สุด",
+    "desc": "เรียนเวทจากตำรา มีสมุดเวท (Spellbook) รู้เวทได้มากที่สุดในเกม เปลี่ยนเวทที่เตรียมได้ทุกวัน แต่ตัวบาง",
+    "abilityTip": "รองลงมาคือ CON และ DEX — HP น้อย ต้องยืนหลัง",
+    "tips": [
+      "ยืนหลังทีมเสมอ HP น้อยที่สุดในปาร์ตี้",
+      "Mage Armor + Shield ช่วยให้รอดได้มาก",
+      "เวทที่เป็น Ritual ร่ายจากสมุดได้เลยไม่ต้องเตรียม (เช่น Detect Magic, Find Familiar)",
+      "ทุกเลเวลได้ใส่เวทลงสมุดเพิ่ม 2 อัน เลือกให้หลากหลาย"
+    ],
+    "f": {
+      "spellcasting": { "t": "passive", "s": "ร่ายเวทด้วย INT มีสมุดเวท 6 อันตอนเลเวล 1 (+2 อันทุกเลเวล) เตรียมเวทจากสมุดได้ใหม่ทุกครั้งที่พักยาว" },
+      "ritual-adept": { "t": "passive", "s": "ร่ายเวทที่มีป้าย Ritual จากสมุดได้เลยโดยไม่ต้องเตรียม (ใช้เวลาเพิ่ม 10 นาที ไม่เสีย slot)" },
+      "arcane-recovery": { "t": "passive", "s": "หลังพักสั้น คืน Spell Slot รวมเลเวลไม่เกินครึ่งเลเวล Wizard (ปัดขึ้น) ห้ามเป็น slot เลเวล 6+ ทำได้ 1 ครั้งต่อพักยาว" },
+      "scholar": { "t": "passive", "s": "ได้ Expertise 1 สกิลที่ชำนาญอยู่จาก Arcana, History, Investigation, Medicine, Nature หรือ Religion" }
+    },
+    "sub": {
+      "desc": "Evoker — ผู้เชี่ยวชาญเวทพลังงาน ไฟ น้ำแข็ง สายฟ้า",
+      "f": {
+        "evocation-savant": { "t": "passive", "s": "ใส่เวทสาย Evocation (เลเวลไม่เกิน 2) ลงสมุดฟรี 2 อัน และทุกครั้งที่ได้ slot เลเวลใหม่ ได้ใส่เวท Evocation ฟรีอีก 1 อัน" },
+        "potent-cantrip": { "t": "passive", "s": "cantrip ที่ทำดาเมจ ถ้าโจมตีพลาดหรือเป้าเซฟผ่าน เป้ายังโดนดาเมจครึ่งหนึ่ง" }
+      }
+    }
+  }
+}

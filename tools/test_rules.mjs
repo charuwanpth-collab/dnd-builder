@@ -1,0 +1,34 @@
+// ทดสอบการคำนวณด้วย node: node tools/test_rules.mjs
+import fs from 'fs';
+globalThis.document = undefined;
+const { D } = await import('../js/data.js');
+const rd = k => JSON.parse(fs.readFileSync(`data/srd/${k}.json`));
+for (const k of ['classes','spells','species','backgrounds','feats','weapons','weaponProps','mastery','armor','gear']) D[k] = rd(k);
+const idx = a => Object.fromEntries(a.map(x => [x.id, x]));
+Object.assign(D, { cls: idx(D.classes), sp: idx(D.species), bg: idx(D.backgrounds), feat: idx(D.feats), spell: idx(D.spells), weapon: idx(D.weapons), armorById: idx(D.armor), masteryById: idx(D.mastery), th: {} });
+D.spellByName = Object.fromEntries(D.spells.map(s => [s.name.toLowerCase(), s]));
+const R = await import('../js/rules.js');
+const show = (label, c) => {
+  R.rebuildEquipment(c);
+  const x = R.compute(c);
+  console.log(`\n== ${label}: AC ${x.ac} (${x.acNote}) HP ${x.hpMax} Speed ${x.speed} Init ${x.init} PB ${x.pb} PP ${10 + x.perception}`);
+  console.log(' attacks:', x.attacks.map(a => `${a.name} ${a.hit >= 0 ? '+' : ''}${a.hit} ${a.dmg}${a.mastery ? ' [' + a.mastery + ']' : ''}${a.prof ? '' : ' (no prof)'}`).join(' | '));
+  console.log(' res:', x.res.map(r => `${r.name}:${r.max}/${r.reset}`).join(', '));
+  console.log(' casting:', x.casting.map(s => `${s.source} DC${s.dc} +${s.atk} c${s.cantripMax} p${s.preparedMax} slots ${JSON.stringify(s.slots)} always[${s.always}] cantrips[${s.cantrips}]`).join(' || '));
+  console.log(' feats:', x.feats.map(f => f.name).join(', '));
+  console.log(' gear:', c.equipment.items.map(i => `${i.qty}x ${i.name}${i.weapon ? '(W)' : ''}${i.armor ? '(A)' : ''}`).join(', '), c.equipment.gp + 'GP');
+  console.log(' warn:', x.warn, 'missing:', R.missing(c));
+};
+const base = (o) => Object.assign(R.newCharacter(), o);
+show('Goliath Barbarian 3', base({ level: 3, classId: 'barbarian', speciesId: 'goliath', bgId: 'soldier', speciesOpt: { ancestry: "Hill's Tumble" },
+  abilities: { base: { str: 15, dex: 13, con: 14, int: 8, wis: 12, cha: 10 }, bonus: { str: 2, con: 1 } }, skills: ['Athletics','Perception'],
+  choices: { mastery: ['greataxe', 'handaxe'], primalSkill: 'Survival' } }));
+show('Wood Elf Cleric 3 (Life, Protector)', base({ level: 3, classId: 'cleric', speciesId: 'elf', bgId: 'acolyte', speciesOpt: { lineage: 'Wood Elf', ability: 'wis', skill: 'Perception' },
+  abilities: { base: { str: 13, dex: 12, con: 14, int: 8, wis: 15, cha: 10 }, bonus: { wis: 2, cha: 1 } }, skills: ['Medicine','Persuasion'], choices: { divineOrder: 'Protector' } }));
+show('Draconic Sorcerer 3', base({ level: 3, classId: 'sorcerer', speciesId: 'tiefling', bgId: 'sage', speciesOpt: { legacy: 'Infernal', ability: 'cha' },
+  abilities: { base: { str: 8, dex: 14, con: 13, int: 12, wis: 10, cha: 15 }, bonus: { con: 2, int: 1 } }, equipment: { classOpt: 'A', bgOpt: 'B' } }));
+show('Monk 2 Human', base({ level: 2, classId: 'monk', speciesId: 'human', bgId: 'criminal', speciesOpt: { feat: 'alert', skill: 'Stealth' },
+  abilities: { base: { str: 12, dex: 15, con: 13, int: 8, wis: 14, cha: 10 }, bonus: { dex: 2, con: 1 } } }));
+show('Warlock 1 / Fighter 3 / Wizard 3 / Paladin 2 / Ranger 3 / Druid 3', base({ level: 1, classId: 'warlock', speciesId: 'dwarf', bgId: 'criminal' }));
+for (const id of ['fighter','wizard','paladin','ranger','druid','rogue','bard'])
+  show(id, base({ level: id==='paladin'?2:3, classId: id, speciesId: 'human', bgId: 'soldier', choices: { fightingStyle: 'defense', land: 'polar' } }));

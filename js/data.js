@@ -1,0 +1,36 @@
+// โหลดข้อมูล SRD (อังกฤษ) + คำอธิบายไทย แล้วทำดัชนี
+export const D = {};
+
+const SRD = ['classes', 'spells', 'species', 'backgrounds', 'feats', 'weapons', 'weaponProps', 'mastery', 'armor', 'gear', 'legal'];
+const TH = ['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc'];
+
+const get = p => fetch(p).then(r => { if (!r.ok) throw new Error(p); return r.json(); });
+
+export async function loadData() {
+  const [srd, th, icons] = await Promise.all([
+    Promise.all(SRD.map(k => get(`data/srd/${k}.json`))),
+    Promise.all(TH.map(k => get(`data/th/${k}.json`).catch(() => ({})))),
+    get('data/icons.json'),
+  ]);
+  SRD.forEach((k, i) => (D[k] = srd[i]));
+  D.th = {};
+  TH.forEach((k, i) => (D.th[k] = th[i]));
+  D.icons = icons;
+  const idx = arr => Object.fromEntries(arr.map(x => [x.id, x]));
+  D.cls = idx(D.classes);
+  D.sp = idx(D.species);
+  D.bg = idx(D.backgrounds);
+  D.feat = idx(D.feats);
+  D.spell = idx(D.spells);
+  D.spellByName = Object.fromEntries(D.spells.map(s => [s.name.toLowerCase(), s]));
+  D.weapon = idx(D.weapons);
+  D.armorById = idx(D.armor);
+  D.masteryById = idx(D.mastery);
+  return D;
+}
+
+/** คำอธิบายไทยของฟีเจอร์คลาส/ซับคลาส */
+export function thFeature(classId, featId, sub = false) {
+  const c = D.th.classes?.[classId];
+  return (sub ? c?.sub?.f : c?.f)?.[featId];
+}
