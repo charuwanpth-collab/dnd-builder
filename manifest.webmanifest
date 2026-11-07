@@ -3,8 +3,8 @@
  "short_name": "Character Builder",
  "start_url": "./",
  "display": "standalone",
- "background_color": "#14110f",
- "theme_color": "#14110f",
+ "background_color": "#121214",
+ "theme_color": "#121214",
  "lang": "th",
  "icons": [
   {
