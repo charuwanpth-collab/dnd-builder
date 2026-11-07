@@ -78,7 +78,7 @@ export function chips(options, value, max, onChange, { labels = {}, locked = [] 
         else return;
         onChange([...set]);
       },
-    }, labels[o] || o);
+    }, labels[o] || (D.th.misc?.skills?.[o] ? [h('span', o), h('small.chip-th', D.th.misc.skills[o])] : o));
   }));
 }
 
