@@ -172,7 +172,8 @@ for title, body in split_sections(read('07_Spells/Spells_All.md'), 1):
         'components': fl.get('Components', ''), 'duration': dur,
         'concentration': dur.startswith('Concentration'),
         'ritual': 'Ritual' in fl.get('Casting Time', ''),
-        'text': clean(desc),
+        # บางสเปลมีบล็อกสเปลอื่น (เช่น Summon Dragon ใน Suggestion) ติดมาเป็น "> # ..." → ตัดทิ้ง
+        'text': clean(re.split(r'\n>\s*#\s', desc)[0]),
     })
 
 # ---------------- Species ----------------
@@ -240,10 +241,17 @@ gear = [{'name': re.sub(r'\s*\(.*\)$', '', n), 'id': slug(re.sub(r'\s*\(.*\)$', 
 
 legal = clean(read('Legal.md'))
 
+# ---------------- Rules Glossary ----------------
+glossary = []
+for title, body in split_sections(read('08_Rules_Glossary/Rules_Glossary_All.md'), 1):
+    m = re.match(r'(.+?)\s*\[(.+)\]$', title)
+    name, tag = (m.group(1), m.group(2)) if m else (title, '')
+    glossary.append({'id': slug(name), 'name': name, 'tag': tag, 'text': clean(body)})
+
 out = {
     'classes': classes, 'spells': spells, 'species': species, 'backgrounds': backgrounds,
     'feats': feats, 'weapons': weapons, 'weaponProps': props, 'mastery': mastery,
-    'armor': armor, 'gear': gear, 'legal': legal,
+    'armor': armor, 'gear': gear, 'legal': legal, 'glossary': glossary,
 }
 for k, v in out.items():
     (OUT / f'{k}.json').write_text(json.dumps(v, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')

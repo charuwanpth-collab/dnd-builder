@@ -48,7 +48,12 @@
   - `sw.js` → `hh-v4`
 - **แปลไทยเต็ม A+B+C ครบหมดแล้ว** (เช็ค: `python3 tools/check_full.py` → ทุกกลุ่มครบ)
 
-**ของแถม (เสนอแล้ว)**: หน้าอภิธานศัพท์ `#/glossary` + คำในคำอธิบายแตะดูความหมายได้ (Attunement, Advantage, Concentration, Proficiency, Saving Throw, Cover ฯลฯ) — ข้อมูลอยู่ใน SRD `08_Rules_Glossary`
+**✅ อภิธานศัพท์ (2026-11-07)** — หน้า `#/glossary` (เมนู "ศัพท์") + แตะคำดูความหมายทั่วเว็บ
+- ข้อมูล: `tools/build_srd.py` อ่าน `08_Rules_Glossary/Rules_Glossary_All.md` → `data/srd/glossary.json` (154 คำ, `{id,name,tag,text}`) — รันใหม่: `python3 tools/build_srd.py <srd_dir> data/srd` (ซอร์ส: `git clone --depth 1 https://github.com/oldmanumby/dnd.srd.5.2`)
+- ตัวแปลงตัดบล็อกสเปลที่ติดมา (`> # ...`) อัตโนมัติแล้ว → บัค Suggestion ไม่กลับมา
+- ไทย: `data/th/glossary.json` = `{id:{n:ชื่อไทย, s:สรุป}}` ครบ 154 · แปลเต็ม `data/th/full/glossary.json` ได้ 40/154 (คำหลัก 25 + Condition 15) → **ที่เหลือ 114 คำ ทยอยแปลรอบหน้า**
+- โค้ด: `js/views/glossary.js` — `renderGlossary` (ค้นไทย/อังกฤษ, กรองแท็ก, `#/glossary/<id>` เลื่อนไปคำนั้น+เปิดแปลเต็ม), `linkTerms` + `initGlossaryLinks` (MutationObserver ลิงก์คำใน `.md, p.th, p.tip, .opt p, .mastery-list li` ครั้งแรกต่อคำต่อกล่อง, แตะแล้วเด้ง bottom sheet) — รายการคำที่ลิงก์อยู่ใน `LINK_IDS` / `ACTION_IDS` / `ALIAS` (Condition ลิงก์ทั้งหมด)
+- `sw.js` → `hh-v5`
 
 ทุกเฟสย่อย: เขียนสคริปต์เช็คว่าครบทุก id → ทดสอบด้วย headless Chrome (`/usr/bin/google-chrome` + puppeteer-core 22.15.0, เปิด http.server ด้วย run_in_background) → commit + push → อัปเดต handoff
 

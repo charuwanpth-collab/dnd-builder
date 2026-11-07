@@ -5,6 +5,7 @@ import * as S from './store.js';
 import { renderHome, renderImport, renderCredits } from './views/home.js';
 import { renderWizard } from './views/wizard.js';
 import { renderSheet } from './views/sheet.js';
+import { renderGlossary, initGlossaryLinks } from './views/glossary.js';
 
 const app = $('#app');
 const nav = hash => { location.hash = hash; };
@@ -25,12 +26,14 @@ function route() {
   }
   if (page === 'import' && a) return renderImport(app, parts.slice(1).join('/'), nav);
   if (page === 'credits') return renderCredits(app);
+  if (page === 'glossary') return renderGlossary(app, a);
   renderHome(app, nav);
 }
 
 loadData().then(() => {
   hydrateIcons();
   S.askPersist();
+  initGlossaryLinks();
   window.addEventListener('hashchange', () => { route(); window.scrollTo(0, 0); });
   route();
 }).catch(err => {

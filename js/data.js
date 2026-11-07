@@ -1,8 +1,8 @@
 // โหลดข้อมูล SRD (อังกฤษ) + คำอธิบายไทย แล้วทำดัชนี
 export const D = {};
 
-const SRD = ['classes', 'spells', 'species', 'backgrounds', 'feats', 'weapons', 'weaponProps', 'mastery', 'armor', 'gear', 'legal'];
-const TH = ['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc'];
+const SRD = ['classes', 'spells', 'species', 'backgrounds', 'feats', 'weapons', 'weaponProps', 'mastery', 'armor', 'gear', 'legal', 'glossary'];
+const TH = ['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc', 'glossary'];
 
 const get = p => fetch(p).then(r => { if (!r.ok) throw new Error(p); return r.json(); });
 
@@ -26,6 +26,7 @@ export async function loadData() {
   D.weapon = idx(D.weapons);
   D.armorById = idx(D.armor);
   D.masteryById = idx(D.mastery);
+  D.glossaryById = idx(D.glossary);
   return D;
 }
 
