@@ -137,3 +137,60 @@ export function stubSubBox(sub, classId) {
       + (/^(fighter|rogue)$/.test(classId) ? ' (ถ้าเป็นสายร่ายเวท อย่าลืมกรอกช่อง "การร่ายเวท" ในฟอร์ม)' : '')),
     h('a.btn.small', { href: fillHref(classId, sub.name) }, '+ สร้างในแพ็ก'));
 }
+
+/** แถบพับ (accordion) — need = ยังเลือกไม่ครบ (ติด ⚠ + เปิดค้าง), openSet = Set จำว่าแถบไหนเปิดอยู่ */
+export function acc({ key, title, sub, need, done, openSet }, ...kids) {
+  const open = need || openSet?.has(key);
+  return h('details.acc' + (need ? '.need' : ''), {
+    open, ontoggle: e => { if (!openSet) return; if (e.currentTarget.open) openSet.add(key); else openSet.delete(key); },
+  }, h('summary', h('div.acc-t', h('b', title), sub ? h('small', sub) : null), need ? h('span.acc-badge.warn-b', '⚠ ต้องเลือก') : done ? h('span.acc-badge', '✓') : null),
+  h('div.acc-body', ...kids));
+}
+
+// ---------- Character Details (ใช้ทั้งวิซาร์ดและใบตัวละคร) ----------
+export const ALIGN = [
+  ['Lawful Good', 'ดีและมีระเบียบ — ทำสิ่งที่ถูกต้อง รักษาคำพูด และเคารพกฎที่ยุติธรรม'],
+  ['Neutral Good', 'ดีแบบยืดหยุ่น — ช่วยคนเท่าที่ช่วยได้ จะทำตามกฎหรือไม่ก็ดูว่าแบบไหนช่วยคนได้มากกว่า'],
+  ['Chaotic Good', 'ดีแบบรักอิสระ — ทำความดีตามหัวใจตัวเอง ถ้ากฎขวางการทำสิ่งที่ถูกก็พร้อมแหกกฎ'],
+  ['Lawful Neutral', 'ยึดกฎและระเบียบเป็นหลัก — สนใจว่าทำตามหน้าที่ ประเพณี หรือคำสั่งไหม มากกว่าเรื่องดีหรือชั่ว'],
+  ['Neutral', 'เป็นกลาง — ไม่เอียงไปทางไหนชัด ๆ ตัดสินใจตามสถานการณ์ตรงหน้า'],
+  ['Chaotic Neutral', 'รักอิสระเหนือสิ่งอื่น — ทำตามใจตัวเอง ไม่ชอบให้ใครมาสั่ง แต่ก็ไม่ได้ตั้งใจทำร้ายใคร'],
+  ['Lawful Evil', 'ชั่วแบบมีระบบ — ใช้กฎ อำนาจ และลำดับชั้นหาประโยชน์ให้ตัวเอง และรักษาคำพูดถ้ามันได้ประโยชน์'],
+  ['Neutral Evil', 'เห็นแก่ตัวสุด ๆ — ทำทุกอย่างเพื่อตัวเอง ไม่สนว่าใครจะเดือดร้อน'],
+  ['Chaotic Evil', 'ชั่วและบ้าระห่ำ — ใช้ความรุนแรงตามอารมณ์ ไม่สนกฎและไม่สนใคร'],
+];
+const LIFESTYLE = ['Wretched', 'Squalid', 'Poor', 'Modest', 'Comfortable', 'Wealthy', 'Aristocratic'];
+
+/** ช่องกรอกหนึ่งช่องที่ผูกกับ c.details[k] */
+export function detailField(Dt, save, k, label, opt = {}) {
+  return h('label.fld', h('small', label), opt.rows
+    ? h('textarea.inp', { rows: opt.rows, placeholder: opt.ph || '', oninput: e => { Dt[k] = e.target.value; save(); } }, Dt[k] || '')
+    : h('input.inp', { value: Dt[k] || '', placeholder: opt.ph || '', list: opt.list, oninput: e => { Dt[k] = e.target.value; save(); } }));
+}
+
+/** กลุ่มช่องรายละเอียดตัวละคร → [[key, EN, ไทย, element], …] */
+export function detailGroups(Dt, save) {
+  const f = (k, label, opt) => detailField(Dt, save, k, label, opt);
+  const al = h('p.muted.small', ALIGN.find(a => a[0] === Dt.alignment)?.[1] || '');
+  return [
+    ['details', 'CHARACTER DETAILS', 'รายละเอียดตัวละคร', h('div.card.details',
+      h('label.fld', h('small', 'Alignment (แนวทางนิสัย)'), h('select.inp', { onchange: e => { Dt.alignment = e.target.value; al.textContent = ALIGN.find(a => a[0] === Dt.alignment)?.[1] || ''; save(); } },
+        h('option', { value: '' }, '— ยังไม่เลือก —'), ALIGN.map(([n]) => h('option', { value: n, selected: Dt.alignment === n }, n)))),
+      al,
+      f('faith', 'ความเชื่อ / เทพที่นับถือ'),
+      f('lifestyle', 'ไลฟ์สไตล์ (ใช้ชีวิตหรูแค่ไหน)', { list: 'dl-life' }),
+      h('datalist#dl-life', LIFESTYLE.map(v => h('option', { value: v }))))],
+    ['appearance', 'APPEARANCE', 'รูปลักษณ์', h('div.card.details.grid2',
+      f('gender', 'เพศ / สรรพนาม'), f('age', 'อายุ'), f('height', 'ส่วนสูง'), f('weight', 'น้ำหนัก'),
+      f('eyes', 'สีตา'), f('hair', 'ผม'), f('skin', 'ผิว'),
+      h('div.span2', f('appearance', 'รูปร่างหน้าตาโดยรวม', { rows: 3, ph: 'เช่น ตัวสูงใหญ่ มีแผลเป็นที่แก้มซ้าย ชอบใส่ผ้าคลุมสีแดง' })))],
+    ['personality', 'PERSONALITY', 'นิสัยใจคอ', h('div.card.details',
+      f('traits', 'Personality Traits — นิสัยที่คนอื่นเห็นชัด ๆ', { rows: 2 }),
+      f('ideals', 'Ideals — สิ่งที่เชื่อและยึดถือ', { rows: 2 }),
+      f('bonds', 'Bonds — คน สถานที่ หรือสิ่งที่ผูกพัน', { rows: 2 }),
+      f('flaws', 'Flaws — จุดอ่อนหรือนิสัยเสีย', { rows: 2 }))],
+    ['backstory', 'BACKSTORY', 'ประวัติความเป็นมา', h('div.card.details', f('backstory', '', { rows: 6, ph: 'เกิดที่ไหน ทำไมถึงออกผจญภัย…' }))],
+    ['people', 'ORGANIZATIONS & ALLIES', 'องค์กร พันธมิตร ศัตรู', h('div.card.details',
+      f('orgs', 'องค์กร / กลุ่มที่สังกัด', { rows: 2 }), f('allies', 'พันธมิตร', { rows: 2 }), f('enemies', 'ศัตรู', { rows: 2 }), f('other', 'อื่น ๆ', { rows: 2 }))],
+  ];
+}

@@ -1,4 +1,5 @@
 /* Character Builder — ธีมแดง + เทาเข้ม อ่านง่ายบนมือถือ (ตัวแปร --gold/--gold2 = สีเน้นหลัก ตอนนี้เป็นแดง) */
+[hidden] { display: none !important; }
 :root {
   --bg: #121214; --bg2: #18181b; --card: #1f1f23; --card2: #28282d; --line: #38383f;
   --text: #ececef; --muted: #a9a9b3; --dim: #7c7c87;
@@ -105,7 +106,7 @@ select.inp { width: auto; min-width: 90px; }
 /* ---------- วิซาร์ด ---------- */
 .stepper {
   display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 4px -16px 8px; padding: 6px 16px;
-  position: sticky; top: 53px; z-index: 10; background: var(--bg);
+  position: sticky; top: var(--topbar-h, 53px); z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line);
 }
 .stepper::-webkit-scrollbar { display: none; }
 .step {
@@ -113,7 +114,8 @@ select.inp { width: auto; min-width: 90px; }
   border-radius: 10px; border: 1px solid transparent; background: none; color: var(--dim); cursor: pointer;
 }
 .step span .ico { width: 22px; height: 22px; }
-.step small { font-size: .72rem; white-space: nowrap; }
+.step small { font-size: .68rem; white-space: nowrap; }
+.step b { font-size: .76rem; letter-spacing: .05em; white-space: nowrap; }
 .step.past { color: var(--muted); }
 .step.on { color: var(--gold); background: var(--card); border-color: var(--line); }
 .wz-intro h2 { font-family: var(--display); color: var(--gold2); margin-top: .4em; font-size: 1.5rem; }
@@ -605,3 +607,33 @@ div.titem { cursor: default; }
 .seg-btn.hp-roll .inp.num { width: 64px; min-height: 34px; padding: 4px 6px; }
 @media (min-width: 640px) { .box3 { grid-template-columns: repeat(3, 1fr); } .saves6 { grid-template-columns: repeat(6, 1fr); } }
 @media print { .mini, .rest-btn, .chips.filter { display: none !important; } }
+
+/* ---------- วิซาร์ดแบบ D&D Beyond (เฟส 4B) ---------- */
+.step { position: relative; gap: 0; font: inherit; }
+.step.need::after { content: ''; position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
+.step.to-sheet { color: var(--gold2); border-color: var(--gold); margin-left: 6px; }
+.acc { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); margin: 8px 0; }
+.acc > summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; }
+.acc > summary::-webkit-details-marker { display: none; }
+.acc > summary::after { content: '▸'; color: var(--dim); transition: transform .15s; flex: none; }
+.acc[open] > summary::after { transform: rotate(90deg); }
+.acc-t { flex: 1; min-width: 0; }
+.acc-t b { display: block; font-size: .95rem; }
+.acc-t small { display: block; color: var(--muted); font-size: .78rem; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.acc[open] .acc-t small { -webkit-line-clamp: unset; }
+.acc-badge { flex: none; font-size: .72rem; padding: 1px 8px; border-radius: 999px; color: var(--green); border: 1px solid color-mix(in srgb, var(--green) 50%, var(--line)); }
+.acc-badge.warn-b { color: var(--red); border-color: var(--red); }
+.acc.need { border-color: var(--red); }
+.acc-body { padding: 0 14px 12px; }
+.acc-body > .feat { margin: 8px 0 0; }
+.acc .card.details { background: transparent; border: 0; padding: 0; margin: 0; }
+.picked { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--r); border: 1.5px solid var(--gold); background: #2e1c1e; margin: 10px 0 4px; }
+.picked-ico { width: 40px; height: 40px; color: var(--gold); flex: none; }
+.picked-ico .ico { width: 40px; height: 40px; }
+.picked small { display: block; color: var(--muted); font-size: .72rem; }
+.picked b { font-size: 1.1rem; }
+.picked p { margin: 2px 0 0; }
+.roll-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 8px 0; }
+.roll-inputs .inp { text-align: center; }
+.sp-filter { position: sticky; top: calc(var(--topbar-h, 53px) + var(--stepper-h, 58px)); z-index: 8; background: var(--bg); padding: 4px 0 2px; }
+.pack-toggles { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }

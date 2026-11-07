@@ -725,6 +725,7 @@ export function missing(c) {
   if (c.speciesId === 'human' && !c.speciesOpt?.feat) out.push('เลือก Origin Feat (Human Versatile)');
   if (c.speciesId === 'human' && !c.speciesOpt?.skill) out.push('เลือกสกิล (Human Skillful)');
   if (c.speciesId === 'elf' && !c.speciesOpt?.skill) out.push('เลือกสกิล (Keen Senses)');
+  if (c.settings?.hp === 'roll') for (const li of levelInfo(c)) if (li.i > 0 && li.cls && !li.e.hp) out.push(`ใส่ผลทอย HP (Lv ${li.lv})`);
   for (const li of levelInfo(c)) if (li.asi || li.boon) {
     const f = D.feat[li.e.feat];
     if (!f) { out.push(`เลือก ${li.boon ? 'Epic Boon' : 'ASI'} หรือ Feat (Lv ${li.lv})`); continue; }
@@ -744,7 +745,7 @@ export function newCharacter() {
     equipment: { classOpt: 'A', bgOpt: 'A', items: [], gp: 0, armor: null, shield: false },
     spells: { cantrips: [], prepared: [], book: [] },
     play: { hp: null, temp: 0, hdUsed: 0, slots: {}, res: {}, conditions: [], death: { s: 0, f: 0 }, inspiration: false },
-    notes: '', details: {},
+    notes: '', details: {}, settings: { hp: 'avg' },
   };
 }
 

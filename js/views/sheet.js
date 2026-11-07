@@ -5,7 +5,7 @@ import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
 import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, compute, missing, rebuildEquipment, levelInfo, chOf } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
-import { classFeatureCard, featureCard, spellRow, LEVEL_TH, stubSubBox, TYPE_LABEL } from './parts.js';
+import { classFeatureCard, featureCard, spellRow, LEVEL_TH, stubSubBox, TYPE_LABEL, detailGroups, detailField } from './parts.js';
 import { formula, explain, attackBody, dmgText } from './explain.js';
 import { showTerm } from './glossary.js';
 import * as T from './turn.js';
@@ -13,18 +13,6 @@ import * as T from './turn.js';
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
 const TABS = [['actions', 'ACTIONS', 'การกระทำ'], ['spells', 'SPELLS', 'เวท'], ['inventory', 'INVENTORY', 'ของในกระเป๋า'], ['features', 'FEATURES & TRAITS', 'ความสามารถ'], ['background', 'BACKGROUND', 'ภูมิหลัง'], ['notes', 'NOTES', 'โน้ต']];
 const OLD_TAB = { main: 'actions', skills: 'actions', gear: 'inventory' };
-const ALIGN = [
-  ['Lawful Good', 'ดีและมีระเบียบ — ทำสิ่งที่ถูกต้อง รักษาคำพูด และเคารพกฎที่ยุติธรรม'],
-  ['Neutral Good', 'ดีแบบยืดหยุ่น — ช่วยคนเท่าที่ช่วยได้ จะทำตามกฎหรือไม่ก็ดูว่าแบบไหนช่วยคนได้มากกว่า'],
-  ['Chaotic Good', 'ดีแบบรักอิสระ — ทำความดีตามหัวใจตัวเอง ถ้ากฎขวางการทำสิ่งที่ถูกก็พร้อมแหกกฎ'],
-  ['Lawful Neutral', 'ยึดกฎและระเบียบเป็นหลัก — สนใจว่าทำตามหน้าที่ ประเพณี หรือคำสั่งไหม มากกว่าเรื่องดีหรือชั่ว'],
-  ['Neutral', 'เป็นกลาง — ไม่เอียงไปทางไหนชัด ๆ ตัดสินใจตามสถานการณ์ตรงหน้า'],
-  ['Chaotic Neutral', 'รักอิสระเหนือสิ่งอื่น — ทำตามใจตัวเอง ไม่ชอบให้ใครมาสั่ง แต่ก็ไม่ได้ตั้งใจทำร้ายใคร'],
-  ['Lawful Evil', 'ชั่วแบบมีระบบ — ใช้กฎ อำนาจ และลำดับชั้นหาประโยชน์ให้ตัวเอง และรักษาคำพูดถ้ามันได้ประโยชน์'],
-  ['Neutral Evil', 'เห็นแก่ตัวสุด ๆ — ทำทุกอย่างเพื่อตัวเอง ไม่สนว่าใครจะเดือดร้อน'],
-  ['Chaotic Evil', 'ชั่วและบ้าระห่ำ — ใช้ความรุนแรงตามอารมณ์ ไม่สนกฎและไม่สนใคร'],
-];
-const LIFESTYLE = ['Wretched', 'Squalid', 'Poor', 'Modest', 'Comfortable', 'Wealthy', 'Aristocratic'];
 const head = (en, th, ...rest) => h('h3.sec2', h('span', en), h('small', th), ...rest);
 let obs; // IntersectionObserver ของกล่อง HP (โชว์แถบย่อตอนเลื่อนพ้น)
 
@@ -34,7 +22,7 @@ export function renderSheet(root, c, tab, nav) {
   const P = c.play = Object.assign({ hp: null, temp: 0, hdUsed: 0, slots: {}, res: {}, conditions: [], death: { s: 0, f: 0 }, inspiration: false }, c.play);
   if (!P.hdu) { P.hdu = {}; const d0 = D.cls[c.classId]?.hitDie; if (P.hdUsed && d0) P.hdu[d0] = P.hdUsed; }
   const Dt = c.details = Object.assign({}, c.details);
-  if (c.look) { if (!Dt.appearance) Dt.appearance = c.look; delete c.look; }
+  if (c.look) { if (!Dt.appearance) Dt.appearance = c.look; delete c.look; S.autosave(c); }
   const hdUsedAll = () => Object.values(P.hdu).reduce((s, n) => s + n, 0);
   const save = () => S.autosave(c);
   const redraw = () => draw();
@@ -524,9 +512,7 @@ export function renderSheet(root, c, tab, nav) {
   }
 
   // ---------- BACKGROUND ----------
-  const field = (k, label, opt = {}) => h('label.fld', h('small', label), opt.rows
-    ? h('textarea.inp', { rows: opt.rows, placeholder: opt.ph || '', oninput: e => { Dt[k] = e.target.value; save(); } }, Dt[k] || '')
-    : h('input.inp', { value: Dt[k] || '', placeholder: opt.ph || '', list: opt.list, oninput: e => { Dt[k] = e.target.value; save(); } }));
+  const field = (k, label, opt) => detailField(Dt, save, k, label, opt);
 
   function background(x) {
     const out = [];
@@ -541,25 +527,8 @@ export function renderSheet(root, c, tab, nav) {
           x.bg.tool ? [h('dt', 'Tool'), h('dd', x.bg.tool.replace(/\s*\(see.*?\)/g, ''))] : null,
           h('dt', 'Origin Feat'), h('dd', x.bg.feat))));
     } else out.push(h('p.muted', 'ยังไม่ได้เลือก Background'));
-    const al = h('p.muted.small', ALIGN.find(a => a[0] === Dt.alignment)?.[1] || '');
-    out.push(head('CHARACTER DETAILS', 'รายละเอียดตัวละคร'), h('div.card.details',
-      h('label.fld', h('small', 'Alignment (แนวทางนิสัย)'), h('select.inp', { onchange: e => { Dt.alignment = e.target.value; al.textContent = ALIGN.find(a => a[0] === Dt.alignment)?.[1] || ''; save(); } },
-        h('option', { value: '' }, '— ยังไม่เลือก —'), ALIGN.map(([n]) => h('option', { value: n, selected: Dt.alignment === n }, n)))),
-      al,
-      field('faith', 'ความเชื่อ / เทพที่นับถือ'),
-      field('lifestyle', 'ไลฟ์สไตล์ (ใช้ชีวิตหรูแค่ไหน)', { list: 'dl-life' }),
-      h('datalist#dl-life', LIFESTYLE.map(v => h('option', { value: v })))),
-      head('APPEARANCE', 'รูปลักษณ์'), h('div.card.details.grid2',
-        field('gender', 'เพศ / สรรพนาม'), field('age', 'อายุ'), field('height', 'ส่วนสูง'), field('weight', 'น้ำหนัก'),
-        field('eyes', 'สีตา'), field('hair', 'ผม'), field('skin', 'ผิว'),
-        h('div.span2', field('appearance', 'รูปร่างหน้าตาโดยรวม', { rows: 3, ph: 'เช่น ตัวสูงใหญ่ มีแผลเป็นที่แก้มซ้าย ชอบใส่ผ้าคลุมสีแดง' }))),
-      head('PERSONALITY', 'นิสัยใจคอ'), h('div.card.details',
-        field('traits', 'Personality Traits — นิสัยที่คนอื่นเห็นชัด ๆ', { rows: 2 }),
-        field('ideals', 'Ideals — สิ่งที่เชื่อและยึดถือ', { rows: 2 }),
-        field('bonds', 'Bonds — คน สถานที่ หรือสิ่งที่ผูกพัน', { rows: 2 }),
-        field('flaws', 'Flaws — จุดอ่อนหรือนิสัยเสีย', { rows: 2 })),
-      head('BACKSTORY', 'ประวัติความเป็นมา'), h('div.card.details', field('backstory', '', { rows: 6, ph: 'เกิดที่ไหน ทำไมถึงออกผจญภัย…' })),
-      built(x));
+    for (const [k, en, th, el] of detailGroups(Dt, save)) if (k !== 'people') out.push(head(en, th), el);
+    out.push(built(x));
     return out;
   }
 
