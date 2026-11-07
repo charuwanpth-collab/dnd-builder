@@ -20,6 +20,13 @@ export function md(src) {
     const l = lines[i];
     if (!l.trim()) { i++; continue; }
     let m;
+    // blockquote (เช่น ค่าสถานะ Otherworldly Steed) → แปลงเนื้อในแบบ recursive
+    if (/^\s*>/.test(l)) {
+      const q = [];
+      while (i < lines.length && /^\s*>/.test(lines[i])) q.push(lines[i++].replace(/^\s*>\s?/, ''));
+      out.push(`<blockquote class="md-q">${md(q.join('\n'))}</blockquote>`);
+      continue;
+    }
     if ((m = l.match(/^(#{1,6})\s+(.*)/))) {
       out.push(`<h5 class="md-h">${inline(m[2])}</h5>`); i++; continue;
     }
@@ -41,7 +48,7 @@ export function md(src) {
       continue;
     }
     const para = [];
-    while (i < lines.length && lines[i].trim() && !/^(#|\||\s*[-*]\s|\s*\d+\.\s)/.test(lines[i])) para.push(lines[i++]);
+    while (i < lines.length && lines[i].trim() && !/^(#|\||\s*>|\s*[-*]\s|\s*\d+\.\s)/.test(lines[i])) para.push(lines[i++]);
     if (para.length) out.push(`<p>${inline(para.join(' '))}</p>`);
     else i++;
   }

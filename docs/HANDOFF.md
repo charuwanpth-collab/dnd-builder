@@ -41,7 +41,12 @@
   - Background: SRD ไม่มีข้อความบรรยาย (มีแค่ช่องข้อมูล) → ไม่มีอะไรต้องแปลเต็ม; Origin Feat ของ background ใช้ full/feats แล้ว
   - ข้อสังเกต SRD ที่แก้ในคำแปล: Rage (bullet list เพี้ยน), Pact Magic (ชื่อเวทแนะนำหาย+ย่อหน้าขาด → เติม Charm Person/Hex), Wizard Subclass (ขาดท้าย), Breath Weapon/Relentless Endurance (ขึ้นบรรทัดเพี้ยน), ตาราง Fiendish Legacies ติดไปอยู่ใน Otherworldly Presence → ย้ายไปไว้ใน Fiendish Legacy
   - `sw.js` → `hh-v3`
-- ⏭️ **ถัดไป: C** (141 อัน): สเปล Cantrip / Lv1 / Lv2 แยกทีละเลเวลต่อแชต → `full/spells.json`
+- ✅ **C เสร็จแล้ว (2026-11-07)** — สเปล 141 อัน (Cantrip 27, Lv1 57, Lv2 57) → `full/spells.json` แสดงใน `spellDetail` (หน้าต่างรายละเอียดสเปล)
+  - แก้บัค `js/md.js`: รองรับ blockquote (`>`) แล้ว — ค่าสถานะ Otherworldly Steed ทั้ง EN และไทยแสดงตารางถูก
+  - แก้บัค SRD: ข้อความ Suggestion มีบล็อก Summon Dragon (Lv5) ติดมา → ตัดออกใน `data/srd/spells.json` แล้ว (⚠️ ถ้ารัน `tools/build_srd.py` ใหม่ บัคจะกลับมา ต้องแก้ตัวแปลงด้วย)
+  - เติมข้อความที่ SRD ตัดขาด: Shield (Magic Missile), Find Traps (Alarm/Glyph of Warding)
+  - `sw.js` → `hh-v4`
+- **แปลไทยเต็ม A+B+C ครบหมดแล้ว** (เช็ค: `python3 tools/check_full.py` → ทุกกลุ่มครบ)
 
 **ของแถม (เสนอแล้ว)**: หน้าอภิธานศัพท์ `#/glossary` + คำในคำอธิบายแตะดูความหมายได้ (Attunement, Advantage, Concentration, Proficiency, Saving Throw, Cover ฯลฯ) — ข้อมูลอยู่ใน SRD `08_Rules_Glossary`
 
