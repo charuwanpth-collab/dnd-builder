@@ -2,7 +2,8 @@
 import { D } from '../data.js';
 import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
 import * as S from '../store.js';
-import { ABIL, ABIL_EN, ABIL_SHORT, compute, missing, rebuildEquipment } from '../rules.js';
+import { ABIL, ABIL_EN, ABIL_SHORT, compute, missing, rebuildEquipment, levelInfo } from '../rules.js';
+import { openLevelUp, levelSummary } from './levelup.js';
 import { classFeatureCard, featureCard, spellRow, statBox, original, LEVEL_TH, fullTh } from './parts.js';
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
@@ -21,7 +22,7 @@ export function renderSheet(root, c, tab, nav) {
     const x = compute(c);
     if (P.hp == null || P.hp > x.hpMax) P.hp = x.hpMax;
     const y = window.scrollY;
-    const subtitle = [x.sp?.name + (c.speciesOpt?.lineage ? ` (${c.speciesOpt.lineage})` : ''), `${x.cls?.name || '?'} ${c.level}`, c.level >= 3 && x.sub ? x.sub.name : null, x.bg?.name].filter(Boolean).join(' · ');
+    const subtitle = [x.sp?.name + (c.speciesOpt?.lineage ? ` (${c.speciesOpt.lineage})` : ''), x.classLine || '?', x.CL >= 3 && x.sub ? x.sub.name : null, x.bg?.name].filter(Boolean).join(' · ');
     root.replaceChildren(...[
       h('header.sh-head',
         h('span.sh-ico', { html: iconSvg(c.classId || 'd20') }),
@@ -44,13 +45,26 @@ export function renderSheet(root, c, tab, nav) {
 
   function menu() {
     sheet('เมนู', h('div.menu-list',
-      h('button.menu-item', { onclick: () => { close(); nav(`#/edit/${c.id}/basic`); } }, '✏️ แก้ไข / เลเวลอัป'),
+      h('button.menu-item', { onclick: () => { close(); openLevelUp(c, () => { S.save(c); redraw(); }); } }, `⬆️ เลเวลอัป (→ Lv ${c.level + 1})`),
+      c.level > 1 ? h('button.menu-item', { onclick: async () => { close(); await levelDown(); } }, `↩️ ย้อนเลเวล (กลับเป็น Lv ${c.level - 1})`) : null,
+      h('button.menu-item', { onclick: () => { close(); nav(`#/edit/${c.id}/basic`); } }, '✏️ แก้ไขตัวละคร'),
       h('button.menu-item', { onclick: async () => { close(); await share(); } }, '🔗 แชร์ลิงก์ตัวละคร'),
       h('button.menu-item', { onclick: () => { close(); S.exportFile([c]); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); } }, '💾 ดาวน์โหลดไฟล์สำรอง'),
       h('button.menu-item', { onclick: () => { close(); window.print(); } }, '🖨️ ปริ้น / เซฟเป็น PDF'),
       h('button.menu-item', { onclick: () => { close(); const copy = structuredClone(c); delete copy.id; copy.name = (c.name || 'Character ') + ' (สำเนา)'; S.save(copy); nav(`#/c/${copy.id}`); toast('ทำสำเนาแล้ว'); } }, '📄 ทำสำเนา'),
       h('button.menu-item.danger', { onclick: async () => { close(); if (await confirmSheet('ลบตัวละคร?', `ลบ "${c.name || 'Character ไร้ชื่อ'}" ออกจากเครื่องนี้ (กู้คืนไม่ได้ ถ้าไม่ได้สำรองไว้)`, 'ลบเลย')) { S.remove(c.id); nav('#/'); } } }, '🗑️ ลบตัวละคร')));
     const close = () => document.querySelector('.bs-wrap:last-child .bs-backdrop')?.click();
+  }
+
+  async function levelDown() {
+    const li = levelInfo(c).at(-1);
+    if (!await confirmSheet(`ย้อนเป็นเลเวล ${c.level - 1}?`, `ลบเลเวล ${c.level} (${levelSummary(c, li)}) ออก — ตัวเลือกของเลเวลนี้ (HP / ASI / feat) จะหายไป`, 'ย้อนเลเวล')) return;
+    const before = compute(c).hpMax;
+    c.levels.pop();
+    c.level = c.levels.length;
+    P.hp = Math.max(0, Math.min(compute(c).hpMax, (P.hp ?? before) - (before - compute(c).hpMax)));
+    P.hdUsed = Math.min(P.hdUsed, c.level);
+    S.save(c); redraw(); toast(`กลับเป็นเลเวล ${c.level} แล้ว`);
   }
 
   async function share() {
@@ -86,7 +100,7 @@ export function renderSheet(root, c, tab, nav) {
     out.push(h('div.rest-row',
       h('button.btn', { onclick: () => shortRest(x) }, h('span', { html: iconSvg('short') }), ' พักสั้น'),
       h('button.btn', { onclick: () => longRest(x) }, h('span', { html: iconSvg('long') }), ' พักยาว'),
-      h('span.muted.small', `Hit Dice: ${hdLeft}/${c.level} (d${x.cls?.hitDie || 8})`)));
+      h('span.muted.small', `Hit Dice: ${hdLeft}/${c.level} (${x.hitDice.map(d => `${d.n}d${d.die}`).join(' + ') || 'd8'})`)));
     // ค่าพลัง
     out.push(h('h3', 'ค่าพลัง & Saving Throws'), h('div.abil-grid', ABIL.map(a => {
       const sv = x.saves.find(s => s.ab === a);
@@ -95,7 +109,7 @@ export function renderSheet(root, c, tab, nav) {
         h('span.save' + (sv.prof ? '.prof' : ''), { onclick: e => { e.stopPropagation(); roll(`${ABIL_EN[a]} save`, sv.bonus); } }, `Save ${sign(sv.bonus)}`));
     })));
     // โจมตี
-    out.push(h('h3', 'โจมตี'), h('div.card.list', x.attacks.map(a => h('div.atk', { onclick: () => roll(`${a.name} (attack)`, a.hit) },
+    out.push(h('h3', 'โจมตี'), x.atkPer > 1 ? h('p.muted.small', `⚔️ Extra Attack: ใช้ Attack action แล้วโจมตีได้ ${x.atkPer} ครั้ง`) : null, h('div.card.list', x.attacks.map(a => h('div.atk', { onclick: () => roll(`${a.name} (attack)`, a.hit) },
       h('div', h('b', a.name), a.mastery ? h('i.tag.mastery', { title: D.th.mastery?.[a.mastery.toLowerCase()] || '' }, a.mastery) : null, h('small', a.props || (a.name === 'Unarmed Strike' ? 'ต่อย เตะ โขก' : ''))),
       h('span.atk-hit', sign(a.hit)), h('span.atk-dmg', a.dmg)))));
     // ความหมาย Mastery + คุณสมบัติอาวุธที่ตัวละครใช้อยู่
@@ -105,7 +119,7 @@ export function renderSheet(root, c, tab, nav) {
     if (wTerms.length) out.push(h('details.orig', h('summary', 'ความหมาย Mastery / คุณสมบัติอาวุธ'),
       wTerms.map(id => { const it = D.masteryById[id] || D.weaponProps.find(p => p.id === id);
         return h('div.wterm', h('b', it.name), D.th.mastery?.[id] ? h('p.th', D.th.mastery[id]) : null, fullTh('mastery', id)); })));
-    if (x.cls?.id === 'barbarian') out.push(h('p.muted.small', `💡 ตอน Rage: ดาเมจ ${x.cls.table.rows[c.level - 1][4]} กับการโจมตีที่ใช้ STR`));
+    if (x.cls?.id === 'barbarian') out.push(h('p.muted.small', `💡 ตอน Rage: ดาเมจ ${x.cls.table.rows[x.CL - 1][4]} กับการโจมตีที่ใช้ STR`));
     // ทรัพยากร
     if (x.res.length) {
       out.push(h('h3', 'ใช้ได้กี่ครั้ง'), h('div.card.list', x.res.map(r => {
@@ -218,7 +232,8 @@ export function renderSheet(root, c, tab, nav) {
   function features(x) {
     const out = [];
     if (x.cls) {
-      out.push(h('h2.sec', x.cls.name));
+      out.push(h('button.btn.primary.lvup-btn', { onclick: () => openLevelUp(c, () => { S.save(c); redraw(); }) }, `⬆️ เลเวลอัป (→ Lv ${c.level + 1})`));
+      out.push(h('h2.sec', `${x.cls.name} ${x.CL}`));
       for (const f of x.feats) out.push(classFeatureCard(x.cls, f, f.src === 'sub'));
       const ch = c.choices || {};
       const opts = [...(ch.metamagic || []).map(id => x.cls.options['metamagic-options']?.items.find(i => i.id === id)), ...(ch.invocations || []).map(id => x.cls.options['eldritch-invocation-options']?.items.find(i => i.id === id))].filter(Boolean);
@@ -227,6 +242,12 @@ export function renderSheet(root, c, tab, nav) {
       if (ch.divineOrder || ch.primalOrder) out.push(h('p', h('b', 'บทบาท: '), ch.divineOrder || ch.primalOrder));
       if (ch.mastery?.length) out.push(h('p', h('b', 'Weapon Mastery: '), ch.mastery.map(id => `${D.weapon[id]?.name} (${D.weapon[id]?.mastery})`).join(', ')));
     }
+    for (const mc of x.mcFeats) {
+      out.push(h('h2.sec', `${mc.cls.name} ${mc.n}`), h('p.muted.small', 'Multiclass — ซับคลาสและเวทของคลาสนี้จะตามมาในอัปเดตถัดไป'));
+      for (const f of mc.feats) out.push(classFeatureCard(mc.cls, f, false));
+    }
+    if (c.level > 1) out.push(h('details.orig', h('summary', `ประวัติเลเวล (${c.level})`),
+      h('ol.lv-hist', levelInfo(c).map(li => h('li', levelSummary(c, li, x))))));
     const feats = [...x.featIds];
     if (feats.length) {
       out.push(h('h2.sec', 'Feats'));

@@ -32,3 +32,14 @@ show('Monk 2 Human', base({ level: 2, classId: 'monk', speciesId: 'human', bgId:
 show('Warlock 1 / Fighter 3 / Wizard 3 / Paladin 2 / Ranger 3 / Druid 3', base({ level: 1, classId: 'warlock', speciesId: 'dwarf', bgId: 'criminal' }));
 for (const id of ['fighter','wizard','paladin','ranger','druid','rogue','bard'])
   show(id, base({ level: id==='paladin'?2:3, classId: id, speciesId: 'human', bgId: 'soldier', choices: { fightingStyle: 'defense', land: 'polar' } }));
+
+// ---- เลเวลสูง / ASI / Multiclass ----
+const hi = (label, o, lv) => { const c = base(o); R.setLevel(c, lv.length); lv.forEach((e, i) => Object.assign(c.levels[i], e)); show(label, c);
+  const x = R.compute(c); console.log(' line:', x.classLine, 'score', JSON.stringify(x.score), 'atk/turn', x.atkPer, 'saves', x.saves.map(s => s.ab + (s.prof ? '*' : '') + s.bonus).join(' '), 'mc', x.mcFeats.map(m => m.cls.id + m.n + ':' + m.feats.length)); };
+const F = (n, extra = {}) => Array.from({ length: n }, () => ({ c: 'fighter', ...extra }));
+const lvF = F(20); lvF[3] = { c: 'fighter', feat: 'ability-score-improvement', asi: { str: 2 } }; lvF[5] = { c: 'fighter', feat: 'grappler', asi: { str: 1 } }; lvF[18] = { c: 'fighter', feat: 'boon-of-combat-prowess', asi: { str: 1 } };
+hi('Fighter 20', { classId: 'fighter', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 13, con: 14, int: 8, wis: 12, cha: 10 }, bonus: { str: 2, con: 1 } }, choices: { fightingStyle: 'defense' } }, lvF);
+hi('Paladin 6', { classId: 'paladin', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 10, con: 14, int: 8, wis: 12, cha: 13 }, bonus: { str: 2, cha: 1 } } }, Array.from({ length: 6 }, () => ({ c: 'paladin' })));
+hi('Wizard 9', { classId: 'wizard', speciesId: 'elf', bgId: 'sage', speciesOpt: { lineage: 'High Elf', ability: 'int' }, abilities: { base: { str: 8, dex: 14, con: 13, int: 15, wis: 12, cha: 10 }, bonus: { int: 2, con: 1 } } }, Array.from({ length: 9 }, () => ({ c: 'wizard' })));
+hi('Fighter 3 / Rogue 2', { classId: 'fighter', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 14, con: 13, int: 8, wis: 12, cha: 10 }, bonus: { str: 2, dex: 1 } } }, [{}, {}, { hp: 10 }, { c: 'rogue' }, { c: 'rogue', hp: 1 }].map(e => ({ c: 'fighter', ...e })));
+hi('Barbarian 20', { classId: 'barbarian', speciesId: 'dwarf', bgId: 'soldier', abilities: { base: { str: 15, dex: 13, con: 14, int: 8, wis: 12, cha: 10 }, bonus: { str: 2, con: 1 } } }, Array.from({ length: 20 }, () => ({ c: 'barbarian' })));

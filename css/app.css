@@ -441,3 +441,24 @@ select.inp { width: auto; min-width: 90px; }
 .pack-badge { display: inline-block; font-size: .75rem; color: var(--gold2); background: #2c2418; border: 1px solid #5a4523; border-radius: 999px; padding: 1px 10px; margin: 6px 0 2px; }
 .feat.from-pack { border-left-color: var(--gold); }
 @media (max-width: 400px) { .topnav a { padding: 6px 6px; font-size: .85rem; } }
+
+/* ---- เลเวลอัป (2L) ---- */
+.lbl { display: block; font-size: .85rem; color: var(--muted); margin: 12px 0 6px; }
+.lv-sel { max-width: 200px; }
+.lv-card > summary { cursor: pointer; list-style: none; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.lv-card > summary::-webkit-details-marker { display: none; }
+.lv-card > summary span { color: var(--muted); font-size: .85rem; }
+.lv-card.need { border-color: var(--gold2); }
+.lv-card.need > summary span { color: var(--gold2); }
+.lv-body { margin-top: 8px; }
+.lv-gains { margin: 10px 0 4px; line-height: 1.9; }
+.lv-gains .tag { margin-left: 0; margin-right: 4px; }
+.asi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 6px 0 10px; }
+.asi-cell { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 6px; text-align: center; min-width: 0; }
+.asi-cell.on { border-color: var(--gold2); }
+.asi-cell small { display: block; color: var(--muted); }
+.asi-cell .stepper-inp { justify-content: center; }
+.lvup-head { margin: 0 0 6px; }
+.lvup-btn { width: 100%; margin: 4px 0 12px; }
+.lv-hist { margin: 6px 0; padding-left: 22px; font-size: .9rem; }
+.lv-hist li { margin: 3px 0; }

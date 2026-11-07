@@ -5,9 +5,10 @@ import * as S from '../store.js';
 import {
   ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, SKILLS, SKILL_AB, LANGS, STANDARD_ARRAY, POINT_COST, MAX_LEVEL,
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
-  compute, missing, col, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub,
+  compute, missing, col, setLevel, setPrimaryClass, classLevels, levelInfo, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub,
 } from '../rules.js';
 import { featIdOf } from '../packs.js';
+import { levelEditor, levelSummary } from './levelup.js';
 import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh } from './parts.js';
 
 const STEPS = [
@@ -16,6 +17,7 @@ const STEPS = [
   { id: 'background', label: 'Background', icon: 'background' },
   { id: 'species', label: 'Species', icon: 'human' },
   { id: 'abilities', label: 'ค่าพลัง', icon: 'str' },
+  { id: 'levels', label: 'เลเวล', icon: 'level' },
   { id: 'equipment', label: 'ของติดตัว', icon: 'gear' },
   { id: 'spells', label: 'เวทมนตร์', icon: 'spell' },
   { id: 'done', label: 'สรุป', icon: 'd20' },
@@ -38,7 +40,7 @@ export function renderWizard(root, c, stepId, nav) {
   function visibleSteps() {
     const x = compute(c);
     const hasSpells = x.casting.some(b => !b.fixed && (b.cantripMax || b.preparedMax));
-    return STEPS.filter(s => s.id !== 'spells' || hasSpells);
+    return STEPS.filter(s => (s.id !== 'spells' || hasSpells) && (s.id !== 'levels' || c.level > 1));
   }
 
   function draw() {
@@ -47,7 +49,7 @@ export function renderWizard(root, c, stepId, nav) {
     const cur = STEPS[step];
     const pos = steps.indexOf(cur);
     const scrollY = window.scrollY;
-    const body = ({ basic, class: klass, background, species, abilities, equipment, spells, done })[cur.id]();
+    const body = ({ basic, class: klass, background, species, abilities, levels, equipment, spells, done })[cur.id]();
     root.replaceChildren(
       h('nav.stepper', { 'aria-label': 'ขั้นตอน' }, steps.map((s, i) => h('button.step' + (s === cur ? '.on' : '') + (i < pos ? '.past' : ''), {
         type: 'button', onclick: () => go(STEPS.indexOf(s)),
@@ -79,10 +81,12 @@ export function renderWizard(root, c, stepId, nav) {
       section('ชื่อตัวละคร', h('input.inp', { value: c.name, placeholder: 'เช่น Jerk', maxlength: 40, oninput: e => { c.name = e.target.value; changed(false); } })),
       section('ชื่อผู้เล่น', h('input.inp', { value: c.player, placeholder: 'ไม่ใส่ก็ได้', maxlength: 40, oninput: e => { c.player = e.target.value; changed(false); } })),
       section('เลเวล',
-        h('div.seg', Array.from({ length: MAX_LEVEL }, (_, i) => i + 1).map(l => h('button.seg-btn' + (c.level === l ? '.on' : ''), {
-          type: 'button', onclick: () => { c.level = l; changed(); },
-        }, `Lv ${l}`))),
-        h('p.muted.small', 'ตอนนี้รองรับถึงเลเวล 3 (ซับคลาสได้ที่เลเวล 3) — เลเวล 4–20 จะตามมาในอัปเดตถัดไป')),
+        h('select.inp.lv-sel', { 'aria-label': 'เลเวล', onchange: async e => {
+          const n = +e.target.value;
+          if (n < c.level && levelInfo(c).slice(n).some(li => li.e.hp || li.e.feat || li.e.c !== c.classId) && !confirm(`ลดเป็นเลเวล ${n}? ตัวเลือกของเลเวล ${n + 1}–${c.level} (HP/ASI/feat/คลาส) จะหายไป`)) { e.target.value = c.level; return; }
+          setLevel(c, n); changed();
+        } }, Array.from({ length: MAX_LEVEL }, (_, i) => h('option', { value: i + 1, selected: c.level === i + 1 }, `เลเวล ${i + 1}`))),
+        h('p.muted.small', 'ซับคลาสได้ที่เลเวล 3 · ถ้าเริ่มเลเวล 2 ขึ้นไปจะมีขั้น "เลเวล" ให้เลือก HP / ASI / feat / Multiclass ทีละเลเวล')),
       section('รูปลักษณ์ / บุคลิก (ไม่บังคับ)', h('textarea.inp', { rows: 3, placeholder: 'ผมแดงยุ่ง ผิวสีน้ำตาลมีลายขาว ถือขวานสองคม…', oninput: e => { c.look = e.target.value; changed(false); } }, c.look || '')),
     ];
   }
@@ -90,7 +94,7 @@ export function renderWizard(root, c, stepId, nav) {
   // ---------- 2. Class ----------
   function classSheet(cls) {
     const t = thc(cls.id);
-    const L = Math.max(c.level, 3);
+    const L = Math.max(classLevels(c)[cls.id] || c.level, 3);
     sheet(cls.name, h('div',
       h('div.hero-row', h('span.hero-ico', { html: iconSvg(cls.id) }), h('div', h('b', t.tag || ''), h('p', t.desc || ''))),
       t.tips?.length ? h('div.tips', h('b', '💡 ทิปสำหรับมือใหม่'), h('ul', t.tips.map(x => h('li', x)))) : null,
@@ -100,7 +104,7 @@ export function renderWizard(root, c, stepId, nav) {
         h('dt', 'Saving Throws'), h('dd', cls.saves.map(a => ABIL_SHORT[a]).join(', ')),
         h('dt', 'Armor'), h('dd', cls.core['Armor Training']),
         h('dt', 'Weapons'), h('dd', cls.core['Weapon Proficiencies'])),
-      h('h4', 'ความสามารถถึงเลเวล 3'),
+      h('h4', `ความสามารถถึงเลเวล ${L}`),
       cls.features.filter(f => f.level <= L && !/Subclass$/.test(f.name)).map(f => classFeatureCard(cls, f, false)),
       h('h4', `ซับคลาส: ${cls.subclass.name}`),
       thc(cls.id).sub?.desc ? h('p', thc(cls.id).sub.desc) : null,
@@ -110,7 +114,7 @@ export function renderWizard(root, c, stepId, nav) {
   }
   function pickClass(id) {
     if (c.classId !== id) {
-      c.classId = id;
+      setPrimaryClass(c, id);
       c.skills = [];
       c.choices = {};
       c.spells = { cantrips: [], prepared: [], book: [] };
@@ -130,7 +134,7 @@ export function renderWizard(root, c, stepId, nav) {
     if (!cls) return out;
     const x = compute(c);
     const ch = c.choices;
-    const L = c.level;
+    const L = x.CL;
     const block = (title, desc, ...kids) => h('div.block.choice-block', h('h3', title), desc ? h('p.muted', desc) : null, ...kids);
 
     out.push(h('h2.sec', `ตัวเลือกของ ${cls.name}`));
@@ -317,7 +321,7 @@ export function renderWizard(root, c, stepId, nav) {
       if (so.feat === 'skilled') out.push(section('Skilled', h('p.muted', 'เลือกสกิล 3 อย่าง (กฎจริงเลือกเครื่องมือแทนได้ — จดไว้ในโน้ตได้เลย)'),
         counter((c.choices.skilled || []).length, 3), chips(SKILLS.map(s => s[0]), c.choices.skilled || [], 3, v => { c.choices.skilled = v; changed(); })));
     }
-    const nLang = 2 + (c.classId === 'ranger' && c.level >= 2 ? 2 : 0);
+    const nLang = 2 + (c.classId === 'ranger' && (classLevels(c).ranger || 0) >= 2 ? 2 : 0);
     out.push(section('ภาษา', h('p.muted', `รู้ภาษา Common อยู่แล้ว เลือกเพิ่ม ${nLang} ภาษา${nLang > 2 ? ' (รวม 2 ภาษาจาก Deft Explorer ของ Ranger)' : ''}`),
       counter(c.languages.length, nLang), chips(LANGS, c.languages, nLang, v => { c.languages = v; changed(); })));
     out.push(h('h3', 'ความสามารถของเผ่า'));
@@ -378,6 +382,24 @@ export function renderWizard(root, c, stepId, nav) {
     });
     out.push(h('div.ab-table', rows));
     if (!c.bgId) out.push(h('p.warn', 'ยังไม่ได้เลือก Background — โบนัส +2/+1 จะมาจาก Background'));
+    return out;
+  }
+
+  // ---------- เลเวล 2+ ----------
+  const openLv = new Set();
+  function levels() {
+    const x = compute(c);
+    const out = [intro('เลเวลอัป', `ตั้งค่าทีละเลเวล (2–${c.level}): HP แบบค่าเฉลี่ยหรือทอย, ASI / feat ที่เลเวล 4, 8, 12, 16 (บางคลาสได้เพิ่ม) และ Epic Boon ที่เลเวล 19 · อยากลองคลาสอื่นก็เปลี่ยนคลาสของเลเวลนั้นได้ (Multiclass)`)];
+    out.push(h('div.ab-mini', ABIL.map(a => h('div', h('small', ABIL_SHORT[a]), h('b', sign(x.m[a])), h('span', String(x.score[a]))))),
+      h('p.muted.small', `HP สูงสุด ${x.hpMax} · ${x.classLine}`));
+    for (const li of levelInfo(c).slice(1)) {
+      const need = (li.asi || li.boon) && !li.e.feat;
+      const open = openLv.has(li.i) || need;
+      out.push(h('details.block.lv-card' + (need ? '.need' : ''), {
+        open, ontoggle: e => { if (e.currentTarget.open) openLv.add(li.i); else openLv.delete(li.i); },
+      }, h('summary', h('b', `Lv ${li.lv}`), ' ', h('span', levelSummary(c, li, x))),
+        h('div.lv-body', levelEditor(c, li.i, () => { openLv.add(li.i); changed(); }))));
+    }
     return out;
   }
 
@@ -454,7 +476,7 @@ export function renderWizard(root, c, stepId, nav) {
     const x = compute(c);
     const miss = missing(c);
     return [
-      intro(c.name || 'Character ไร้ชื่อ', [x.sp?.name, x.cls?.name, `Lv ${c.level}`, x.bg?.name].filter(Boolean).join(' · ')),
+      intro(c.name || 'Character ไร้ชื่อ', [x.sp?.name, x.classLine, x.bg?.name].filter(Boolean).join(' · ')),
       h('div.stats-row', statBox('AC', x.ac, null, 'ac'), statBox('HP', x.hpMax, null, 'hp'), statBox('Speed', `${x.speed} ft`, null, 'speed'), statBox('Initiative', sign(x.init), null, 'init')),
       h('div.ab-mini', ABIL.map(a => h('div', h('small', ABIL_SHORT[a]), h('b', sign(x.m[a])), h('span', String(x.score[a]))))),
       miss.length ? h('div.block.warn-box', h('h3', 'ยังเลือกไม่ครบ'), h('ul', miss.map(m => h('li', m))), h('p.muted.small', 'เปิดใบตัวละครได้เลย แล้วค่อยกลับมาแก้ทีหลังก็ได้')) : h('p.ok', '✓ เลือกครบแล้ว พร้อมลุย!'),

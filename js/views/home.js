@@ -25,7 +25,7 @@ export function renderHome(root, nav) {
       try { x = compute(c); } catch { /* ข้อมูลไม่ครบ */ }
       return h('a.char-card', { href: `#/c/${c.id}` },
         h('span.char-ico', { html: iconSvg(c.classId || 'd20') }),
-        h('div', h('b', c.name || 'Character ไร้ชื่อ'), h('small', [x?.sp?.name, x?.cls ? `${x.cls.name} ${c.level}` : 'ยังไม่เลือกคลาส'].filter(Boolean).join(' · '))),
+        h('div', h('b', c.name || 'Character ไร้ชื่อ'), h('small', [x?.sp?.name, x?.cls ? x.classLine : 'ยังไม่เลือกคลาส'].filter(Boolean).join(' · '))),
         x?.cls ? h('div.char-stats', h('span', `AC ${x.ac}`), h('span', `HP ${c.play?.hp ?? x.hpMax}/${x.hpMax}`)) : null);
     })) : h('p.empty', 'ยังไม่มีตัวละคร — กดปุ่มด้านบนเพื่อเริ่มสร้างเลย'),
     h('div.row.home-tools',
@@ -43,7 +43,7 @@ export async function renderImport(root, data, nav) {
     root.replaceChildren(h('section.hero',
       h('span.hero-ico', { html: iconSvg(c.classId || 'd20') }),
       h('h1', c.name || 'Character ไร้ชื่อ'),
-      h('p', [x.sp?.name, x.cls ? `${x.cls.name} ${c.level}` : null, x.bg?.name].filter(Boolean).join(' · ')),
+      h('p', [x.sp?.name, x.cls ? x.classLine : null, x.bg?.name].filter(Boolean).join(' · ')),
       h('p.muted', 'มีคนแชร์ตัวละครนี้ให้คุณ — บันทึกลงเครื่องเพื่อเปิดดูและใช้งาน'),
       c.packs?.length ? h('p.muted.small', `📦 มีของจาก Content Pack ${c.packs.reduce((n, p) => n + Object.values(p.items).flat().length, 0)} รายการ (${c.packs.map(p => p.name).join(', ')}) — จะเพิ่มลงเครื่องให้ตอนบันทึก`) : null,
       h('div.row', h('button.btn.primary.big', { onclick: () => { S.save(c); nav(`#/c/${c.id}`); toast('บันทึกลงเครื่องแล้ว'); } }, 'บันทึกลงเครื่องนี้'),

@@ -2,7 +2,7 @@
 import { D } from './data.js';
 import { featIdOf } from './packs.js';
 
-export const MAX_LEVEL = 3; // เฟส 1
+export const MAX_LEVEL = 20;
 export const ABIL = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 export const ABIL_EN = { str: 'Strength', dex: 'Dexterity', con: 'Constitution', int: 'Intelligence', wis: 'Wisdom', cha: 'Charisma' };
 export const ABIL_SHORT = { str: 'STR', dex: 'DEX', con: 'CON', int: 'INT', wis: 'WIS', cha: 'CHA' };
@@ -86,6 +86,102 @@ export function subOf(c) {
 }
 /** เลือกซับคลาส SRD อยู่หรือเปล่า (ตัวเลือกพิเศษอย่าง Land / Hunter's Prey ใช้เฉพาะซับคลาส SRD) */
 export const srdSub = c => !!D.cls[c.classId] && subOf(c) === D.cls[c.classId].subclass;
+
+// ---------- เลเวล (เก็บเป็นประวัติทีละเลเวล รองรับ Multiclass) ----------
+/** c.levels[i] = {c: classId, hp?: ผลทอยเต๋า (ไม่มี = ค่าเฉลี่ย), feat?: featId ที่ได้ตอน ASI/Epic Boon, asi?: {ab: +n}} — index 0 = Lv1 = คลาสหลักเสมอ */
+export function ensureLevels(c) {
+  if (!Array.isArray(c.levels) || !c.levels.length) {
+    const n = Math.min(MAX_LEVEL, Math.max(1, c.level || 1));
+    c.levels = Array.from({ length: n }, (_, i) => (i && c.hpRolls?.[i + 1] ? { c: c.classId || null, hp: c.hpRolls[i + 1] } : { c: c.classId || null }));
+    delete c.hpRolls;
+  }
+  // c.level เป็นตัวหลัก — ถ้าโค้ด/ไฟล์เก่าตั้งไว้ไม่ตรง ให้เติม/ตัดเลเวลท้ายให้ตรง
+  const want = Math.max(1, Math.min(MAX_LEVEL, c.level | 0 || c.levels.length));
+  while (c.levels.length < want) c.levels.push({ c: c.classId || null });
+  c.levels.length = want;
+  for (const e of c.levels) if (!e.c) e.c = c.classId || null;
+  c.levels[0].c = c.classId || null;
+  c.level = c.levels.length;
+  return c.levels;
+}
+/** ตั้งเลเวลรวม (เพิ่มเลเวลใหม่เป็นคลาสหลัก / ตัดเลเวลท้ายทิ้ง) */
+export function setLevel(c, n) {
+  ensureLevels(c);
+  n = Math.max(1, Math.min(MAX_LEVEL, n | 0));
+  while (c.levels.length < n) c.levels.push({ c: c.classId || null });
+  c.levels.length = n;
+  c.level = n;
+}
+/** เปลี่ยนคลาสหลัก — เลเวลที่เป็นคลาสหลักเดิมย้ายไปเป็นคลาสใหม่ */
+export function setPrimaryClass(c, id) {
+  const old = c.classId;
+  ensureLevels(c);
+  for (const e of c.levels) if (!e.c || e.c === old) e.c = id;
+  c.classId = id;
+}
+/** {classId: เลเวลของคลาสนั้น} เรียงตามลำดับที่เข้า */
+export function classLevels(c) {
+  const out = {};
+  for (const e of ensureLevels(c)) if (e.c) out[e.c] = (out[e.c] || 0) + 1;
+  return out;
+}
+export const classLine = c => Object.entries(classLevels(c)).map(([id, n]) => `${D.cls[id]?.name || id} ${n}`).join(' / ');
+export const hitDieAvg = d => Math.floor(d / 2) + 1;
+/** แต่ละเลเวลเป็นคลาสไหน เลเวลที่เท่าไหร่ของคลาส ได้ ASI / Epic Boon ไหม */
+export function levelInfo(c) {
+  const cnt = {};
+  return ensureLevels(c).map((e, i) => {
+    const cls = D.cls[e.c];
+    const cl = cnt[e.c] = (cnt[e.c] || 0) + 1;
+    const gains = cls ? String(col(cls, 'Class Features', cl) || '') : '';
+    return { i, lv: i + 1, e, cls, cl, gains, asi: /Ability Score Improvement/.test(gains), boon: /Epic Boon/.test(gains) };
+  });
+}
+const ABIL_BY_EN = Object.fromEntries(ABIL.map(a => [ABIL_EN[a].toLowerCase(), a]));
+/** feat นี้เพิ่มค่าพลังยังไง: {total, per, abil[], cap} หรือ null */
+export function featAsiRule(f) {
+  if (!f) return null;
+  if (f.id === 'ability-score-improvement') return { total: 2, per: 2, abil: ABIL, cap: 20 };
+  const t = f.text || '';
+  let mm = t.match(/Increase one ability score of your choice by 1, to a maximum of (\d+)/i);
+  if (mm) return { total: 1, per: 1, abil: ABIL, cap: +mm[1] };
+  mm = t.match(/Increase your ([A-Za-z ,]+?) score by 1, to a maximum of (\d+)/i);
+  if (mm) {
+    const abil = mm[1].split(/,\s*(?:or\s+)?|\s+or\s+/).map(x => ABIL_BY_EN[x.trim().toLowerCase()]).filter(Boolean);
+    if (abil.length) return { total: 1, per: 1, abil, cap: +mm[2] };
+  }
+  return null;
+}
+const REPEATABLE = new Set(['ability-score-improvement', 'skilled', 'magic-initiate']);
+export const featRepeatable = f => !!f && (!!f.repeatable || REPEATABLE.has(f.id) || /Repeatable\./.test(f.text || ''));
+const hasFightingStyle = c => Object.entries(classLevels(c)).some(([id, n]) => FIGHTING_STYLE_AT[id] && n >= FIGHTING_STYLE_AT[id]);
+function originFeatIds(c) {
+  const bg = D.bg[c.bgId], so = c.speciesOpt || {};
+  const out = [];
+  if (bg) out.push(D.feat[featIdOf(bg.feat)]?.id);
+  if (c.speciesId === 'human' && so.feat) out.push(so.feat);
+  return out.filter(Boolean);
+}
+/** feat ที่เลือกได้ตอน ASI / Epic Boon ของเลเวล li */
+export function featChoices(c, li) {
+  const taken = new Set([...originFeatIds(c), c.choices?.fightingStyle, ...levelInfo(c).filter(o => o.i !== li.i && o.e.feat).map(o => o.e.feat)]);
+  const key = f => (li.boon ? (f.category === 'Epic Boon' ? 0 : f.id === 'ability-score-improvement' ? 1 : 2) : (f.id === 'ability-score-improvement' ? 0 : 1));
+  return D.feats.filter(f => {
+    if (taken.has(f.id) && !featRepeatable(f)) return false;
+    if (f.category === 'Epic Boon') return li.lv >= 19;
+    if (f.category === 'Fighting Style') return hasFightingStyle(c);
+    if (f.category === 'General') return li.lv >= 4;
+    return true;
+  }).sort((a, b) => key(a) - key(b));
+}
+/** ผ่านเงื่อนไข Multiclass (ค่าพลังหลัก 13+) ไหม */
+export function meetsPrimary(cls, score) {
+  const s = cls?.core?.['Primary Ability'] || '';
+  const abil = s.split(/\s+(?:or|and)\s+/).map(x => ABIL_BY_EN[x.trim().toLowerCase()]).filter(Boolean);
+  if (!abil.length) return true;
+  return / or /.test(s) ? abil.some(a => (score[a] || 0) >= 13) : abil.every(a => (score[a] || 0) >= 13);
+}
+const EXTRA_ATK = { barbarian: [5], fighter: [5, 11, 20], monk: [5], paladin: [5], ranger: [5] };
 
 /** สเปลที่ซับคลาสให้ "เตรียมไว้เสมอ" */
 export function subclassSpells(cls, level, land, sub = cls.subclass) {
@@ -183,18 +279,25 @@ export function weaponProficient(w, rule) {
 
 // ---------- ทรัพยากร (ใช้ได้กี่ครั้ง) ----------
 function resources(c, x) {
-  const { cls, L, pb, m } = x;
+  const { cls, L, TL, pb, m } = x;
   const R = [];
   const add = (id, name, max, reset, icon) => max > 0 && R.push({ id, name, max, reset, icon });
   const t = n => num(col(cls, n, L));
   switch (cls.id) {
-    case 'barbarian': add('rage', 'Rage', t('Rages'), 'short1', 'flame'); break;
-    case 'bard': add('bardic', 'Bardic Inspiration', Math.max(1, m.cha), 'long', 'lyre'); break;
-    case 'cleric': if (L >= 2) add('cd', 'Channel Divinity', t('Channel Divinity'), 'short1', 'holy-symbol'); break;
+    case 'barbarian':
+      add('rage', 'Rage', t('Rages'), 'short1', 'flame');
+      if (L >= 15) add('persist', 'Persistent Rage (คืน Rage ตอนทอย Initiative)', 1, 'long', 'flame');
+      break;
+    case 'bard': add('bardic', 'Bardic Inspiration', Math.max(1, m.cha), L >= 5 ? 'short' : 'long', 'lyre'); break;
+    case 'cleric':
+      if (L >= 2) add('cd', 'Channel Divinity', t('Channel Divinity'), 'short1', 'holy-symbol');
+      if (L >= 10) add('di', 'Divine Intervention', 1, 'long', 'holy-symbol');
+      break;
     case 'druid': if (L >= 2) add('wild', 'Wild Shape', t('Wild Shape'), 'short1', 'oak-leaf'); break;
     case 'fighter':
       add('sw', 'Second Wind', t('Second Wind'), 'short1', 'hp');
-      if (L >= 2) add('surge', 'Action Surge', 1, 'short', 'lightning-helix');
+      if (L >= 2) add('surge', 'Action Surge', L >= 17 ? 2 : 1, 'short', 'lightning-helix');
+      if (L >= 9) add('indom', 'Indomitable', L >= 17 ? 3 : L >= 13 ? 2 : 1, 'long', 'hp');
       break;
     case 'monk':
       if (L >= 2) { add('focus', 'Focus Points', t('Focus Points'), 'short', 'fist'); add('meta', 'Uncanny Metabolism', 1, 'long', 'hp'); }
@@ -203,14 +306,28 @@ function resources(c, x) {
       add('loh', 'Lay On Hands (HP)', 5 * L, 'long', 'hp');
       if (L >= 2) add('smite', "Paladin's Smite (ร่ายฟรี)", 1, 'long', 'flame');
       if (L >= 3) add('cd', 'Channel Divinity', t('Channel Divinity'), 'short1', 'holy-symbol');
+      if (L >= 5) add('steed', 'Faithful Steed (ร่าย Find Steed ฟรี)', 1, 'long', 'spell');
       break;
-    case 'ranger': add('fe', "Hunter's Mark (ร่ายฟรี)", t('Favored Enemy'), 'long', 'eye'); break;
+    case 'ranger':
+      add('fe', "Hunter's Mark (ร่ายฟรี)", t('Favored Enemy'), 'long', 'eye');
+      if (L >= 10) add('tireless', 'Tireless (Temp HP)', Math.max(1, m.wis), 'long', 'hp');
+      if (L >= 14) add('veil', "Nature's Veil", Math.max(1, m.wis), 'long', 'eye');
+      break;
+    case 'rogue': if (L >= 20) add('luck', 'Stroke of Luck', 1, 'short', 'd20'); break;
     case 'sorcerer':
       add('innate', 'Innate Sorcery', 2, 'long', 'magic-swirl');
       if (L >= 2) add('sp', 'Sorcery Points', t('Sorcery Points'), 'long', 'sorcerer');
+      if (L >= 5) add('restore', 'Sorcerous Restoration', 1, 'long', 'sorcerer');
       break;
-    case 'warlock': if (L >= 2) add('cunning', 'Magical Cunning', 1, 'long', 'warlock-eye'); break;
-    case 'wizard': add('arcrec', 'Arcane Recovery', 1, 'long', 'book'); break;
+    case 'warlock':
+      if (L >= 2) add('cunning', 'Magical Cunning', 1, 'long', 'warlock-eye');
+      if (L >= 9) add('patron', 'Contact Patron', 1, 'long', 'warlock-eye');
+      for (const [lv, sl] of [[11, 6], [13, 7], [15, 8], [17, 9]]) if (L >= lv) add('arc' + sl, `Mystic Arcanum (Lv ${sl})`, 1, 'long', 'spell');
+      break;
+    case 'wizard':
+      add('arcrec', 'Arcane Recovery', 1, 'long', 'book');
+      if (L >= 20) add('sig', 'Signature Spells', 2, 'short', 'book');
+      break;
   }
   const sp = c.speciesId, so = c.speciesOpt || {};
   if (sp === 'dragonborn') add('breath', 'Breath Weapon', pb, 'long', 'dragonborn');
@@ -218,8 +335,10 @@ function resources(c, x) {
   if (sp === 'orc') { add('adrenaline', 'Adrenaline Rush', pb, 'short', 'orc'); add('relentless', 'Relentless Endurance', 1, 'long', 'hp'); }
   if (sp === 'dwarf') add('stone', 'Stonecunning', pb, 'long', 'dwarf');
   if (sp === 'gnome' && so.lineage === 'Forest Gnome') add('swa', 'Speak with Animals (ร่ายฟรี)', pb, 'long', 'gnome');
-  if (SPECIES_SPELLS[so.lineage || so.legacy] && L >= 3 && SPECIES_SPELLS[so.lineage || so.legacy][1])
+  if (SPECIES_SPELLS[so.lineage || so.legacy] && TL >= 3 && SPECIES_SPELLS[so.lineage || so.legacy][1])
     add('sp3', SPECIES_SPELLS[so.lineage || so.legacy][1] + ' (ร่ายฟรี)', 1, 'long', 'spell');
+  if (SPECIES_SPELLS[so.lineage || so.legacy]?.[2] && TL >= 5)
+    add('sp5', SPECIES_SPELLS[so.lineage || so.legacy][2] + ' (ร่ายฟรี)', 1, 'long', 'spell');
   if (x.originFeats.includes('magic-initiate')) add('mi', 'Magic Initiate (ร่ายฟรี)', 1, 'long', 'feat');
   // ฟีเจอร์ซับคลาสจาก Content Pack ที่กำหนดจำนวนครั้งไว้
   if (x.sub?.pack && L >= 3) for (const f of x.sub.features) if (f.level <= L && f.uses?.n) {
@@ -231,8 +350,9 @@ function resources(c, x) {
 
 // ---------- คำนวณทั้งหมด ----------
 export function compute(c) {
+  const LI = levelInfo(c), CLs = classLevels(c);
   const cls = D.cls[c.classId], sp = D.sp[c.speciesId], bg = D.bg[c.bgId];
-  const L = c.level || 1, pb = pbOf(L), ch = c.choices || {}, so = c.speciesOpt || {};
+  const L = LI.length, CL = CLs[c.classId] || L, pb = pbOf(L), ch = c.choices || {}, so = c.speciesOpt || {};
   const warn = [];
   const sub = subOf(c), isSrdSub = srdSub(c);
   if (cls && c.subclassId && sub?.id !== c.subclassId) warn.push('ซับคลาสที่เลือกไว้ไม่มีในเครื่องนี้ (แพ็กถูกปิดหรือลบ) — แสดงซับคลาส SRD แทน');
@@ -240,33 +360,45 @@ export function compute(c) {
   // ค่าความสามารถ
   const score = {};
   for (const a of ABIL) score[a] = (c.abilities?.base?.[a] ?? 10) + (c.abilities?.bonus?.[a] || 0);
+  // ASI / feat จากเลเวลอัป (เฉพาะเลเวลที่ได้ ASI หรือ Epic Boon จริง)
+  const levelFeats = [];
+  for (const li of LI) if ((li.asi || li.boon) && D.feat[li.e.feat]) {
+    levelFeats.push(li.e.feat);
+    const r = featAsiRule(D.feat[li.e.feat]);
+    if (r) for (const [a, n] of Object.entries(li.e.asi || {})) if (r.abil.includes(a) && n > 0) score[a] = Math.max(score[a], Math.min(r.cap, score[a] + Math.min(n, r.per)));
+  }
+  if ((CLs.barbarian || 0) >= 20) for (const a of ['str', 'con']) score[a] = Math.max(score[a], Math.min(25, score[a] + 4));
+  if ((CLs.monk || 0) >= 20) for (const a of ['dex', 'wis']) score[a] = Math.max(score[a], Math.min(25, score[a] + 4));
   const m = Object.fromEntries(ABIL.map(a => [a, mod(score[a])]));
 
   // Origin feats (จาก background + Human Versatile)
-  const originFeats = [];
-  if (bg) originFeats.push(D.feat[featIdOf(bg.feat)]?.id);
-  if (c.speciesId === 'human' && so.feat) originFeats.push(so.feat);
-  const featIds = originFeats.filter(Boolean);
+  const originFeats = originFeatIds(c);
+  const featIds = [...originFeats];
   if (ch.fightingStyle && !['blessed-warrior', 'druidic-warrior'].includes(ch.fightingStyle)) featIds.push(ch.fightingStyle);
+  featIds.push(...levelFeats);
 
   // สกิล
   const prof = new Set([...(bg?.skills || []), ...(c.skills || [])]);
   if (so.skill) prof.add(so.skill);
-  if (cls?.id === 'barbarian' && L >= 3 && ch.primalSkill) prof.add(ch.primalSkill);
-  if (cls?.id === 'bard' && L >= 3 && isSrdSub) (ch.loreSkills || []).forEach(k => prof.add(k));
+  if (cls?.id === 'barbarian' && CL >= 3 && ch.primalSkill) prof.add(ch.primalSkill);
+  if (cls?.id === 'bard' && CL >= 3 && isSrdSub) (ch.loreSkills || []).forEach(k => prof.add(k));
   for (const k of ['skilled', 'skilled2']) (ch[k] || []).forEach(s => SKILL_AB[s] && prof.add(s));
   const exp = new Set((ch.expertise || []).filter(s => prof.has(s)));
   const skills = SKILLS.map(([name, ab]) => {
     let bonus = m[ab];
     const p = prof.has(name), e = exp.has(name);
     if (e) bonus += pb * 2; else if (p) bonus += pb;
-    else if (cls?.id === 'bard' && L >= 2) bonus += Math.floor(pb / 2);
+    else if (cls?.id === 'bard' && CL >= 2) bonus += Math.floor(pb / 2);
     if ((cls?.id === 'cleric' && ch.divineOrder === 'Thaumaturge' && ['Arcana', 'Religion'].includes(name)) ||
         (cls?.id === 'druid' && ch.primalOrder === 'Magician' && ['Arcana', 'Nature'].includes(name))) bonus += Math.max(1, m.wis);
     return { name, ab, bonus, prof: p, exp: e };
   });
 
-  const saves = ABIL.map(a => ({ ab: a, prof: !!cls?.saves.includes(a), bonus: m[a] + (cls?.saves.includes(a) ? pb : 0) }));
+  const saveProf = new Set(cls?.saves || []);
+  if ((CLs.monk || 0) >= 14) ABIL.forEach(a => saveProf.add(a)); // Disciplined Survivor
+  if ((CLs.rogue || 0) >= 15) ['wis', 'cha'].forEach(a => saveProf.add(a)); // Slippery Mind
+  const aura = (CLs.paladin || 0) >= 6 ? Math.max(1, m.cha) : 0; // Aura of Protection
+  const saves = ABIL.map(a => ({ ab: a, prof: saveProf.has(a), bonus: m[a] + (saveProf.has(a) ? pb : 0) + aura }));
 
   // เกราะและ AC
   const training = cls ? armorTraining(c, cls) : new Set();
@@ -287,7 +419,7 @@ export function compute(c) {
     const alt = [];
     if (cls?.id === 'barbarian') alt.push([10 + m.dex + m.con, 'Unarmored Defense (10 + DEX + CON)']);
     if (cls?.id === 'monk' && !shield) alt.push([10 + m.dex + m.wis, 'Unarmored Defense (10 + DEX + WIS)']);
-    if (cls?.id === 'sorcerer' && L >= 3) alt.push([10 + m.dex + m.cha, 'Draconic Resilience (10 + DEX + CHA)']);
+    if (cls?.id === 'sorcerer' && CL >= 3 && isSrdSub) alt.push([10 + m.dex + m.cha, 'Draconic Resilience (10 + DEX + CHA)']);
     for (const [v, n] of alt) if (v > ac) { ac = v; acNote = n; }
   }
   if (shield) {
@@ -298,20 +430,23 @@ export function compute(c) {
 
   // HP
   let hpMax = 0;
-  if (cls) {
-    const per = Math.floor(cls.hitDie / 2) + 1;
-    for (let l = 1; l <= L; l++) {
-      const roll = l === 1 ? cls.hitDie : (c.hpRolls?.[l] || per);
-      hpMax += Math.max(1, roll + m.con);
-    }
-    if (c.speciesId === 'dwarf') hpMax += L;
-    if (cls.id === 'sorcerer' && L >= 3) hpMax += L;
+  for (const li of LI) {
+    const d = li.cls?.hitDie;
+    if (d) hpMax += Math.max(1, (li.i === 0 ? d : li.e.hp || hitDieAvg(d)) + m.con);
   }
+  if (cls) {
+    if (c.speciesId === 'dwarf') hpMax += L;
+    if (cls.id === 'sorcerer' && CL >= 3 && isSrdSub) hpMax += CL;
+  }
+  const hitDice = Object.entries(CLs).filter(([id]) => D.cls[id]).map(([id, n]) => ({ die: D.cls[id].hitDie, n }));
 
   // ความเร็ว
   let speed = sp?.speed || 30;
   if (so.lineage === 'Wood Elf') speed = 35;
-  if (cls?.id === 'monk' && L >= 2 && !worn && !shield) speed += num(col(cls, 'Unarmored Movement', L));
+  if ((CLs.monk || 0) >= 2 && !worn && !shield) speed += num(col(D.cls.monk, 'Unarmored Movement', CLs.monk));
+  const heavy = /Heavy/.test(worn?.group || '');
+  if ((CLs.barbarian || 0) >= 5 && !heavy) speed += 10; // Fast Movement
+  if ((CLs.ranger || 0) >= 6 && !heavy) speed += 10; // Roving
   if (worn?.strength?.match(/\d+/) && score.str < +worn.strength.match(/\d+/)[0]) speed -= 10;
 
   const init = m.dex + (featIds.includes('alert') ? pb : 0);
@@ -336,32 +471,34 @@ export function compute(c) {
     if (ranged && featIds.includes('archery')) hit += 2;
     let dmg = w.damage.replace(/^(\S+)/, `$1${m[ab] ? (m[ab] > 0 ? '+' : '') + m[ab] : ''}`);
     if (cls?.id === 'monk' && ab === 'dex') {
-      const ma = col(cls, 'Martial Arts', L);
+      const ma = col(cls, 'Martial Arts', CL);
       const [d] = w.damage.split(' ');
       if (parseInt(ma.slice(2)) > parseInt(d.split('d')[1])) dmg = w.damage.replace(d, ma + (m.dex ? (m.dex > 0 ? '+' : '') + m.dex : ''));
     }
     attacks.push({ name: w.name, hit, dmg, props: w.properties, mastery: masteries.has(w.id) ? w.mastery : null, prof: p, ranged });
   }
-  const unarmedDie = cls?.id === 'monk' ? col(cls, 'Martial Arts', L) : null;
+  const unarmedDie = cls?.id === 'monk' ? col(cls, 'Martial Arts', CL) : null;
+  let atkPer = 1;
+  for (const [id, n] of Object.entries(CLs)) atkPer = Math.max(atkPer, 1 + (EXTRA_ATK[id] || []).filter(l => n >= l).length);
   const uAb = cls?.id === 'monk' && m.dex > m.str ? 'dex' : 'str';
   attacks.push({ name: 'Unarmed Strike', hit: m[uAb] + pb, dmg: unarmedDie ? `${unarmedDie}${m[uAb] >= 0 ? '+' : ''}${m[uAb]} Bludgeoning` : `${Math.max(0, 1 + m.str)} Bludgeoning`, props: '', prof: true });
 
   // เวท
   const casting = [];
-  const ci = cls ? casterInfo(cls, L) : null;
+  const ci = cls ? casterInfo(cls, CL) : null;
   if (ci) {
     const ab = ci.ability;
     let always = [];
     if (cls.id === 'druid') always.push('Speak with Animals');
     if (cls.id === 'ranger') always.push("Hunter's Mark");
-    if (cls.id === 'paladin' && L >= 2) always.push('Divine Smite');
-    always.push(...subclassSpells(cls, L, ch.land, sub));
+    if (cls.id === 'paladin' && CL >= 2) always.push('Divine Smite');
+    always.push(...subclassSpells(cls, CL, ch.land, sub));
     const extraCantrips = (cls.id === 'cleric' && ch.divineOrder === 'Thaumaturge') || (cls.id === 'druid' && ch.primalOrder === 'Magician') ? 1 : 0;
     casting.push({
       key: 'class', source: cls.name, ab, dc: 8 + pb + m[ab], atk: pb + m[ab],
       cantripMax: ci.cantrips + extraCantrips, preparedMax: ci.prepared, slots: ci.slots, pact: ci.pact, maxLevel: ci.maxLevel,
       cantrips: c.spells?.cantrips || [], prepared: c.spells?.prepared || [], book: c.spells?.book,
-      bookMax: cls.id === 'wizard' ? 6 + 2 * (L - 1) : null,
+      bookMax: cls.id === 'wizard' ? 6 + 2 * (CL - 1) : null,
       always: always.map(n => D.spellByName[n.toLowerCase()]?.id).filter(Boolean), list: cls.id,
     });
     if (ci.cantrips + extraCantrips < (c.spells?.cantrips || []).length) warn.push('เลือก cantrip เกินจำนวน');
@@ -394,11 +531,16 @@ export function compute(c) {
   // ฟีเจอร์
   const feats = [];
   if (cls) {
-    for (const f of cls.features) if (f.level <= L && !/Subclass$|^Ability Score Improvement$|^Epic Boon$/.test(f.name)) feats.push({ ...f, src: 'class' });
-    if (L >= 3) for (const f of sub.features) if (f.level <= L) feats.push({ ...f, src: 'sub' });
+    for (const f of cls.features) if (f.level <= CL && !/Subclass$|^Ability Score Improvement$|^Epic Boon$/.test(f.name)) feats.push({ ...f, src: 'class' });
+    if (CL >= 3) for (const f of sub.features) if (f.level <= CL) feats.push({ ...f, src: 'sub' });
   }
+  // ฟีเจอร์ของคลาสที่ multiclass เข้าไป (ซับคลาส/เวทของคลาสที่ 2 มาในเฟส 2L-2)
+  const mcFeats = Object.entries(CLs).filter(([id]) => id !== c.classId && D.cls[id]).map(([id, n]) => ({
+    cls: D.cls[id], n,
+    feats: D.cls[id].features.filter(f => f.level <= n && !/Subclass$|^Ability Score Improvement$|^Epic Boon$/.test(f.name)).map(f => ({ ...f, src: 'class' })),
+  }));
 
-  const xx = { cls, L, pb, m, originFeats: featIds, sub };
+  const xx = { cls, L: CL, TL: L, pb, m, originFeats: featIds, sub };
   const res = cls ? resources(c, xx) : [];
 
   // ภาษา
@@ -412,7 +554,8 @@ export function compute(c) {
   if (!bg) warn.push('ยังไม่ได้เลือก Background');
 
   return {
-    cls, sub, sp, bg, L, pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, perception, darkvision,
+    cls, sub, sp, bg, L, CL, CLs, classLine: classLine(c), hitDice, atkPer, mcFeats, levelFeats, aura,
+    pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, perception, darkvision,
     attacks, casting, feats, res, featIds, originFeats: originFeats.filter(Boolean), langs: [...langs],
     training: [...training], weaponRule: rule, warn,
   };
@@ -423,7 +566,7 @@ export function missing(c) {
   const out = [];
   const cls = D.cls[c.classId];
   if (!cls) return ['เลือกคลาส'];
-  const L = c.level || 1, ch = c.choices || {};
+  const L = classLevels(c)[cls.id] || 1, ch = c.choices || {};
   if ((c.skills || []).length < cls.skillChoose) out.push(`เลือกสกิลของคลาส (${cls.skillChoose})`);
   if (FIGHTING_STYLE_AT[cls.id] && L >= FIGHTING_STYLE_AT[cls.id] && !ch.fightingStyle) out.push('เลือก Fighting Style');
   if (cls.id === 'cleric' && !ch.divineOrder) out.push('เลือก Divine Order');
@@ -441,12 +584,18 @@ export function missing(c) {
   if (c.speciesId === 'human' && !c.speciesOpt?.feat) out.push('เลือก Origin Feat (Human Versatile)');
   if (c.speciesId === 'human' && !c.speciesOpt?.skill) out.push('เลือกสกิล (Human Skillful)');
   if (c.speciesId === 'elf' && !c.speciesOpt?.skill) out.push('เลือกสกิล (Keen Senses)');
+  for (const li of levelInfo(c)) if (li.asi || li.boon) {
+    const f = D.feat[li.e.feat];
+    if (!f) { out.push(`เลือก ${li.boon ? 'Epic Boon' : 'ASI'} หรือ Feat (Lv ${li.lv})`); continue; }
+    const r = featAsiRule(f);
+    if (r && Object.values(li.e.asi || {}).reduce((s, n) => s + n, 0) < r.total) out.push(`ใส่แต้มค่าพลังของ ${f.name} (Lv ${li.lv})`);
+  }
   return out;
 }
 
 export function newCharacter() {
   return {
-    v: 1, name: '', player: '', level: 1, classId: null, speciesId: null, bgId: null,
+    v: 1, name: '', player: '', level: 1, levels: [{ c: null }], classId: null, speciesId: null, bgId: null,
     abilities: { method: 'standard', base: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 }, bonus: {}, assign: {} },
     skills: [], languages: [], choices: {}, speciesOpt: {},
     equipment: { classOpt: 'A', bgOpt: 'A', items: [], gp: 0, armor: null, shield: false },
