@@ -19,6 +19,7 @@ def flat(d, pre=''):
     if isinstance(v, dict): out.update(flat(v, pre + k + '/'))
     else: out[pre + k] = v
   return out
+want['spells'] = [s['id'] for s in L('data/srd/spells.json') if s['level'] <= 2]
 bad = 0
 for g, ids in want.items():
   p = f'data/th/full/{g}.json'

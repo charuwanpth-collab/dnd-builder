@@ -55,6 +55,7 @@ export function spellDetail(s, actions = []) {
   sheet(s.name, h('div.spell-detail',
     h('div.spell-head', h('span.school', { html: iconSvg(s.school) }), h('div', h('b', `${LEVEL_TH(s.level)} · ${s.school}`), h('small', `สำนัก${SCHOOL_TH[s.school] || ''}`))),
     D.th.spells?.[s.id] ? h('p.th', D.th.spells[s.id]) : null,
+    fullTh('spells', s.id),
     h('dl.kv',
       h('dt', 'Casting Time'), h('dd', s.time),
       h('dt', 'Range'), h('dd', s.range),
