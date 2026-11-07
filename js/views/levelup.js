@@ -2,7 +2,7 @@
 import { D } from '../data.js';
 import { h, sheet, toast, sign } from '../util.js';
 import {
-  ABIL, ABIL_SHORT, MAX_LEVEL, compute, levelInfo, ensureLevels, featChoices, featAsiRule, meetsPrimary, hitDieAvg, subOf,
+  ABIL, ABIL_SHORT, MAX_LEVEL, MC_PROF, compute, levelInfo, ensureLevels, featChoices, featAsiRule, meetsPrimary, hitDieAvg, subOf,
 } from '../rules.js';
 import { classFeatureCard, original } from './parts.js';
 
@@ -43,14 +43,17 @@ export function levelEditor(c, i, changed) {
     if (e.c !== c.classId) {
       const bad = [D.cls[c.classId], ...Object.keys(before).map(id => D.cls[id]), li.cls].filter((k, j, a) => k && a.indexOf(k) === j && !meetsPrimary(k, x.score));
       if (bad.length) out.push(h('p.warn', `Multiclass ต้องมีค่าพลังหลัก 13+ ทั้งคลาสเดิมและคลาสใหม่ — ยังไม่ผ่าน: ${bad.map(k => `${k.name} (${k.core['Primary Ability']})`).join(', ')} · ถ้า DM อนุญาตก็เลือกได้`));
-      out.push(h('p.muted.small', '🧪 Multiclass รอบนี้นับ HP, PB, ฟีเจอร์คลาส และ Extra Attack แล้ว — สเปลสลอตรวม, proficiency แบบจำกัด และซับคลาสของคลาสที่ 2 จะตามมาในอัปเดตถัดไป'));
+      if (!before[e.c]) {
+        const mp = MC_PROF[e.c] || {};
+        const got = [...(mp.armor || []).map(a => ({ light: 'Light armor', medium: 'Medium armor', shield: 'Shields' })[a]), mp.martial ? 'Martial weapons' : null, mp.tools, mp.skills ? `สกิล ${mp.skills} อย่าง` : null].filter(Boolean);
+        out.push(h('p.muted.small', `Multiclass เข้า ${li.cls?.name}: ได้ ${got.join(', ') || 'ไม่มี proficiency เพิ่ม'} (ไม่ได้ Saving Throw/ของเริ่มต้น) · ตัวเลือกของคลาสนี้ (สกิล, ซับคลาส, เวท ฯลฯ) เลือกได้ที่ขั้น Class และ เวทมนตร์`));
+      }
     }
   }
 
   // ---- ได้อะไรที่เลเวลนี้ ----
   if (li.cls) {
-    const isMain = li.cls.id === c.classId;
-    const sub = isMain ? subOf(c) : null;
+    const sub = subOf(c, li.cls.id);
     const fs = [
       ...li.cls.features.filter(f => f.level === li.cl && !/Subclass$|^Ability Score Improvement$|^Epic Boon$/.test(f.name)).map(f => [f, false]),
       ...(sub && li.cl >= 3 ? sub.features.filter(f => f.level === li.cl).map(f => [f, true]) : []),

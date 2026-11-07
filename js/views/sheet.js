@@ -2,7 +2,7 @@
 import { D } from '../data.js';
 import { h, iconSvg, sheet, toast, sign, confirmSheet } from '../util.js';
 import * as S from '../store.js';
-import { ABIL, ABIL_EN, ABIL_SHORT, compute, missing, rebuildEquipment, levelInfo } from '../rules.js';
+import { ABIL, ABIL_EN, ABIL_SHORT, compute, missing, rebuildEquipment, levelInfo, chOf } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
 import { classFeatureCard, featureCard, spellRow, statBox, original, LEVEL_TH, fullTh } from './parts.js';
 
@@ -13,6 +13,8 @@ const d = n => 1 + Math.floor(Math.random() * n);
 export function renderSheet(root, c, tab, nav) {
   let cur = TABS.some(t => t[0] === tab) ? tab : 'main';
   const P = c.play = Object.assign({ hp: null, temp: 0, hdUsed: 0, slots: {}, res: {}, conditions: [], death: { s: 0, f: 0 }, inspiration: false }, c.play);
+  if (!P.hdu) { P.hdu = {}; const d0 = D.cls[c.classId]?.hitDie; if (P.hdUsed && d0) P.hdu[d0] = P.hdUsed; }
+  const hdUsedAll = () => Object.values(P.hdu).reduce((s, n) => s + n, 0);
   const save = () => S.autosave(c);
   const redraw = () => draw();
 
@@ -63,7 +65,8 @@ export function renderSheet(root, c, tab, nav) {
     c.levels.pop();
     c.level = c.levels.length;
     P.hp = Math.max(0, Math.min(compute(c).hpMax, (P.hp ?? before) - (before - compute(c).hpMax)));
-    P.hdUsed = Math.min(P.hdUsed, c.level);
+    const x2 = compute(c);
+    for (const k of Object.keys(P.hdu)) P.hdu[k] = Math.min(P.hdu[k], x2.hitDice.filter(hd => hd.die === +k).reduce((t, hd) => t + hd.n, 0));
     S.save(c); redraw(); toast(`กลับเป็นเลเวล ${c.level} แล้ว`);
   }
 
@@ -96,7 +99,7 @@ export function renderSheet(root, c, tab, nav) {
       out.push(h('div.card.death', h('h3', '💀 Death Saves'), h('p.muted.small', 'ทอย d20 ต้นเทิร์น: 10+ สำเร็จ, 9- ล้มเหลว, 20 ฟื้นมี HP 1, 1 นับล้มเหลว 2 ครั้ง'), pips('s', 'สำเร็จ'), pips('f', 'ล้มเหลว')));
     }
     // พัก
-    const hdLeft = c.level - P.hdUsed;
+    const hdLeft = c.level - hdUsedAll();
     out.push(h('div.rest-row',
       h('button.btn', { onclick: () => shortRest(x) }, h('span', { html: iconSvg('short') }), ' พักสั้น'),
       h('button.btn', { onclick: () => longRest(x) }, h('span', { html: iconSvg('long') }), ' พักยาว'),
@@ -160,26 +163,30 @@ export function renderSheet(root, c, tab, nav) {
   }
 
   function shortRest(x) {
-    const hd = x.cls?.hitDie || 8;
     const log = h('p.muted');
+    const btns = h('div.row');
+    const drawBtns = () => btns.replaceChildren(...x.hitDice.map(({ die, n }) => {
+      const left = n - (P.hdu[die] || 0);
+      return h('button.btn.primary', { disabled: left <= 0, onclick: () => {
+        if (left <= 0) return;
+        const r = Math.max(1, d(die) + x.m.con);
+        P.hdu[die] = (P.hdu[die] || 0) + 1; P.hp = Math.min(x.hpMax, P.hp + r); save();
+        log.textContent = `ทอย d${die} ฟื้น ${r} HP → ตอนนี้ ${P.hp}/${x.hpMax} · Hit Dice เหลือ ${c.level - hdUsedAll()}`;
+        drawBtns();
+      } }, `ใช้ d${die} (เหลือ ${left})`);
+    }));
+    drawBtns();
     const body = h('div',
-      h('p', 'พักสั้น 1 ชั่วโมง: ใช้ Hit Dice ฟื้น HP ได้ (ทอย + CON แต่ละลูก)'),
-      h('div.row',
-        h('button.btn.primary', { onclick: () => {
-          if (c.level - P.hdUsed <= 0) { log.textContent = 'Hit Dice หมดแล้ว'; return; }
-          const r = Math.max(1, d(hd) + x.m.con);
-          P.hdUsed++; P.hp = Math.min(x.hpMax, P.hp + r); save();
-          log.textContent = `ฟื้น ${r} HP → ตอนนี้ ${P.hp}/${x.hpMax} · Hit Dice เหลือ ${c.level - P.hdUsed}`;
-        } }, `ใช้ Hit Die (d${hd})`)), log);
+      h('p', 'พักสั้น 1 ชั่วโมง: ใช้ Hit Dice ฟื้น HP ได้ (ทอย + CON แต่ละลูก)'), btns, log);
     sheet('พักสั้น', body, [{ label: 'พักเสร็จ', primary: true, onClick: () => {
       for (const r of x.res) if (r.reset === 'short') P.res[r.id] = 0; else if (r.reset === 'short1') P.res[r.id] = Math.max(0, (P.res[r.id] || 0) - 1);
-      if (x.cls?.id === 'warlock') P.slots = {};
+      for (const k of Object.keys(P.slots)) if (k.startsWith('p')) delete P.slots[k]; // Pact Magic คืนตอนพักสั้น
       save(); redraw(); toast('พักสั้นเรียบร้อย');
     } }]);
   }
   async function longRest(x) {
     if (!(await confirmSheet('พักยาว 8 ชั่วโมง?', 'HP เต็ม · Hit Dice คืนหมด · Spell Slot และความสามารถคืนหมด'))) return;
-    P.hp = x.hpMax; P.temp = 0; P.hdUsed = 0; P.slots = {}; P.res = {}; P.death = { s: 0, f: 0 };
+    P.hp = x.hpMax; P.temp = 0; P.hdUsed = 0; P.hdu = {}; P.slots = {}; P.res = {}; P.death = { s: 0, f: 0 };
     P.conditions = P.conditions.filter(k => k !== 'Exhaustion');
     save(); redraw(); toast('พักยาวแล้ว พร้อมลุยต่อ!');
   }
@@ -209,10 +216,11 @@ export function renderSheet(root, c, tab, nav) {
     const out = [];
     for (const b of x.casting) {
       out.push(h('h2.sec', b.source), h('div.stats-row', statBox('Save DC', b.dc), statBox('Spell Attack', sign(b.atk)), statBox('ค่าพลัง', ABIL_SHORT[b.ab])));
-      if (b.key === 'class' && Object.keys(b.slots).length) {
-        out.push(h('div.card.list', Object.entries(b.slots).map(([lv, n]) => {
-          const used = P.slots[lv] || 0;
-          return h('div.res', h('div.res-name', h('b', `${b.pact ? 'Pact Slot ' : 'Spell Slot '}Lv ${lv}`), h('small', b.pact ? 'คืนตอนพักสั้น/ยาว' : 'คืนตอนพักยาว')),
+      if (Object.keys(b.slots).length) {
+        if (b.casterLv) out.push(h('p.muted.small', `สลอตรวมจาก Multiclass (caster level ${b.casterLv}) — ใช้ร่วมกันทุกคลาส`));
+        out.push(h('div.card.list', Object.entries(b.slots).map(([lv0, n]) => {
+          const lv = (b.pact ? 'p' : '') + lv0, used = P.slots[lv] || 0;
+          return h('div.res', h('div.res-name', h('b', `${b.pact ? 'Pact Slot ' : 'Spell Slot '}Lv ${lv0}`), h('small', b.pact ? 'คืนตอนพักสั้น/ยาว' : 'คืนตอนพักยาว')),
             h('div.pips', Array.from({ length: n }, (_, i) => h('button.pip' + (i < n - used ? '.on' : ''), {
               'aria-label': `slot ${lv}-${i + 1}`, onclick: () => { P.slots[lv] = i < n - used ? n - i : n - i - 1; save(); redraw(); },
             }))));
@@ -236,15 +244,16 @@ export function renderSheet(root, c, tab, nav) {
       out.push(h('h2.sec', `${x.cls.name} ${x.CL}`));
       for (const f of x.feats) out.push(classFeatureCard(x.cls, f, f.src === 'sub'));
       const ch = c.choices || {};
-      const opts = [...(ch.metamagic || []).map(id => x.cls.options['metamagic-options']?.items.find(i => i.id === id)), ...(ch.invocations || []).map(id => x.cls.options['eldritch-invocation-options']?.items.find(i => i.id === id))].filter(Boolean);
+      const chS = x.CLs.sorcerer ? chOf(c, 'sorcerer') : {}, chW = x.CLs.warlock ? chOf(c, 'warlock') : {};
+      const opts = [...(chS.metamagic || []).map(id => D.cls.sorcerer.options['metamagic-options']?.items.find(i => i.id === id)), ...(chW.invocations || []).map(id => D.cls.warlock.options['eldritch-invocation-options']?.items.find(i => i.id === id))].filter(Boolean);
       if (opts.length) { out.push(h('h3', 'ตัวเลือกที่เลือกไว้')); opts.forEach(o => out.push(featureCard({ name: o.name, text: o.text, th: { s: D.th.options?.[o.id] }, full: ['options', o.id] }))); }
       if (ch.huntersPrey && x.sub === x.cls.subclass) out.push(h('p', h('b', "Hunter's Prey: "), ch.huntersPrey));
       if (ch.divineOrder || ch.primalOrder) out.push(h('p', h('b', 'บทบาท: '), ch.divineOrder || ch.primalOrder));
-      if (ch.mastery?.length) out.push(h('p', h('b', 'Weapon Mastery: '), ch.mastery.map(id => `${D.weapon[id]?.name} (${D.weapon[id]?.mastery})`).join(', ')));
+      if (x.masteryIds.length) out.push(h('p', h('b', 'Weapon Mastery: '), x.masteryIds.map(id => `${D.weapon[id]?.name} (${D.weapon[id]?.mastery})`).join(', ')));
     }
     for (const mc of x.mcFeats) {
-      out.push(h('h2.sec', `${mc.cls.name} ${mc.n}`), h('p.muted.small', 'Multiclass — ซับคลาสและเวทของคลาสนี้จะตามมาในอัปเดตถัดไป'));
-      for (const f of mc.feats) out.push(classFeatureCard(mc.cls, f, false));
+      out.push(h('h2.sec', `${mc.cls.name} ${mc.n}`), h('p.muted.small', `Multiclass${mc.n >= 3 ? ` · ซับคลาส ${mc.sub.name}` : ''}`));
+      for (const f of mc.feats) out.push(classFeatureCard(mc.cls, f, f.src === 'sub'));
     }
     if (c.level > 1) out.push(h('details.orig', h('summary', `ประวัติเลเวล (${c.level})`),
       h('ol.lv-hist', levelInfo(c).map(li => h('li', levelSummary(c, li, x))))));

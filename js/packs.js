@@ -101,6 +101,7 @@ export function usedPackItems(chars) {
   const want = { subclasses: new Set(), backgrounds: new Set(), feats: new Set(), spells: new Set() };
   for (const c of chars) {
     if (c.subclassId) want.subclasses.add(c.subclassId);
+    for (const o of Object.values(c.mc || {})) if (o?.subclassId) want.subclasses.add(o.subclassId);
     if (c.bgId) want.backgrounds.add(c.bgId);
     const bg = D.bg[c.bgId];
     if (bg) want.feats.add(featIdOf(bg.feat));

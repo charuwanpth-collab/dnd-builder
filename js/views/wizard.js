@@ -5,7 +5,7 @@ import * as S from '../store.js';
 import {
   ABIL, ABIL_EN, ABIL_SHORT, ABIL_TH, SKILLS, SKILL_AB, LANGS, STANDARD_ARRAY, POINT_COST, MAX_LEVEL,
   SPECIES_OPT, SIZE_CHOICE, FIGHTING_STYLE_AT, MASTERY_AT, EXPERTISE,
-  compute, missing, col, setLevel, setPrimaryClass, classLevels, levelInfo, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub,
+  compute, missing, col, setLevel, setPrimaryClass, classLevels, levelInfo, chOf, mcOf, MC_PROF, equipOptions, rebuildEquipment, classSpellList, weaponProficient, mod, subOf, srdSub,
 } from '../rules.js';
 import { featIdOf } from '../packs.js';
 import { levelEditor, levelSummary } from './levelup.js';
@@ -135,17 +135,32 @@ export function renderWizard(root, c, stepId, nav) {
     const x = compute(c);
     const ch = c.choices;
     const L = x.CL;
+
+    out.push(...classChoices(cls, L, ch, x, true));
+    for (const [id, n] of Object.entries(x.CLs)) if (id !== cls.id && D.cls[id]) out.push(...classChoices(D.cls[id], n, chOf(c, id), x, false));
+    return out;
+  }
+
+  /** ตัวเลือกของคลาสหนึ่ง (คลาสหลัก หรือคลาสที่ multiclass เข้าไป) */
+  function classChoices(cls, L, ch, x, primary) {
+    const out = [h('h2.sec', primary ? `ตัวเลือกของ ${cls.name}` : `Multiclass: ${cls.name} ${L}`)];
     const block = (title, desc, ...kids) => h('div.block.choice-block', h('h3', title), desc ? h('p.muted', desc) : null, ...kids);
+    if (primary) {
+      const list = cls.skillList === 'any' ? SKILLS.map(s => s[0]) : cls.skillList;
+      const bgSkills = D.bg[c.bgId]?.skills || [];
+      out.push(block('สกิลจากคลาส', `เลือก ${cls.skillChoose} อย่าง (สกิลที่ได้จาก Background จะทำเครื่องหมายไว้)`,
+        counter(c.skills.length, cls.skillChoose),
+        chips(list, c.skills, cls.skillChoose, v => { c.skills = v; changed(); }, { locked: bgSkills.filter(s => !c.skills.includes(s)) })));
+    } else {
+      const mp = MC_PROF[cls.id] || {}, mo = mcOf(c, cls.id);
+      const got = [...(mp.armor || []).map(a => ({ light: 'Light armor', medium: 'Medium armor', shield: 'Shields' })[a]), mp.martial ? 'Martial weapons' : null, mp.tools].filter(Boolean);
+      out.push(block('Proficiency จาก Multiclass', `ได้: ${got.join(', ') || 'ไม่มี proficiency เพิ่ม'}${mp.skills ? ` + สกิล ${mp.skills} อย่าง` : ''} · ไม่ได้ Saving Throw และของเริ่มต้นของคลาสนี้`,
+        mp.skills ? chips(mp.anySkill ? SKILLS.map(k => k[0]) : cls.skillList, mo.skills, mp.skills, v => { mo.skills = v; changed(); },
+          { locked: x.skills.filter(k => k.prof && !mo.skills.includes(k.name)).map(k => k.name) }) : null));
+    }
 
-    out.push(h('h2.sec', `ตัวเลือกของ ${cls.name}`));
-    const list = cls.skillList === 'any' ? SKILLS.map(s => s[0]) : cls.skillList;
-    const bgSkills = D.bg[c.bgId]?.skills || [];
-    out.push(block('สกิลจากคลาส', `เลือก ${cls.skillChoose} อย่าง (สกิลที่ได้จาก Background จะทำเครื่องหมายไว้)`,
-      counter(c.skills.length, cls.skillChoose),
-      chips(list, c.skills, cls.skillChoose, v => { c.skills = v; changed(); }, { locked: bgSkills.filter(s => !c.skills.includes(s)) })));
-
-    if (cls.id === 'cleric') out.push(orderBlock('Divine Order', 'divineOrder', ['Protector', 'Thaumaturge']));
-    if (cls.id === 'druid') out.push(orderBlock('Primal Order', 'primalOrder', ['Magician', 'Warden']));
+    if (cls.id === 'cleric') out.push(orderBlock(cls, ch, 'Divine Order', 'divineOrder', ['Protector', 'Thaumaturge']));
+    if (cls.id === 'druid') out.push(orderBlock(cls, ch, 'Primal Order', 'primalOrder', ['Magician', 'Warden']));
 
     if (FIGHTING_STYLE_AT[cls.id] && L >= FIGHTING_STYLE_AT[cls.id]) {
       const opts = D.feats.filter(f => f.category === 'Fighting Style').map(f => ({ id: f.id, name: f.name, text: f.text }));
@@ -184,7 +199,7 @@ export function renderWizard(root, c, stepId, nav) {
       out.push(block('Primal Knowledge', 'เลือกสกิลเพิ่มอีก 1 อย่างจากรายการสกิลของ Barbarian',
         chips(opts, ch.primalSkill ? [ch.primalSkill] : [], 1, v => { ch.primalSkill = v[0]; changed(); })));
     }
-    const isSrdSub = srdSub(c);
+    const isSrdSub = srdSub(c, cls.id);
     if (cls.id === 'bard' && L >= 3 && isSrdSub) {
       const opts = SKILLS.map(k => k[0]).filter(k => !x.skills.find(z => z.name === k && z.prof) || (ch.loreSkills || []).includes(k));
       out.push(block('Bonus Proficiencies (College of Lore)', 'เลือกสกิลที่ยังไม่ชำนาญ 3 อย่าง', counter((ch.loreSkills || []).length, 3),
@@ -209,28 +224,27 @@ export function renderWizard(root, c, stepId, nav) {
         optionList(items, ch.invocations || [], n, v => { ch.invocations = v; changed(); })));
     }
 
-    const subs = D.subs?.[cls.id] || [cls.subclass], cur = subOf(c);
+    const subs = D.subs?.[cls.id] || [cls.subclass], cur = subOf(c, cls.id);
     out.push(h('div.block.sub-info',
       h('h3', `ซับคลาส: ${cur.name}`),
       h('p', L >= 3 ? 'ได้รับแล้วที่เลเวล 3' : 'จะได้ตอนเลเวล 3 (เลือกไว้ก่อนได้)'),
       subs.length > 1 ? h('div.grid.grid-2', subs.map(sb => choiceCard({
         id: sb.id, iconName: cls.id, title: sb.name, sub: sb.pack ? '📦 ' + sb.pack : 'SRD',
         desc: sb.pack ? sb.th?.s : thc(cls.id).sub?.desc, selected: cur.id === sb.id,
-        onClick: () => { c.subclassId = sb.id === cls.subclass.id ? null : sb.id; changed(); },
+        onClick: () => { const v = sb.id === cls.subclass.id ? null : sb.id; if (primary) c.subclassId = v; else mcOf(c, cls.id).subclassId = v; changed(); },
       }))) : null,
       cur.pack && L >= 3 ? cur.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, f, true)) : null,
       h('p.muted.small', 'ข้อมูลฟรี (SRD) มีซับคลาสละ 1 แบบ — ซับคลาสอื่นเพิ่มเองได้ที่ ', h('a', { href: '#/packs' }, 'Content Pack'))));
     return out;
   }
 
-  function orderBlock(title, key, opts) {
-    const cls = D.cls[c.classId];
+  function orderBlock(cls, ch, title, key, opts) {
     const f = cls.features.find(x => x.name === title);
     return h('div.block.choice-block', h('h3', title), h('p.muted', 'เลือกบทบาท 1 แบบ'),
       h('div.grid.grid-2', opts.map(o => choiceCard({
         id: o, iconName: o === 'Protector' || o === 'Warden' ? 'shield' : 'spell', title: o,
-        desc: thc(cls.id).orders?.[o], selected: c.choices[key] === o,
-        onClick: () => { c.choices[key] = o; changed(); },
+        desc: thc(cls.id).orders?.[o], selected: ch[key] === o,
+        onClick: () => { ch[key] = o; changed(); },
       }))), f ? fullTh('classes', [cls.id, 'f', f.id]) : null, original(f?.text));
   }
 
@@ -437,7 +451,7 @@ export function renderWizard(root, c, stepId, nav) {
     const out = [intro('เลือกเวทมนตร์', 'Cantrip ร่ายได้ไม่จำกัด ส่วนเวทเลเวล 1+ ต้องใช้ Spell Slot — แตะชื่อเวทเพื่ออ่านรายละเอียด')];
     for (const b of x.casting) {
       if (b.fixed || (!b.cantripMax && !b.preparedMax)) continue;
-      out.push(h('h2.sec', b.source), h('p.muted', `ค่าพลังร่าย ${ABIL_SHORT[b.ab]} · Save DC ${b.dc} · Spell Attack ${sign(b.atk)}`));
+      out.push(h('h2.sec', b.source), h('p.muted', `ค่าพลังร่าย ${ABIL_SHORT[b.ab]} · Save DC ${b.dc} · Spell Attack ${sign(b.atk)}${b.cid && b.maxLevel ? ` · เตรียมได้ถึงเวทเลเวล ${b.maxLevel}` : ''}`));
       const always = new Set(b.always);
       if (b.always.length) out.push(section('เตรียมไว้เสมอ (ไม่นับโควตา)', h('div.spell-list', b.always.map(id => spellRow(D.spell[id], { badge: 'ติดตัว' })))));
       const pick = (title, pool, value, max, onChange) => {
@@ -450,18 +464,19 @@ export function renderWizard(root, c, stepId, nav) {
               onToggle: () => { set.has(s.id) ? set.delete(s.id) : set.size < max && set.add(s.id); onChange([...set]); },
             })))]));
       };
-      if (b.key === 'class') {
+      if (b.cid) {
+        const sp = b.sel;
         const all = classSpellList(b.list, b.maxLevel);
-        if (b.cantripMax) out.push(pick('Cantrips', all.filter(s => s.level === 0), c.spells.cantrips, b.cantripMax, v => { c.spells.cantrips = v; changed(); }));
+        if (b.cantripMax) out.push(pick('Cantrips', all.filter(s => s.level === 0), sp.cantrips, b.cantripMax, v => { sp.cantrips = v; changed(); }));
         if (b.bookMax) {
-          out.push(pick('Spellbook (สมุดเวท)', all.filter(s => s.level > 0), c.spells.book || [], b.bookMax, v => { c.spells.book = v; c.spells.prepared = c.spells.prepared.filter(id => v.includes(id)); changed(); }));
-          out.push(pick('เตรียมวันนี้ (เลือกจากสมุดเวท)', (c.spells.book || []).map(id => D.spell[id]).filter(Boolean), c.spells.prepared, b.preparedMax, v => { c.spells.prepared = v; changed(); }));
+          out.push(pick('Spellbook (สมุดเวท)', all.filter(s => s.level > 0), sp.book || [], b.bookMax, v => { sp.book = v; sp.prepared = sp.prepared.filter(id => v.includes(id)); changed(); }));
+          out.push(pick('เตรียมวันนี้ (เลือกจากสมุดเวท)', (sp.book || []).map(id => D.spell[id]).filter(Boolean), sp.prepared, b.preparedMax, v => { sp.prepared = v; changed(); }));
         } else if (b.preparedMax) {
-          out.push(pick('เวทที่เตรียมไว้', all.filter(s => s.level > 0 && !always.has(s.id)), c.spells.prepared, b.preparedMax, v => { c.spells.prepared = v; changed(); }));
+          out.push(pick('เวทที่เตรียมไว้', all.filter(s => s.level > 0 && !always.has(s.id)), sp.prepared, b.preparedMax, v => { sp.prepared = v; changed(); }));
         }
         if (['cleric', 'druid', 'paladin', 'ranger', 'wizard'].includes(b.list)) out.push(h('p.muted.small', '💡 คลาสนี้เปลี่ยนเวทที่เตรียมได้ทุกครั้งที่พักยาว'));
       } else if (b.key === 'fs') {
-        out.push(pick('Cantrips', classSpellList(b.list, 0).filter(s => s.level === 0), c.choices.fsCantrips || [], 2, v => { c.choices.fsCantrips = v; changed(); }));
+        out.push(pick('Cantrips', classSpellList(b.list, 0).filter(s => s.level === 0), b.chs.fsCantrips || [], 2, v => { b.chs.fsCantrips = v; changed(); }));
       } else if (b.key === 'mi') {
         const all = classSpellList(b.list, 1);
         out.push(pick('Cantrips', all.filter(s => s.level === 0), c.choices.miCantrips || [], 2, v => { c.choices.miCantrips = v; changed(); }));

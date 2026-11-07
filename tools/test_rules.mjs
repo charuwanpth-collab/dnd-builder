@@ -43,3 +43,11 @@ hi('Paladin 6', { classId: 'paladin', speciesId: 'human', bgId: 'soldier', abili
 hi('Wizard 9', { classId: 'wizard', speciesId: 'elf', bgId: 'sage', speciesOpt: { lineage: 'High Elf', ability: 'int' }, abilities: { base: { str: 8, dex: 14, con: 13, int: 15, wis: 12, cha: 10 }, bonus: { int: 2, con: 1 } } }, Array.from({ length: 9 }, () => ({ c: 'wizard' })));
 hi('Fighter 3 / Rogue 2', { classId: 'fighter', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 15, dex: 14, con: 13, int: 8, wis: 12, cha: 10 }, bonus: { str: 2, dex: 1 } } }, [{}, {}, { hp: 10 }, { c: 'rogue' }, { c: 'rogue', hp: 1 }].map(e => ({ c: 'fighter', ...e })));
 hi('Barbarian 20', { classId: 'barbarian', speciesId: 'dwarf', bgId: 'soldier', abilities: { base: { str: 15, dex: 13, con: 14, int: 8, wis: 12, cha: 10 }, bonus: { str: 2, con: 1 } } }, Array.from({ length: 20 }, () => ({ c: 'barbarian' })));
+// ---- Multiclass 2L-2 ----
+const P = n => Array.from({ length: n }, () => ({ c: 'paladin' }));
+hi('Paladin 2 / Sorcerer 3 (slots รวม)', { classId: 'paladin', speciesId: 'human', bgId: 'soldier', choices: { fightingStyle: 'blessed-warrior' }, mc: { sorcerer: { choices: { metamagic: ['quickened-spell', 'twinned-spell'] }, skills: [], spells: { cantrips: [], prepared: [] } } },
+  abilities: { base: { str: 15, dex: 10, con: 14, int: 8, wis: 12, cha: 13 }, bonus: { str: 2, cha: 1 } } }, [...P(2), ...Array.from({ length: 3 }, () => ({ c: 'sorcerer' }))]);
+hi('Warlock 3 / Wizard 2 (pact แยก)', { classId: 'warlock', speciesId: 'human', bgId: 'sage', abilities: { base: { str: 8, dex: 14, con: 13, int: 13, wis: 10, cha: 15 }, bonus: { cha: 2, int: 1 } } },
+  [{ c: 'warlock' }, { c: 'warlock' }, { c: 'warlock' }, { c: 'wizard' }, { c: 'wizard' }]);
+hi('Monk 2 / Barbarian 1 (UD อันแรก)', { classId: 'monk', speciesId: 'human', bgId: 'soldier', abilities: { base: { str: 13, dex: 15, con: 14, int: 8, wis: 13, cha: 10 }, bonus: { dex: 2, con: 1 } } },
+  [{ c: 'monk' }, { c: 'monk' }, { c: 'barbarian' }]);
