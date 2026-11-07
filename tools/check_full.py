@@ -9,9 +9,10 @@ want = {
   'mastery': [i['id'] for i in L('data/srd/mastery.json') + L('data/srd/weaponProps.json')],
 }
 # classes/species เป็นแบบซ้อน → แปลงเป็นคีย์ 'a/b/c'
-MAX_LEVEL = 3
-want['classes'] = [f"{c}/f/{f['id']}" for c, x in cls.items() for f in x['features'] if int(f['level']) <= MAX_LEVEL] + \
-  [f"{c}/sub/{f['id']}" for c, x in cls.items() for f in x['subclass'].get('features', []) if int(f['level']) <= MAX_LEVEL]
+MAX_LEVEL = 20   # แปลเต็มครบทุกเลเวลแล้ว (Lv4+ ไม่นับ ASI / Epic Boon / หัวข้อ "X Subclass")
+skipHi = lambda f: int(f['level']) > 3 and (f['name'] in ('Ability Score Improvement', 'Epic Boon') or f['name'].endswith('Subclass'))
+want['classes'] = list(dict.fromkeys([f"{c}/f/{f['id']}" for c, x in cls.items() for f in x['features'] if int(f['level']) <= MAX_LEVEL and not skipHi(f)] + \
+  [f"{c}/sub/{f['id']}" for c, x in cls.items() for f in x['subclass'].get('features', []) if int(f['level']) <= MAX_LEVEL]))
 want['species'] = [f"{s['id']}/{t['id']}" for s in L('data/srd/species.json') for t in s['traits']]
 def flat(d, pre=''):
   out = {}
