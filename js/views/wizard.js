@@ -175,8 +175,9 @@ export function renderWizard(root, c, stepId, nav) {
 
     if (MASTERY_AT[cls.id]) {
       const n = parseInt(col(cls, cls.id === 'barbarian' ? 'Mastery' : 'Weapon Mastery', L), 10) || 2;
-      const ws = D.weapons.filter(w => (cls.id === 'barbarian' ? /Melee/.test(w.group) : true) && weaponProficient(w, x.weaponRule));
-      out.push(block('Weapon Mastery', `เลือกอาวุธ ${n} ชนิดที่ใช้ "ท่าพิเศษ" ได้ (เปลี่ยนได้หลังพักยาว) — แนะนำให้เลือกอาวุธที่ถืออยู่`,
+      const other = new Set(Object.keys(classLevels(c)).filter(id => id !== cls.id && MASTERY_AT[id]).flatMap(id => chOf(c, id).mastery || []));
+      const ws = D.weapons.filter(w => (cls.id === 'barbarian' ? /Melee/.test(w.group) : true) && weaponProficient(w, x.weaponRule) && (!other.has(w.id) || (ch.mastery || []).includes(w.id)));
+      out.push(block('Weapon Mastery', `เลือกอาวุธ ${n} ชนิดที่ใช้ "ท่าพิเศษ" ได้ (เปลี่ยนได้หลังพักยาว) — แนะนำให้เลือกอาวุธที่ถืออยู่${other.size ? ' (อาวุธที่เลือกในคลาสอื่นแล้วจะไม่ขึ้นซ้ำ)' : ''}`,
         counter((ch.mastery || []).length, n),
         chips(ws.map(w => w.id), ch.mastery || [], n, v => { ch.mastery = v; changed(); },
           { labels: Object.fromEntries(ws.map(w => [w.id, `${w.name} · ${w.mastery}`])) }),
@@ -236,7 +237,10 @@ export function renderWizard(root, c, stepId, nav) {
         onClick: () => { setSub(c, cls.id, sb); changed(); },
       }))),
       cur.stub ? stubSubBox(cur, cls.id) : null,
-      cur.pack && L >= 3 ? cur.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, f, true)) : null,
+      cur.pack && L >= 3 ? cur.features.filter(f => f.level <= L).map(f => classFeatureCard(cls, { ...f, picked: ch.packOpt?.[f.id] }, true)) : null,
+      cur.pack && L >= 3 ? cur.features.filter(f => f.level <= L && f.opts?.length).map(f => block(`เลือก ${f.name} (Lv ${f.level})`, 'ฟีเจอร์นี้ให้เลือก 1 แบบ',
+        h('div.grid', f.opts.map(o => choiceCard({ id: o.name, iconName: 'feat', title: o.name, desc: o.s, selected: ch.packOpt?.[f.id] === o.name,
+          onClick: () => { ch.packOpt = { ...ch.packOpt, [f.id]: o.name }; changed(); } }))))) : null,
       h('p.muted.small', 'ข้อมูลฟรี (SRD) มีซับคลาสละ 1 แบบ — อันที่ขึ้น 🟡 เลือกไว้ได้ แล้วเติมข้อมูลเองที่ ', h('a', { href: '#/packs' }, 'Content Pack'))));
     return out;
   }
@@ -338,7 +342,7 @@ export function renderWizard(root, c, stepId, nav) {
       if (so.feat === 'skilled') out.push(section('Skilled', h('p.muted', 'เลือกสกิล 3 อย่าง (กฎจริงเลือกเครื่องมือแทนได้ — จดไว้ในโน้ตได้เลย)'),
         counter((c.choices.skilled || []).length, 3), chips(SKILLS.map(s => s[0]), c.choices.skilled || [], 3, v => { c.choices.skilled = v; changed(); })));
     }
-    const nLang = 2 + (c.classId === 'ranger' && (classLevels(c).ranger || 0) >= 2 ? 2 : 0);
+    const nLang = 2 + ((classLevels(c).ranger || 0) >= 2 ? 2 : 0);
     out.push(section('ภาษา', h('p.muted', `รู้ภาษา Common อยู่แล้ว เลือกเพิ่ม ${nLang} ภาษา${nLang > 2 ? ' (รวม 2 ภาษาจาก Deft Explorer ของ Ranger)' : ''}`),
       counter(c.languages.length, nLang), chips(LANGS, c.languages, nLang, v => { c.languages = v; changed(); })));
     out.push(h('h3', 'ความสามารถของเผ่า'));

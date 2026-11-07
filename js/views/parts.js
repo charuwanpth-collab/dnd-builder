@@ -55,7 +55,12 @@ export function featureCard({ name, level, text, th, tag, full, pack }) {
 }
 
 export function classFeatureCard(cls, f, sub) {
-  if (f.pack) return featureCard({ name: f.name, level: f.level, text: f.text, th: f.th, tag: f.subName, pack: f.pack });
+  if (f.pack) {
+    const card = featureCard({ name: f.name, level: f.level, text: f.text, th: f.th, tag: f.subName, pack: f.pack });
+    if (f.opts?.length) card.append(h('ul.pack-opts', f.opts.map(o => h('li' + (o.name === f.picked ? '.on' : ''), h('b', (o.name === f.picked ? '✅ ' : '') + o.name), o.s ? ' — ' + o.s : ''))),
+      f.picked ? null : h('p.tip', '🟡 ยังไม่ได้เลือก — ไปเลือกที่ขั้น Class ในหน้าแก้ไข'));
+    return card;
+  }
   return featureCard({ name: f.name, level: f.level, text: f.text, th: thFeature(cls.id, f.id, sub), tag: sub ? cls.subclass.name : null, full: ['classes', [cls.id, sub ? 'sub' : 'f', f.id]] });
 }
 
@@ -78,10 +83,10 @@ export function spellDetail(s, actions = []) {
     s.pack ? (s.text ? original(s.text, 'ข้อความ EN') : null) : h('div.md', { html: md(s.text) })), actions);
 }
 
-export function spellRow(s, { selected, disabled, onToggle, badge } = {}) {
+export function spellRow(s, { selected, disabled, onToggle, badge, actions } = {}) {
   const row = h('div.spell-row' + (selected ? '.on' : '') + (disabled ? '.off' : ''),
     h('span.school', { html: iconSvg(s.school) }),
-    h('div.spell-main', { onclick: () => spellDetail(s) },
+    h('div.spell-main', { onclick: () => spellDetail(s, typeof actions === 'function' ? actions() : actions) },
       h('b', s.name, s.concentration ? h('i.tag', 'C') : null, s.ritual ? h('i.tag', 'R') : null),
       h('small', D.th.spells?.[s.id] || spellMeta(s))),
     badge ? h('span.badge', badge) : null,

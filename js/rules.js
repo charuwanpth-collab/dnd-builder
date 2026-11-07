@@ -426,6 +426,7 @@ function resources(c, x) {
   if (SPECIES_SPELLS[so.lineage || so.legacy]?.[2] && TL >= 5)
     add('sp5', SPECIES_SPELLS[so.lineage || so.legacy][2] + ' (ร่ายฟรี)', 1, 'long', 'spell');
   if (x.originFeats.includes('magic-initiate')) add('mi', 'Magic Initiate (ร่ายฟรี)', 1, 'long', 'feat');
+  if (x.originFeats.includes('boon-of-fate')) add('fate', 'Improve Fate (2d4 · ได้คืนตอนทอย Initiative ด้วย)', 1, 'short', 'd20');
   return R;
 }
 
@@ -657,13 +658,13 @@ export function compute(c) {
   const feats = [];
   if (cls) {
     for (const f of cls.features) if (f.level <= CL && !/Subclass$|^Ability Score Improvement$|^Epic Boon$/.test(f.name)) feats.push({ ...f, src: 'class' });
-    if (CL >= 3) for (const f of sub.features) if (f.level <= CL) feats.push({ ...f, src: 'sub' });
+    if (CL >= 3) for (const f of sub.features) if (f.level <= CL) feats.push({ ...f, src: 'sub', picked: chOf(c, c.classId).packOpt?.[f.id] });
   }
   // ฟีเจอร์ของคลาสที่ multiclass เข้าไป (ซับคลาส/เวทของคลาสที่ 2 มาในเฟส 2L-2)
   const mcFeats = Object.entries(CLs).filter(([id]) => id !== c.classId && D.cls[id]).map(([id, n]) => ({
     cls: D.cls[id], n,
     feats: [...D.cls[id].features.filter(f => f.level <= n && !/Subclass$|^Ability Score Improvement$|^Epic Boon$/.test(f.name)).map(f => ({ ...f, src: 'class' })),
-      ...(n >= 3 ? subOf(c, id).features.filter(f => f.level <= n).map(f => ({ ...f, src: 'sub' })) : [])],
+      ...(n >= 3 ? subOf(c, id).features.filter(f => f.level <= n).map(f => ({ ...f, src: 'sub', picked: chOf(c, id).packOpt?.[f.id] })) : [])],
     sub: subOf(c, id),
   }));
 
@@ -683,7 +684,7 @@ export function compute(c) {
 
   return {
     cls, sub, sp, bg, L, CL, CLs, masteryIds: [...masteries], classLine: classLine(c), hitDice, atkPer, mcFeats, levelFeats, aura,
-    pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, perception, darkvision,
+    pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, perception, darkvision, truesight: featIds.includes('boon-of-truesight') ? 60 : 0,
     attacks, casting, feats, res, featIds, originFeats: originFeats.filter(Boolean), langs: [...langs],
     training: [...training], weaponRule: rule, warn,
   };
@@ -712,6 +713,8 @@ export function missing(c) {
     if (id === 'warlock' && (ch.invocations || []).includes('pact-of-the-tome') && ((ch.tomeCantrips || []).length < 3 || (ch.tomeRituals || []).length < 2)) out.push('เลือกเวทใน Book of Shadows (Pact of the Tome)');
     if (id === 'warlock' && (ch.invocations || []).length < num(col(k, 'Eldritch Invocations', L))) out.push('เลือก Eldritch Invocations' + tag);
     if ((ch.expertise || []).length < expertiseCount(id, L)) out.push(`เลือก Expertise ${expertiseCount(id, L)} อย่าง` + tag);
+    const sb = subOf(c, id);
+    if (sb?.pack && L >= 3) for (const f of sb.features) if (f.level <= L && f.opts?.length && !f.opts.some(o => o.name === ch.packOpt?.[f.id])) out.push(`เลือก ${f.name} (Lv ${f.level})` + tag);
   }
   if (SPECIES_OPT[c.speciesId] && !c.speciesOpt?.[SPECIES_OPT[c.speciesId].key]) out.push(`เลือก ${SPECIES_OPT[c.speciesId].label}`);
   if (c.speciesId === 'human' && !c.speciesOpt?.feat) out.push('เลือก Origin Feat (Human Versatile)');

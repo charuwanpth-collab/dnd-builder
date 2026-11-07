@@ -1,8 +1,8 @@
 // แคชไฟล์ไว้ให้เปิดเว็บได้แม้เน็ตหลุดตอนเล่น
-const V = 'hh-v19';
+const V = 'hh-v20';
 const CORE = ['./', 'index.html', 'css/app.css', 'manifest.webmanifest', 'assets/icon.svg',
   'js/main.js', 'js/util.js', 'js/md.js', 'js/data.js', 'js/rules.js', 'js/store.js',
-  'js/views/parts.js', 'js/views/glossary.js', 'js/views/packs.js', 'js/packs.js', 'js/views/wizard.js', 'js/views/sheet.js', 'js/views/home.js', 'js/views/levelup.js',
+  'js/views/parts.js', 'js/views/glossary.js', 'js/views/packs.js', 'js/packs.js', 'js/views/wizard.js', 'js/views/sheet.js', 'js/views/turn.js', 'js/views/home.js', 'js/views/levelup.js',
   'data/icons.json', 'data/subclass-list.json',
   ...['classes', 'spells', 'species', 'backgrounds', 'feats', 'weapons', 'weaponProps', 'mastery', 'armor', 'gear', 'legal', 'glossary'].map(k => `data/srd/${k}.json`),
   ...['classes', 'species', 'backgrounds', 'feats', 'spells', 'options', 'mastery', 'misc', 'glossary'].map(k => `data/th/${k}.json`),

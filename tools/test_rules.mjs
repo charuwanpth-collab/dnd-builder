@@ -95,3 +95,26 @@ hi('Fighter 7 EK / Wizard 2', { classId: 'fighter', subclassId: 'ek-x', speciesI
   R.setSub(mc, 'warlock', D.cls.warlock.subclass);
   ok(mc.mc.warlock.subclassId === null, 'เลือกกลับเป็น SRD → null');
 }
+
+// ---- ① Epic Boon / ฟีเจอร์แพ็ก A/B ----
+{
+  console.log('\n== ① Epic Boon + แพ็ก A/B');
+  const ok = (cond, label) => console.log(`  ${cond ? '✓' : '✗'} ${label}`);
+  const c = base({ classId: 'wizard', speciesId: 'human', bgId: 'sage' });
+  R.setLevel(c, 20);
+  c.levels[18] = { c: 'wizard', feat: 'boon-of-fate', asi: { int: 1 } };
+  c.levels[19] = { c: 'wizard' };
+  let x = R.compute(c);
+  ok(x.res.some(r => r.id === 'fate' && r.reset === 'short'), 'Boon of Fate → ทรัพยากร Improve Fate (พักสั้นคืน)');
+  ok(!x.truesight, 'ไม่มี Truesight ถ้าไม่ได้เลือก');
+  c.levels[18] = { c: 'wizard', feat: 'boon-of-truesight', asi: { int: 1 } };
+  x = R.compute(c);
+  ok(x.truesight === 60, 'Boon of Truesight → Truesight 60 ft');
+  const sub = { id: 'ab-test', classId: 'wizard', name: 'Test School', pack: 'P', features: [{ id: 'pick-q1w2', level: 3, name: 'Pick One', opts: [{ name: 'A' }, { name: 'B' }] }], spells: [] };
+  D.subs = { wizard: [D.cls.wizard.subclass, sub] };
+  R.setSub(c, 'wizard', sub);
+  ok(R.missing(c).some(m => /Pick One/.test(m)), 'ยังไม่เลือก A/B → missing เตือน');
+  R.chOf(c, 'wizard').packOpt = { 'pick-q1w2': 'B' };
+  ok(!R.missing(c).some(m => /Pick One/.test(m)), 'เลือกแล้ว → ไม่เตือน');
+  ok(R.compute(c).feats.find(f => f.id === 'pick-q1w2')?.picked === 'B', 'compute ส่ง picked ไปการ์ด');
+}

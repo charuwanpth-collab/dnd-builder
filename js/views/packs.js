@@ -201,7 +201,12 @@ function itemForm(root, p, type, iid, nav) {
     it.name = it.name.trim();
     if (!it.id) it.id = P.itemId(it.name);
     if (type === 'subclasses') {
-      it.features = it.features.filter(f => f.name?.trim()).map(f => ({ ...f, name: f.name.trim(), id: f.id || P.itemId(f.name) }));
+      it.features = it.features.filter(f => f.name?.trim()).map(f => {
+        const opts = (f.opts || []).filter(o => o.name?.trim()).map(o => ({ name: o.name.trim(), s: (o.s || '').trim() }));
+        const g = { ...f, name: f.name.trim(), id: f.id || P.itemId(f.name) };
+        if (opts.length >= 2) g.opts = opts; else delete g.opts;
+        return g;
+      });
       it.spells = (it.spells || []).filter(r => r.list?.trim());
     }
     const i = p.items[type].findIndex(x => x.id === it.id);
@@ -241,6 +246,20 @@ function validate(type, it) {
 }
 
 // Subclass
+/** ฟีเจอร์ที่ให้ผู้เล่นเลือก 1 แบบ (เช่น A หรือ B) — f.opts = [{name, s}] */
+function optsBlock(f) {
+  const box = h('div.opts-edit');
+  const draw = () => box.replaceChildren(
+    h('p.muted.small', 'ตัวเลือก (ถ้าฟีเจอร์นี้ให้เลือก 1 แบบ เช่น A หรือ B) — ผู้เล่นจะเลือกตอนสร้างตัวละคร'),
+    ...(f.opts || []).map((o, i) => h('div.row.opt-edit',
+      h('input.inp', { value: o.name || '', placeholder: `ชื่อตัวเลือก ${i + 1}`, oninput: e => { o.name = e.target.value; } }),
+      h('input.inp', { value: o.s || '', placeholder: 'สรุปไทยสั้น ๆ', oninput: e => { o.s = e.target.value; } }),
+      h('button.btn.small.ghost', { type: 'button', onclick: () => { f.opts.splice(i, 1); draw(); } }, 'ลบ'))),
+    h('button.btn.small.ghost', { type: 'button', onclick: () => { (f.opts ||= []).push({ name: '', s: '' }); draw(); } }, '+ เพิ่มตัวเลือก'));
+  draw();
+  return box;
+}
+
 function subForm(it) {
   const feats = h('div.feat-edit-list');
   const spells = h('div.sub-spells');
@@ -255,6 +274,7 @@ function subForm(it) {
     h('div.row2',
       field('ใช้ได้กี่ครั้ง', select(f, 'uses.n', USES)),
       field('ได้คืนเมื่อ', select(f, 'uses.reset', [['long', 'Long Rest'], ['short', 'Short Rest']]))),
+    optsBlock(f),
     enBlock(f))));
   const drawSpells = () => spells.replaceChildren(
     ...(it.spells || []).map((r, i) => h('div.row.spell-rowedit',

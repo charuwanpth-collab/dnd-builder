@@ -5,6 +5,7 @@ import * as S from '../store.js';
 import { ABIL, ABIL_EN, ABIL_SHORT, compute, missing, rebuildEquipment, levelInfo, chOf } from '../rules.js';
 import { openLevelUp, levelSummary } from './levelup.js';
 import { classFeatureCard, featureCard, spellRow, statBox, original, LEVEL_TH, fullTh, stubSubBox } from './parts.js';
+import * as T from './turn.js';
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Deafened', 'Exhaustion', 'Frightened', 'Grappled', 'Incapacitated', 'Invisible', 'Paralyzed', 'Petrified', 'Poisoned', 'Prone', 'Restrained', 'Stunned', 'Unconscious'];
 const TABS = [['main', 'หลัก', 'hp'], ['skills', 'สกิล', 'skill'], ['spells', 'เวท', 'spell'], ['features', 'ความสามารถ', 'feat'], ['gear', 'ของ', 'gear'], ['notes', 'โน้ต', 'note']];
@@ -30,12 +31,14 @@ export function renderSheet(root, c, tab, nav) {
         h('span.sh-ico', { html: iconSvg(c.classId || 'd20') }),
         h('div.sh-title', h('h1', c.name || 'Character ไร้ชื่อ'), h('p', subtitle)),
         h('button.icon-btn', { 'aria-label': 'เมนู', onclick: menu }, '⋯')),
-      h('div.stats-row.sticky-stats',
-        statBox('AC', x.ac, null, 'ac'),
-        statBox('HP', `${P.hp}${P.temp ? '+' + P.temp : ''}`, `/${x.hpMax}`, 'hp'),
-        statBox('Speed', x.speed, 'ft', 'speed'),
-        statBox('Init', sign(x.init), null, 'init'),
-        statBox('Prof', sign(x.pb), null, 'level')),
+      h('div.sticky-stats',
+        h('div.stats-row',
+          statBox('AC', x.ac, null, 'ac'),
+          statBox('HP', `${P.hp}${P.temp ? '+' + P.temp : ''}`, `/${x.hpMax}`, 'hp'),
+          statBox('Speed', x.speed, 'ft', 'speed'),
+          statBox('Init', sign(x.init), null, 'init'),
+          statBox('Prof', sign(x.pb), null, 'level')),
+        T.turnBar(c, x, P, save, redraw)),
       missing(c).length ? h('button.miss-bar', { onclick: () => nav(`#/edit/${c.id}/class`) }, `⚠ ยังเลือกไม่ครบ ${missing(c).length} อย่าง — แตะเพื่อแก้`) : null,
       h('nav.tabs', { role: 'tablist' }, TABS.map(([id, label, ico]) => h('button.tab' + (cur === id ? '.on' : ''), {
         role: 'tab', 'aria-selected': cur === id ? 'true' : 'false',
@@ -43,6 +46,7 @@ export function renderSheet(root, c, tab, nav) {
       }, h('span', { html: iconSvg(ico) }), h('small', label)))),
       h('section.sh-body', ({ main, skills, spells, features, gear, notes })[cur](x))].filter(Boolean));
     window.scrollTo(0, y);
+    document.documentElement.style.setProperty('--topbar-h', (document.querySelector('.topbar')?.offsetHeight || 53) + 'px');
   }
 
   function menu() {
@@ -104,6 +108,10 @@ export function renderSheet(root, c, tab, nav) {
       h('button.btn', { onclick: () => shortRest(x) }, h('span', { html: iconSvg('short') }), ' พักสั้น'),
       h('button.btn', { onclick: () => longRest(x) }, h('span', { html: iconSvg('long') }), ' พักยาว'),
       h('span.muted.small', `Hit Dice: ${hdLeft}/${c.level} (${x.hitDice.map(d => `${d.n}d${d.die}`).join(' + ') || 'd8'})`)));
+    // ค่าที่ DM ถามบ่อย
+    const sk = n => 10 + (x.skills.find(s => s.name === n)?.bonus || 0);
+    out.push(h('div.stats-row.passive-row', statBox('Passive Perception', sk('Perception'), null, 'eye'), statBox('Passive Insight', sk('Insight'), null, 'eye'),
+      statBox('Passive Investigation', sk('Investigation'), null, 'eye'), x.darkvision ? statBox('Darkvision', x.darkvision, 'ft', 'eye') : null, x.truesight ? statBox('Truesight', x.truesight, 'ft', 'eye') : null));
     // ค่าพลัง
     out.push(h('h3', 'ค่าพลัง & Saving Throws'), h('div.abil-grid', ABIL.map(a => {
       const sv = x.saves.find(s => s.ab === a);
@@ -112,7 +120,8 @@ export function renderSheet(root, c, tab, nav) {
         h('span.save' + (sv.prof ? '.prof' : ''), { onclick: e => { e.stopPropagation(); roll(`${ABIL_EN[a]} save`, sv.bonus); } }, `Save ${sign(sv.bonus)}`));
     })));
     // โจมตี
-    out.push(h('h3', 'โจมตี'), x.atkPer > 1 ? h('p.muted.small', `⚔️ Extra Attack: ใช้ Attack action แล้วโจมตีได้ ${x.atkPer} ครั้ง`) : null, h('div.card.list', x.attacks.map(a => h('div.atk', { onclick: () => roll(`${a.name} (attack)`, a.hit) },
+    out.push(h('h3', 'โจมตี'), x.atkPer > 1 ? h('p.muted.small', `⚔️ Extra Attack: ใช้ Attack action แล้วโจมตีได้ ${x.atkPer} ครั้ง`) : null, h('div.card.list', x.attacks.map(a => h('div.atk', { onclick: () => {
+      const m = T.attack(P, x); roll(`${a.name} (attack) · ดาเมจ ${a.dmg}`, a.hit, m); if (P.turn) { save(); redraw(); } } },
       h('div', h('b', a.name), a.mastery ? h('i.tag.mastery', { title: D.th.mastery?.[a.mastery.toLowerCase()] || '' }, a.mastery) : null, h('small', a.props || (a.name === 'Unarmed Strike' ? 'ต่อย เตะ โขก' : ''))),
       h('span.atk-hit', sign(a.hit)), h('span.atk-dmg', a.dmg)))));
     // ความหมาย Mastery + คุณสมบัติอาวุธที่ตัวละครใช้อยู่
@@ -132,11 +141,11 @@ export function renderSheet(root, c, tab, nav) {
           h('span.res-ico', { html: iconSvg(r.icon) }),
           h('div.res-name', h('b', r.name), h('small', r.reset === 'long' ? 'คืนตอนพักยาว' : r.reset === 'short' ? 'คืนตอนพักสั้น/ยาว' : 'พักสั้นคืน 1 · พักยาวคืนหมด')),
           big ? h('div.res-num',
-            h('button.icon-btn', { onclick: () => { P.res[r.id] = Math.min(r.max, used + 1); save(); redraw(); }, 'aria-label': 'ใช้' }, '−'),
+            h('button.icon-btn', { onclick: () => setUse(P.res, r.id, Math.min(r.max, used + 1), () => T.resUsed(P, r.id)), 'aria-label': 'ใช้' }, '−'),
             h('b', `${r.max - used}`), h('small', `/${r.max}`),
             h('button.icon-btn', { onclick: () => { P.res[r.id] = Math.max(0, used - 1); save(); redraw(); }, 'aria-label': 'คืน' }, '+'))
             : h('div.pips', Array.from({ length: r.max }, (_, i) => h('button.pip' + (i < r.max - used ? '.on' : ''), {
-              'aria-label': `${r.name} ${i + 1}`, onclick: () => { P.res[r.id] = i < r.max - used ? r.max - i : r.max - i - 1; save(); redraw(); },
+              'aria-label': `${r.name} ${i + 1}`, onclick: () => setUse(P.res, r.id, i < r.max - used ? r.max - i : r.max - i - 1, () => T.resUsed(P, r.id)),
             }))));
       })));
     }
@@ -149,7 +158,67 @@ export function renderSheet(root, c, tab, nav) {
         if (!on) conditionInfo(k);
       } }, k);
     })), h('label.row.check-row', h('input', { type: 'checkbox', checked: P.inspiration, onchange: e => { P.inspiration = e.target.checked; save(); } }), ' ✨ Heroic Inspiration (ทอยใหม่ได้ 1 ครั้ง)'));
+    out.push(howTo(x), built(x));
     return out;
+  }
+
+  // วิธีเล่น: เทิร์นหนึ่งทำอะไรได้ + ทิปมือใหม่ของทุกคลาสที่มี
+  function howTo(x) {
+    return h('details.orig.howto', h('summary', '🎓 วิธีเล่น'),
+      h('div.md',
+        h('p', h('b', 'เทิร์นหนึ่งทำอะไรได้')),
+        h('ul',
+          h('li', 'เดินได้ตาม Speed — แบ่งเดินก่อนและหลังทำอย่างอื่นได้'),
+          h('li', '1 Action — เช่น โจมตี ร่ายเวท Dash Dodge'),
+          h('li', '1 Bonus Action — เฉพาะเมื่อมีความสามารถหรือเวทที่บอกว่าใช้ Bonus Action'),
+          h('li', '1 Reaction ต่อรอบ — ใช้ตอนไม่ใช่เทิร์นเราก็ได้ เช่น Opportunity Attack'),
+          h('li', 'ทำเรื่องเล็ก ๆ ฟรี 1 อย่าง เช่น เปิดประตู ชักอาวุธ พูดสั้น ๆ')),
+        h('p.muted.small', 'กด ⚔️ เริ่มต่อสู้ด้านบน แล้วแอปจะนับให้ว่าเทิร์นนี้เหลืออะไรใช้ได้บ้าง')),
+      Object.keys(x.CLs).map(id => {
+        const t = D.th.classes?.[id];
+        if (!t) return null;
+        return h('div.howto-cls', h('h4', `${D.cls[id]?.name} — ${t.tag || ''}`), t.desc ? h('p', t.desc) : null,
+          t.abilityTip ? h('p.tip', '📊 ' + t.abilityTip) : null,
+          t.tips?.length ? h('ul', t.tips.map(z => h('li', z))) : null);
+      }));
+  }
+
+  // ตัวละครนี้สร้างมายังไง (สรุปทุกอย่างที่เลือกในวิซาร์ด)
+  function built(x) {
+    const A = c.abilities || {}, rows = [];
+    const row = (k, v) => v && rows.push(h('dt', k), h('dd', v));
+    const join = a => a.filter(Boolean).join(' · ');
+    const names = (ids, f) => (ids || []).map(f).filter(Boolean).join(', ');
+    const METH = { standard: 'ชุดมาตรฐาน', pointbuy: 'ซื้อแต้ม', roll: 'ทอยเต๋า' };
+    row('ค่าพลังตั้งต้น', `${METH[A.method || 'standard']}: ` + ABIL.map(a => `${ABIL_SHORT[a]} ${A.base?.[a] ?? 10}`).join(' '));
+    row(`โบนัส ${x.bg?.name || 'Background'}`, Object.entries(A.bonus || {}).filter(([, n]) => n).map(([a, n]) => `${ABIL_SHORT[a]} +${n}`).join(' '));
+    row('ASI / Feat', levelInfo(c).filter(li => (li.asi || li.boon) && li.e.feat).map(li => `Lv ${li.lv} ${D.feat[li.e.feat]?.name || li.e.feat}` +
+      Object.entries(li.e.asi || {}).filter(([, n]) => n).map(([a, n]) => ` ${ABIL_SHORT[a]}+${n}`).join('')).join(' · '));
+    row('ค่าพลังตอนนี้', ABIL.map(a => `${ABIL_SHORT[a]} ${x.score[a]}`).join(' '));
+    for (const [id, n] of Object.entries(x.CLs)) {
+      const k = D.cls[id], ch = chOf(c, id), primary = id === c.classId;
+      const sub = primary ? x.sub : x.mcFeats.find(m => m.cls.id === id)?.sub;
+      const opt = (key, list) => names(ch[key], o => D.cls[id].options?.[list]?.items.find(i => i.id === o)?.name);
+      row(`${k?.name} ${n}`, join([
+        n >= 3 && sub ? `ซับคลาส ${sub.name}` : null,
+        (primary ? c.skills : c.mc?.[id]?.skills)?.length ? 'สกิล ' + (primary ? c.skills : c.mc[id].skills).join(', ') : null,
+        ch.fightingStyle ? 'Fighting Style ' + (D.feat[ch.fightingStyle]?.name || ch.fightingStyle) : null,
+        ch.divineOrder || ch.primalOrder ? 'บทบาท ' + (ch.divineOrder || ch.primalOrder) : null,
+        ch.mastery?.length ? 'Mastery ' + names(ch.mastery, w => D.weapon[w]?.name) : null,
+        ch.expertise?.length ? 'Expertise ' + ch.expertise.join(', ') : null,
+        ch.primalSkill ? 'Primal Knowledge ' + ch.primalSkill : null,
+        ch.loreSkills?.length ? 'Bonus Proficiencies ' + ch.loreSkills.join(', ') : null,
+        ch.land ? 'ดินแดน ' + ch.land : null,
+        ch.huntersPrey ? "Hunter's Prey " + ch.huntersPrey : null,
+        ch.metamagic?.length ? 'Metamagic ' + opt('metamagic', 'metamagic-options') : null,
+        ch.invocations?.length ? 'Invocations ' + opt('invocations', 'eldritch-invocation-options') : null,
+        ...Object.values(ch.packOpt || {}).map(v => 'เลือก ' + v)]));
+    }
+    if (x.bg) row(x.bg.name, join([`สกิล ${x.bg.skills.join(', ')}`, x.bg.tool ? 'เครื่องมือ ' + x.bg.tool.replace(/\s*\(see.*?\)/g, '') : null, 'Origin Feat ' + x.bg.feat]));
+    if (x.sp) row(x.sp.name, join(Object.entries(c.speciesOpt || {}).map(([k2, v]) => (k2 === 'feat' ? 'Origin Feat ' + (D.feat[v]?.name || v) : k2 === 'skill' ? 'สกิล ' + v : typeof v === 'string' ? v : null))));
+    row('ภาษา', x.langs.join(', '));
+    return h('details.orig.built', h('summary', '🧾 ตัวละครนี้สร้างมายังไง'), h('dl.kv', rows),
+      h('button.btn.ghost.small', { onclick: () => nav(`#/edit/${c.id}/basic`) }, '✏️ แก้ไขตัวเลือก'));
   }
 
   function conditionInfo(k) {
@@ -157,9 +226,16 @@ export function renderSheet(root, c, tab, nav) {
     if (t) toast(`${k}: ${t}`);
   }
 
-  function roll(label, bonus) {
+  function roll(label, bonus, extra) {
     const r = d(20);
-    toast(`🎲 ${label}: ${r} ${sign(bonus)} = ${r + bonus}${r === 20 ? ' 🔥 คริ!' : r === 1 ? ' 💀' : ''}`);
+    toast(`🎲 ${label}: ${r} ${sign(bonus)} = ${r + bonus}${r === 20 ? ' 🔥 คริ!' : r === 1 ? ' 💀' : ''}${extra ? ' · ' + extra : ''}`);
+  }
+  // ใช้ทรัพยากร/สลอต แล้วมาร์คแถบเทิร์นอัตโนมัติ
+  function setUse(obj, key, v, hook) {
+    const old = obj[key] || 0;
+    obj[key] = v;
+    if (v > old && P.turn) { const m = hook(); if (m) toast(m); }
+    save(); redraw();
   }
 
   function shortRest(x) {
@@ -181,13 +257,13 @@ export function renderSheet(root, c, tab, nav) {
     sheet('พักสั้น', body, [{ label: 'พักเสร็จ', primary: true, onClick: () => {
       for (const r of x.res) if (r.reset === 'short') P.res[r.id] = 0; else if (r.reset === 'short1') P.res[r.id] = Math.max(0, (P.res[r.id] || 0) - 1);
       for (const k of Object.keys(P.slots)) if (k.startsWith('p')) delete P.slots[k]; // Pact Magic คืนตอนพักสั้น
-      save(); redraw(); toast('พักสั้นเรียบร้อย');
+      P.turn = null; save(); redraw(); toast('พักสั้นเรียบร้อย');
     } }]);
   }
   async function longRest(x) {
     if (!(await confirmSheet('พักยาว 8 ชั่วโมง?', 'HP เต็ม · Hit Dice คืนหมด · Spell Slot และความสามารถคืนหมด'))) return;
     P.hp = x.hpMax; P.temp = 0; P.hdUsed = 0; P.hdu = {}; P.slots = {}; P.res = {}; P.death = { s: 0, f: 0 };
-    P.conditions = P.conditions.filter(k => k !== 'Exhaustion');
+    P.conditions = P.conditions.filter(k => k !== 'Exhaustion'); P.turn = null;
     save(); redraw(); toast('พักยาวแล้ว พร้อมลุยต่อ!');
   }
 
@@ -195,7 +271,7 @@ export function renderSheet(root, c, tab, nav) {
   function skills(x) {
     const th = D.th.misc?.skills || {};
     return [
-      h('div.stats-row', statBox('Passive Perception', 10 + x.perception, null, 'eye'), x.darkvision ? statBox('Darkvision', x.darkvision, 'ft', 'eye') : null),
+      h('div.stats-row', statBox('Passive Perception', 10 + x.perception, null, 'eye'), x.darkvision ? statBox('Darkvision', x.darkvision, 'ft', 'eye') : null, x.truesight ? statBox('Truesight', x.truesight, 'ft', 'eye') : null),
       h('div.card.list', x.skills.map(s => h('button.skill-row', { onclick: () => roll(s.name, s.bonus) },
         h('span.dot' + (s.exp ? '.exp' : s.prof ? '.prof' : '')),
         h('div', h('b', s.name), h('small', `${ABIL_SHORT[s.ab]} · ${th[s.name] || ''}`)),
@@ -222,11 +298,11 @@ export function renderSheet(root, c, tab, nav) {
           const lv = (b.pact ? 'p' : '') + lv0, used = P.slots[lv] || 0;
           return h('div.res', h('div.res-name', h('b', `${b.pact ? 'Pact Slot ' : 'Spell Slot '}Lv ${lv0}`), h('small', b.pact ? 'คืนตอนพักสั้น/ยาว' : 'คืนตอนพักยาว')),
             h('div.pips', Array.from({ length: n }, (_, i) => h('button.pip' + (i < n - used ? '.on' : ''), {
-              'aria-label': `slot ${lv}-${i + 1}`, onclick: () => { P.slots[lv] = i < n - used ? n - i : n - i - 1; save(); redraw(); },
+              'aria-label': `slot ${lv}-${i + 1}`, onclick: () => setUse(P.slots, lv, i < n - used ? n - i : n - i - 1, () => T.slot(P)),
             }))));
         })));
       }
-      const group = (title, ids, badge) => ids.length ? [h('h4.lv', title), h('div.spell-list', ids.map(id => D.spell[id]).filter(Boolean).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name)).map(s => spellRow(s, { badge: badge || LEVEL_TH(s.level) })))] : null;
+      const group = (title, ids, badge) => ids.length ? [h('h4.lv', title), h('div.spell-list', ids.map(id => D.spell[id]).filter(Boolean).sort((a, b) => a.level - b.level || a.name.localeCompare(b.name)).map(s => spellRow(s, { badge: badge || LEVEL_TH(s.level), actions: () => T.castActions(s, x, P, () => { save(); redraw(); }) })))] : null;
       out.push(group('Cantrips', b.cantrips, 'Cantrip'));
       out.push(group('เตรียมไว้เสมอ', b.always, 'ติดตัว'));
       out.push(group(b.book ? 'เตรียมวันนี้' : 'เวทที่เตรียมไว้', b.prepared));
