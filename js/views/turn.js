@@ -94,11 +94,13 @@ export function castActions(s, x, P, done) {
       const L = leftOf(P), warn = [];
       if (k0 && !L[k0] && !(k0 === 'a' && P.turn.atk)) warn.push(`${KIND_TH[k0]} เทิร์นนี้หมดแล้ว`);
       if (key && k0 !== 'r' && P.turn.slot) warn.push('เทิร์นนี้ใช้ Spell Slot ไปแล้ว (กฎ 2024: 1 สลอตต่อเทิร์น)');
+      if (s.concentration && P.conc && P.conc !== s.id) warn.push(`ตอนนี้ใช้สมาธิกับ ${D.spell[P.conc]?.name} อยู่ — ร่ายอันนี้แล้วอันเก่าจะหลุด`);
       if (warn.length && !confirm(`⚠ ${warn.join('\n⚠ ')}\n\nร่ายต่อไหม?`)) return false;
     }
     if (key) P.slots[key] = (P.slots[key] || 0) + 1;
     const k = castKind(s), msgs = [];
     if (P.turn) { if (key && k !== 'r') msgs.push(slot(P)); msgs.push(spend(P, k)); }
+    if (s.concentration) { const old = P.conc && D.spell[P.conc]; if (old && old.id !== s.id) msgs.push(`สมาธิ ${old.name} หลุด`); P.conc = s.id; msgs.push('🧠 เริ่มใช้สมาธิ'); }
     const m = msgs.filter(Boolean);
     toast(`✨ ร่าย ${s.name}${key ? ` (${key.startsWith('p') ? 'Pact ' : ''}Slot Lv ${key.replace('p', '')})` : ''}${m.length ? ' · ' + m.join(' · ') : ''}`);
     done();

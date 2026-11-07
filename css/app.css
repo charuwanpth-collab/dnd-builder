@@ -653,3 +653,20 @@ div.titem { cursor: default; }
 .sp-help { margin: 2px 0 6px; }
 .explain h4 { margin: 14px 0 2px; }
 .help .acc { scroll-margin-top: calc(var(--topbar-h, 53px) + 10px); }
+
+/* ---------- เฟส 4D ---------- */
+.conc-chip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 8px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--purple); background: color-mix(in srgb, var(--purple) 12%, var(--card)); font-size: .9rem; }
+.conc-chip span { flex: 1; min-width: 0; }
+.save-notes { margin: 6px 0 0; padding-left: 18px; font-size: .82rem; color: var(--muted); }
+.exh { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.exh-row { display: flex; align-items: center; gap: 10px; }
+.exh-row > b:first-child { flex: 1; }
+.exh-n { font-size: 1.3rem; min-width: 24px; text-align: center; }
+.cu-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 8px; }
+.cu-n .inp { min-height: 38px; padding: 6px 8px; }
+.cu-atk { display: grid; grid-template-columns: 1fr 80px 80px; gap: 8px; align-items: end; margin: 4px 0; }
+.cu-atk b { font-size: .9rem; align-self: center; }
+.cu-def { gap: 6px; align-items: center; margin: 4px 0; }
+.cu-def span { flex: 1; }
+.cu-def .inp { flex: 1; min-width: 0; }
+.custom h4 { margin: 14px 0 4px; color: var(--gold2); }

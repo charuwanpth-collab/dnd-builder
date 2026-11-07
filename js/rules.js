@@ -548,8 +548,7 @@ export function compute(c) {
   if (worn?.strength?.match(/\d+/) && score.str < +worn.strength.match(/\d+/)[0]) speed -= 10;
 
   const initParts = [['DEX', m.dex], ...(featIds.includes('alert') ? [['Alert', pb]] : [])];
-  const init = initParts.reduce((t, q) => t + q[1], 0);
-  const perception = skills.find(s => s.name === 'Perception').bonus;
+  let init = initParts.reduce((t, q) => t + q[1], 0);
   let darkvision = { dragonborn: 60, dwarf: 120, elf: 60, gnome: 60, orc: 120, tiefling: 60 }[c.speciesId] || 0;
   if (so.lineage === 'Drow') darkvision = 120;
 
@@ -677,8 +676,57 @@ export function compute(c) {
   const res = cls ? resources(c, xx) : [];
   for (const li of miLv) res.push({ id: 'mi' + li.i, name: `Magic Initiate Lv ${li.lv} (ร่ายฟรี)`, max: 1, reset: 'long', icon: 'feat' });
 
+  // ---- เฟส 4D: ปรับค่าเอง (c.custom) + Exhaustion + Defenses / Speed / Senses ----
+  const cu = c.custom || {}, exh = Math.min(6, Math.max(0, c.play?.exh || 0)), num0 = v => +v || 0;
+  const bump = (o, key, label, n, pk = 'parts') => { if (!n) return; o[pk].push([label, n]); o[key] += n; };
+  for (const s of skills) { bump(s, 'bonus', 'ปรับเอง', num0(cu.skills?.[s.name])); bump(s, 'bonus', `Exhaustion ${exh}`, -2 * exh); }
+  for (const s of saves) { bump(s, 'bonus', 'ปรับเอง', num0(cu.saves?.[s.ab])); bump(s, 'bonus', `Exhaustion ${exh}`, -2 * exh); }
+  for (const [lab, n] of [['ปรับเอง', num0(cu.init)], [`Exhaustion ${exh}`, -2 * exh]]) if (n) { initParts.push([lab, n]); init += n; }
+  for (const a of attacks) {
+    a.hitParts = a.hitParts || [];
+    const ca = cu.attack?.[a.id] || {};
+    bump(a, 'hit', 'ปรับเอง', num0(ca.hit), 'hitParts'); bump(a, 'hit', `Exhaustion ${exh}`, -2 * exh, 'hitParts');
+    if (num0(ca.dmg)) a.dmg = a.dmg.replace(/^(\d+d\d+)?\s*([+-]\d+)?/, (all, dice, k) => { const t = (+k || 0) + num0(ca.dmg); return dice ? `${dice}${t ? (t > 0 ? '+' : '') + t : ''}` : String(Math.max(0, (+k || 0) + num0(ca.dmg))); });
+  }
+  for (const b of casting) { b.dc += num0(cu.spellDc); b.atk += num0(cu.spellAtk) - 2 * exh; }
+  if (num0(cu.ac)) { ac += num0(cu.ac); acNote += ` ${num0(cu.ac) > 0 ? '+' : '−'} ${Math.abs(num0(cu.ac))} (ปรับเอง)`; }
+  hpMax += num0(cu.hpMax);
+  speed = Math.max(0, speed + num0(cu.speed) - 5 * exh);
+  const perception = skills.find(s => s.name === 'Perception').bonus;
+  darkvision = Math.max(darkvision, num0(cu.darkvision));
+  const blindsight = num0(cu.blindsight);
+  // ความเร็วแบบอื่น
+  const speeds = { climb: num0(cu.climb), swim: num0(cu.swim), fly: num0(cu.fly) };
+  if ((CLs.ranger || 0) >= 6 && !heavy) { speeds.climb = Math.max(speeds.climb, speed); speeds.swim = Math.max(speeds.swim, speed); }
+  if ((CLs.rogue || 0) >= 3 && srdSub(c, 'rogue')) speeds.climb = Math.max(speeds.climb, speed);
+  const speedNotes = [];
+  if ((CLs.monk || 0) >= 9) speedNotes.push('Acrobatic Movement: เดินบนผนังแนวตั้งและบนผิวน้ำได้ระหว่างเคลื่อนที่ (ถ้าไม่ใส่เกราะ/โล่)');
+  if (c.speciesId === 'dragonborn' && L >= 5) speedNotes.push('Draconic Flight: ใช้ Bonus Action กางปีกบินได้เท่า Speed นาน 10 นาที (1 ครั้ง/พักยาว)');
+  // ดาเมจที่ทนได้ (res = Resistance, imm = Immunity, vul = Vulnerability)
+  const defenses = [], condImm = [], saveNotes = [];
+  const optType = (sid, key) => SPECIES_OPT[sid]?.opts.find(o => o[0] === so[key])?.[1];
+  if (c.speciesId === 'dwarf') { defenses.push({ type: 'Poison', kind: 'res', src: 'Dwarven Resilience' }); saveNotes.push('Dwarven Resilience: Advantage เซฟกันหรือหลุดจาก Poisoned'); }
+  if (c.speciesId === 'dragonborn' && optType('dragonborn', 'ancestry')) defenses.push({ type: optType('dragonborn', 'ancestry'), kind: 'res', src: 'Damage Resistance (Draconic Ancestry)' });
+  if (c.speciesId === 'tiefling' && optType('tiefling', 'legacy')) defenses.push({ type: optType('tiefling', 'legacy'), kind: 'res', src: `Fiendish Legacy (${so.legacy})` });
+  if (c.speciesId === 'elf') saveNotes.push('Fey Ancestry: Advantage เซฟกันหรือหลุดจาก Charmed');
+  if (c.speciesId === 'gnome') saveNotes.push('Gnomish Cunning: Advantage เซฟ INT, WIS และ CHA');
+  if (c.speciesId === 'halfling') saveNotes.push('Brave: Advantage เซฟกันหรือหลุดจาก Frightened');
+  if (CLs.barbarian) {
+    defenses.push(...['Bludgeoning', 'Piercing', 'Slashing'].map(t => ({ type: t, kind: 'res', src: 'Rage', when: 'ตอน Rage' })));
+    saveNotes.push('Rage: ระหว่าง Rage ได้ Advantage ทอย STR Check และ STR Saving Throw');
+    if (CLs.barbarian >= 2) saveNotes.push('Danger Sense: Advantage เซฟ DEX (ถ้าไม่ติด Incapacitated)');
+  }
+  if ((CLs.druid || 0) >= 10 && srdSub(c, 'druid')) {
+    const t = { arid: 'Fire', polar: 'Cold', temperate: 'Lightning', tropical: 'Poison' }[chOf(c, 'druid').land];
+    if (t) defenses.push({ type: t, kind: 'res', src: "Nature's Ward" });
+    condImm.push({ type: 'Poisoned', src: "Nature's Ward" });
+  }
+  if ((CLs.paladin || 0) >= 10) condImm.push({ type: 'Frightened', src: 'Aura of Courage' });
+  for (const d of cu.defenses || []) if (d?.type) defenses.push({ type: d.type, kind: d.kind || 'res', src: 'เพิ่มเอง' });
+  if (exh >= 6) warn.push('Exhaustion ระดับ 6 = ตัวละครตาย');
+
   // ภาษา
-  const langs = new Set(['Common', ...(c.languages || [])]);
+  const langs = new Set(['Common', ...(c.languages || []), ...String(cu.langs || '').split(',').map(z => z.trim()).filter(Boolean)]);
   if (CLs.druid) langs.add('Druidic');
   if (CLs.rogue) langs.add("Thieves' Cant");
 
@@ -692,6 +740,7 @@ export function compute(c) {
     pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, initParts, perception, darkvision, truesight: featIds.includes('boon-of-truesight') ? 60 : 0,
     attacks, casting, feats, res, featIds, originFeats: originFeats.filter(Boolean), langs: [...langs],
     training: [...training], weaponRule: rule, warn,
+    exh, defenses, condImm, saveNotes, speeds, speedNotes, blindsight, customProfs: String(cu.profs || '').trim(),
   };
 }
 

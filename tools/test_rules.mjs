@@ -118,3 +118,23 @@ hi('Fighter 7 EK / Wizard 2', { classId: 'fighter', subclassId: 'ek-x', speciesI
   ok(!R.missing(c).some(m => /Pick One/.test(m)), 'เลือกแล้ว → ไม่เตือน');
   ok(R.compute(c).feats.find(f => f.id === 'pick-q1w2')?.picked === 'B', 'compute ส่ง picked ไปการ์ด');
 }
+
+console.log('\n== 4D Exhaustion / ปรับค่าเอง / Defenses');
+// ---- เฟส 4D: Exhaustion + ปรับค่าเอง + Defenses ----
+{
+  const ok = (cond, label) => console.log(`  ${cond ? '✓' : '✗'} ${label}`);
+  const c = R.newCharacter(); R.setPrimaryClass(c, 'barbarian'); R.setLevel(c, 5); c.speciesId = 'dwarf';
+  c.abilities.base = { str: 16, dex: 14, con: 14, int: 8, wis: 10, cha: 10 };
+  c.equipment.items = [{ name: 'Greataxe', qty: 1, weapon: 'greataxe' }];
+  const x0 = R.compute(c);
+  c.play.exh = 2; c.custom = { ac: 1, attack: { greataxe: { hit: 1, dmg: 1 } }, defenses: [{ type: 'Fire', kind: 'imm' }], climb: 20 };
+  const x = R.compute(c);
+  const g0 = x0.attacks.find(a => a.id === 'greataxe'), g = x.attacks.find(a => a.id === 'greataxe');
+  ok(x.skills[0].bonus === x0.skills[0].bonus - 4, '4D Exhaustion 2 → สกิล −4');
+  ok(x.speed === x0.speed - 10, '4D Exhaustion 2 → Speed −10');
+  ok(x.ac === x0.ac + 1, '4D ปรับ AC +1');
+  ok(g.hit === g0.hit + 1 - 4 && g.hitParts.some(p => p[0] === 'ปรับเอง'), '4D ดาบปรับ hit +1 และ exh −4');
+  ok(g.dmg === g0.dmg.replace(/\+(\d+)/, (m, n) => '+' + (+n + 1)), '4D ดาเมจปรับ +1');
+  ok(x.defenses.some(d => d.type === 'Poison') && x.defenses.filter(d => d.src === 'Rage').length === 3 && x.defenses.some(d => d.kind === 'imm'), '4D Dwarf Poison + Rage BPS + Fire imm');
+  ok(x.speeds.climb === 20, '4D ปีน 20');
+}

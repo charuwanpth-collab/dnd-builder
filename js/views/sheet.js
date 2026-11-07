@@ -23,6 +23,9 @@ export function renderSheet(root, c, tab, nav) {
   if (!P.hdu) { P.hdu = {}; const d0 = D.cls[c.classId]?.hitDie; if (P.hdUsed && d0) P.hdu[d0] = P.hdUsed; }
   const Dt = c.details = Object.assign({}, c.details);
   if (c.look) { if (!Dt.appearance) Dt.appearance = c.look; delete c.look; S.autosave(c); }
+  if (P.conditions.includes('Exhaustion')) { P.exh = Math.max(1, P.exh || 0); P.conditions = P.conditions.filter(k => k !== 'Exhaustion'); }
+  const INCAP = ['Incapacitated', 'Paralyzed', 'Petrified', 'Stunned', 'Unconscious'];
+  const dropConc = why => { if (!P.conc) return; const n = D.spell[P.conc]?.name || P.conc; P.conc = null; toast(`🧠 สมาธิ ${n} หลุดแล้ว${why ? ' — ' + why : ''}`); };
   const hdUsedAll = () => Object.values(P.hdu).reduce((s, n) => s + n, 0);
   const save = () => S.autosave(c);
   const redraw = () => draw();
@@ -96,7 +99,8 @@ export function renderSheet(root, c, tab, nav) {
     return h('button.mini', { onclick: () => root.querySelector('.hp-box')?.scrollIntoView({ block: 'center', behavior: 'smooth' }) },
       h('span', '❤️ ', h('b', String(P.hp)), `/${x.hpMax}`, P.temp ? h('em', ` +${P.temp}`) : null),
       h('span', '🛡️ AC ', h('b', String(x.ac))), h('span', '👣 ', h('b', String(x.speed)), ' ft'),
-      P.conditions.length ? h('span.bad', '⚠ ' + P.conditions.join(', ')) : null);
+      P.conc ? h('span', '🧠 ', h('b', D.spell[P.conc]?.name || '')) : null,
+      P.conditions.length || P.exh ? h('span.bad', '⚠ ' + [...P.conditions, P.exh ? `Exhaustion ${P.exh}` : null].filter(Boolean).join(', ')) : null);
   }
 
   function menu() {
@@ -107,6 +111,7 @@ export function renderSheet(root, c, tab, nav) {
       h('button.menu-item', { onclick: async () => { close(); await share(); } }, '🔗 แชร์ลิงก์ตัวละคร'),
       h('button.menu-item', { onclick: () => { close(); S.exportFile([c]); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); } }, '💾 ดาวน์โหลดไฟล์สำรอง'),
       h('button.menu-item', { onclick: () => { close(); window.print(); } }, '🖨️ ปริ้น / เซฟเป็น PDF'),
+      h('button.menu-item', { onclick: () => { close(); customSheet(); } }, '🛠️ ปรับค่าเอง (ของวิเศษ / สิ่งที่ DM ให้)'),
       h('button.menu-item', { onclick: () => { close(); const copy = structuredClone(c); delete copy.id; copy.name = (c.name || 'Character ') + ' (สำเนา)'; S.save(copy); nav(`#/c/${copy.id}`); toast('ทำสำเนาแล้ว'); } }, '📄 ทำสำเนา'),
       h('button.menu-item.danger', { onclick: async () => { close(); if (await confirmSheet('ลบตัวละคร?', `ลบ "${c.name || 'Character ไร้ชื่อ'}" ออกจากเครื่องนี้ (ถ้าไม่ได้สำรองไว้จะกู้คืนไม่ได้)`, 'ลบเลย')) { S.remove(c.id); nav('#/'); } } }, '🗑️ ลบตัวละคร')));
   }
@@ -137,6 +142,10 @@ export function renderSheet(root, c, tab, nav) {
 
   function top(x) {
     const sk = n => 10 + (x.skills.find(s => s.name === n)?.bonus || 0);
+    const spdTxt = [['climb', 'ปีน'], ['swim', 'ว่าย'], ['fly', 'บิน']].filter(([k]) => x.speeds[k]).map(([k, l]) => `${l} ${x.speeds[k]}`).join(' · ');
+    const DEF_TH = { res: 'Resistance (โดนครึ่งเดียว)', imm: 'Immunity (ไม่โดนเลย)', vul: 'Vulnerability (โดน 2 เท่า)' };
+    const defMain = x.defenses.filter(d => !d.when);
+    const nCond = P.conditions.length + (P.exh ? 1 : 0);
     return h('section.sh-top',
       h('div.abil6', ABIL.map(a => h('button.ab6', { onclick: () => abilInfo(a, x) },
         h('small', ABIL_EN[a].toUpperCase()), h('b', sign(x.m[a])), h('span.oval', String(x.score[a]))))),
@@ -144,8 +153,10 @@ export function renderSheet(root, c, tab, nav) {
         box('PROFICIENCY', 'โบนัสชำนาญ', sign(x.pb), null, () => explain('Proficiency Bonus', [
           h('div.formula', h('div.f-main', h('span', `เลเวลรวม ${x.L}`), h('b', sign(x.pb))), h('div.f-parts', h('span', 'Lv 1–4 +2 · 5–8 +3 · 9–12 +4 · 13–16 +5 · 17–20 +6'))),
           ...helpBody('pb')])),
-        box('SPEED', 'ความเร็ว', String(x.speed), 'ft', () => explain('Speed', [
-          h('div.formula', h('div.f-main', h('span', 'เดินได้ต่อเทิร์น'), h('b', `${x.speed} ft`)), h('div.f-parts', h('span', `= ${Math.floor(x.speed / 5)} ช่องบนแผนที่ (ช่องละ 5 ฟุต)`), x.sp ? h('span', `${x.sp.name} เริ่มต้น ${x.sp.speed} ft`) : null)),
+        box('SPEED', spdTxt || 'ความเร็ว', String(x.speed), 'ft', () => explain('Speed', [
+          h('div.formula', h('div.f-main', h('span', 'เดินได้ต่อเทิร์น'), h('b', `${x.speed} ft`)), h('div.f-parts', h('span', `= ${Math.floor(x.speed / 5)} ช่องบนแผนที่ (ช่องละ 5 ฟุต)`), x.sp ? h('span', `${x.sp.name} เริ่มต้น ${x.sp.speed} ft`) : null, x.exh ? h('span', `Exhaustion ${x.exh} `, h('b', `−${5 * x.exh}`)) : null)),
+          spdTxt ? h('p', h('b', 'ความเร็วแบบอื่น: '), spdTxt) : null,
+          x.speedNotes.map(n => h('p.small', '💡 ' + n)),
           ...helpBody('speed')])),
         box('HEROIC', 'Inspiration', P.inspiration ? '✨' : '—', null, () => explain('Heroic Inspiration', [
           h('p.formula', P.inspiration ? '✨ ตอนนี้มีอยู่ 1 ครั้ง' : 'ตอนนี้ยังไม่มี'), ...helpBody('insp')], [
@@ -158,11 +169,18 @@ export function renderSheet(root, c, tab, nav) {
         box('ARMOR', 'Class (AC)', String(x.ac), null, () => explain('Armor Class (AC)', [
           h('div.formula', h('div.f-main', h('span', 'AC'), h('b', String(x.ac))), h('div.f-parts', h('span', x.acNote))),
           ...helpBody('ac'), h('p.muted.small', 'เปลี่ยนเกราะหรือโล่ได้ที่ขั้น EQUIPMENT ในหน้าแก้ไข')])),
-        box('DEFENSES', 'ต้านทาน', '—', null, () => explain('Defenses', [
+        box('DEFENSES', defMain.length ? defMain.map(d => d.type).join(', ') : 'ต้านทาน', defMain.length ? String(defMain.length) : '—', null, () => explain('Defenses', [
+          ...['imm', 'res', 'vul'].map(k => { const L = x.defenses.filter(d => d.kind === k); return L.length ? [h('h4', DEF_TH[k]), h('ul', L.map(d => h('li', h('b', d.type), ` — ${d.src}${d.when ? ` (${d.when})` : ''}`)))] : null; }),
+          x.condImm.length ? [h('h4', 'ไม่ติดสถานะ (Condition Immunity)'), h('ul', x.condImm.map(d => h('li', h('b', d.type), ` — ${d.src}`)))] : null,
+          !x.defenses.length && !x.condImm.length ? h('p.formula', 'ตอนนี้ยังไม่มีดาเมจที่ทนได้เป็นพิเศษ') : null,
           ...helpBody('defenses'),
-          h('p.muted.small', 'ตอนนี้ยังไม่มีอะไรที่คำนวณให้อัตโนมัติ ถ้าฟีเจอร์ของเราบอกว่าได้ Resistance ให้จำไว้ก่อนนะ')])),
-        box('CONDITIONS', 'สถานะ', P.conditions.length ? String(P.conditions.length) : '—', null, () => condSheet(), P.conditions.length ? '.bad' : '')),
-      P.conditions.length ? h('p.cond-line', '⚠ ติดอยู่: ', P.conditions.map(k => h('button.link', { onclick: () => showTerm(k.toLowerCase()) }, k)).flatMap((b, i) => (i ? [', ', b] : [b]))) : null,
+          h('p.muted.small', 'ได้ Resistance จากของวิเศษหรือฟีเจอร์ที่เว็บไม่ได้คำนวณให้? เพิ่มเองได้ที่เมนู ⋯ → ปรับค่าเอง')])),
+        box('CONDITIONS', 'สถานะ', nCond ? String(nCond) : '—', null, () => condSheet(), nCond ? '.bad' : '')),
+      nCond ? h('p.cond-line', '⚠ ติดอยู่: ', [...P.conditions.map(k => h('button.link', { onclick: () => showTerm(k.toLowerCase()) }, k)),
+        P.exh ? h('button.link', { onclick: () => condSheet() }, `Exhaustion ${P.exh}`) : null].filter(Boolean).flatMap((b, i) => (i ? [', ', b] : [b]))) : null,
+      P.conc ? h('div.conc-chip', h('span', '🧠 Concentration: ', h('b', D.spell[P.conc]?.name || P.conc)),
+        h('button.link', { onclick: () => explain('Concentration', helpBody('conc')) }, 'คืออะไร'),
+        h('button.btn.small', { onclick: () => { dropConc('เลิกเอง'); done(); } }, 'เลิกใช้สมาธิ')) : null,
       head('SAVING THROWS', 'การทอยเซฟ', infoBtn('save')),
       h('div.saves6', x.saves.map(sv => h('button.save6', { onclick: () => explain(`${ABIL_EN[sv.ab]} Saving Throw`, [
         formula('ทอยเซฟ', sv.bonus, sv.parts),
@@ -170,19 +188,22 @@ export function renderSheet(root, c, tab, nav) {
         ...helpBody('save').slice(1),
         sv.prof ? h('p.muted.small', '● เราชำนาญเซฟนี้ จึงได้บวก Proficiency ด้วย') : null]) },
         h('span.dot' + (sv.prof ? '.prof' : '')), h('small', ABIL_SHORT[sv.ab]), h('b', sign(sv.bonus))))),
+      x.saveNotes.length ? h('ul.save-notes', x.saveNotes.map(n => h('li', n))) : null,
       head('SENSES', 'ประสาทสัมผัส', infoBtn('passive')),
       h('div.card.list.senses',
         senseRow(`Passive Perception`, 'WIS · สังเกตเห็นอะไรโดยไม่ต้องทอย', sk('Perception'), 'Perception'),
         senseRow(`Passive Insight`, 'WIS · จับได้ว่าใครโกหก', sk('Insight'), 'Insight'),
         senseRow(`Passive Investigation`, 'INT · หากับดัก ของซ่อน', sk('Investigation'), 'Investigation'),
         x.darkvision ? h('button.sense', { onclick: () => explain('Darkvision', [h('p.formula', `ระยะ ${x.darkvision} ฟุต`), ...helpBody('darkvision')]) }, h('div', h('b', 'Darkvision'), h('small', 'มองในที่มืดได้เหมือนแสงสลัว (เห็นเป็นขาวดำ)')), h('span.sv', `${x.darkvision} ft`)) : null,
+        x.blindsight ? h('button.sense', { onclick: () => explain('Blindsight', [h('p.formula', `ระยะ ${x.blindsight} ฟุต`), ...helpBody('blindsight')]) }, h('div', h('b', 'Blindsight'), h('small', 'รับรู้รอบตัวได้โดยไม่ต้องใช้ตา')), h('span.sv', `${x.blindsight} ft`)) : null,
         x.truesight ? h('button.sense', { onclick: () => explain('Truesight', [h('p.formula', `ระยะ ${x.truesight} ฟุต`), ...helpBody('truesight')]) }, h('div', h('b', 'Truesight'), h('small', 'มองทะลุภาพลวง ความมืดเวท และร่างแปลง')), h('span.sv', `${x.truesight} ft`)) : null),
       head('PROFICIENCIES & TRAINING', 'สิ่งที่เราชำนาญ'),
       h('dl.kv.profs',
         h('dt', 'Armor'), h('dd', x.training.join(', ') || '—'),
         h('dt', 'Weapons'), h('dd', x.cls?.core['Weapon Proficiencies'] + (x.weaponRule === 'all' && !/Martial/.test(x.cls?.core['Weapon Proficiencies']) ? ' + Martial' : '') || '—'),
         h('dt', 'Tools'), h('dd', [x.cls?.core['Tool Proficiencies'], x.bg?.tool].filter(t => t && t !== 'None').join(', ').replace(/\s*\(see.*?\)/g, '') || '—'),
-        h('dt', 'Languages'), h('dd', x.langs.join(', '))),
+        h('dt', 'Languages'), h('dd', x.langs.join(', ')),
+        x.customProfs ? [h('dt', 'อื่น ๆ'), h('dd', x.customProfs)] : null),
       head('SKILLS', 'สกิล', infoBtn('pb')),
       h('div.card.list.skills-tb',
         h('div.sk-row.sk-head', h('small', 'PROF'), h('small', 'MOD'), h('small', 'SKILL'), h('small', 'BONUS')),
@@ -237,11 +258,52 @@ export function renderSheet(root, c, tab, nav) {
       h('div.hp-ctl',
         h('button.btn.heal', { onclick: () => { const n = val(); if (!n) return toast('ใส่ตัวเลขก่อน แล้วค่อยกดฮีล'); if (P.hp === 0) P.death = { s: 0, f: 0 }; P.hp = Math.min(x.hpMax, P.hp + n); done(); } }, 'HEAL', h('small', 'ฮีล')),
         amt,
-        h('button.btn.dmg', { onclick: () => { let n = val(); if (!n) return toast('ใส่ดาเมจที่โดนก่อน แล้วค่อยกด'); const t = Math.min(P.temp, n); P.temp -= t; n -= t; P.hp = Math.max(0, P.hp - n); done(); } }, 'DAMAGE', h('small', 'โดนตี'))),
+        h('button.btn.dmg', { onclick: () => { let n = val(); if (!n) return toast('ใส่ดาเมจที่โดนก่อน แล้วค่อยกด'); const dmg = n, t = Math.min(P.temp, n); P.temp -= t; n -= t; P.hp = Math.max(0, P.hp - n);
+          if (P.conc && P.hp === 0) dropConc('HP เหลือ 0'); else if (P.conc) concCheck(x, dmg);
+          done(); } }, 'DAMAGE', h('small', 'โดนตี'))),
       h('div.hp-sub',
         h('button.link', { onclick: () => { const n = val(); P.temp = Math.max(P.temp, n); done(); toast(n ? `ได้ Temp HP ${P.temp} (Temp HP ไม่ทบกัน เก็บค่าที่สูงกว่าไว้)` : 'ใส่จำนวน Temp HP ก่อนแล้วกดอีกที'); } }, '+ ตั้ง Temp HP'),
         h('button.link.small', { onclick: () => explain('Hit Dice', [h('p.formula', `เหลือ ${hdLeft} จาก ${c.level} ลูก`), ...helpBody('hd')]) }, `Hit Dice เหลือ ${hdLeft}/${c.level} (${x.hitDice.map(d => `${d.n}d${d.die}`).join(' + ') || 'd8'})`)));
   }
+  // โดนดาเมจตอนใช้สมาธิ → เตือนเซฟ CON
+  function concCheck(x, dmg) {
+    const dc = Math.min(30, Math.max(10, Math.floor(dmg / 2))), sv = x.saves.find(z => z.ab === 'con'), sp = D.spell[P.conc];
+    explain(`เซฟสมาธิ: ${sp?.name || ''}`, [
+      h('p', `โดนดาเมจ ${dmg} ตอนกำลังใช้สมาธิ — ต้องทอยเซฟ CON ให้ได้ ${dc} ขึ้นไป ไม่งั้นเวทหลุด`),
+      formula('ทอยเซฟ CON', sv.bonus, sv.parts),
+      h('p.muted.small', `DC = 10 หรือครึ่งหนึ่งของดาเมจ (${Math.floor(dmg / 2)}) เอาค่าที่สูงกว่า และไม่เกิน 30`)], [
+      { label: 'ไม่ผ่าน — สมาธิหลุด', onClick: () => { dropConc(); done(); } },
+      { label: 'ผ่าน ยังรักษาสมาธิไว้', primary: true }]);
+  }
+
+  // ปรับค่าเอง: ของวิเศษ / สิ่งที่ DM ให้ → c.custom
+  function customSheet() {
+    const cu = c.custom = Object.assign({}, c.custom);
+    const x = compute(c);
+    const setN = (obj, k) => e => { const v = parseInt(e.target.value, 10); if (v) obj[k] = v; else delete obj[k]; save(); redraw(); };
+    const num = (label, obj, k, ph = '0') => h('label.fld.cu-n', h('small', label), h('input.inp.num', { type: 'number', inputmode: 'numeric', value: obj[k] || '', placeholder: ph, onchange: setN(obj, k) }));
+    cu.saves = cu.saves || {}; cu.skills = cu.skills || {}; cu.attack = cu.attack || {}; cu.defenses = cu.defenses || [];
+    const TYPES = ['Acid', 'Bludgeoning', 'Cold', 'Fire', 'Force', 'Lightning', 'Necrotic', 'Piercing', 'Poison', 'Psychic', 'Radiant', 'Slashing', 'Thunder'];
+    const defList = h('div');
+    const fillDef = () => defList.replaceChildren(...cu.defenses.map((d, i) => h('div.row.cu-def', h('span', `${d.type} · ${{ res: 'Resistance', imm: 'Immunity', vul: 'Vulnerability' }[d.kind]}`),
+      h('button.icon-btn', { 'aria-label': 'ลบ', onclick: () => { cu.defenses.splice(i, 1); save(); redraw(); fillDef(); } }, '✕'))));
+    fillDef();
+    const tSel = h('select.inp', TYPES.map(t => h('option', { value: t }, t))), kSel = h('select.inp', [['res', 'Resistance'], ['imm', 'Immunity'], ['vul', 'Vulnerability']].map(([v, l]) => h('option', { value: v }, l)));
+    const txt = (k, label, ph) => h('label.fld', h('small', label), h('input.inp', { value: cu[k] || '', placeholder: ph, onchange: e => { cu[k] = e.target.value; save(); redraw(); } }));
+    sheet('ปรับค่าเอง', h('div.custom',
+      h('p.muted.small', 'ใส่ตัวเลขที่จะ "บวกเพิ่ม" จากที่เว็บคำนวณ (ติดลบได้) เช่น ได้ Cloak of Protection ให้ใส่ AC +1 และเซฟทุกช่อง +1 · เว้นว่าง = ไม่ปรับ'),
+      h('h4', 'ค่าหลัก'), h('div.cu-grid', num('AC', cu, 'ac'), num('HP สูงสุด', cu, 'hpMax'), num('Speed (ฟุต)', cu, 'speed'), num('Initiative', cu, 'init'), num('Spell Save DC', cu, 'spellDc'), num('Spell Attack', cu, 'spellAtk')),
+      h('h4', 'ความเร็วแบบอื่น / ประสาทสัมผัส (ใส่เป็นระยะฟุต)'), h('div.cu-grid', num('ปีน', cu, 'climb', '—'), num('ว่าย', cu, 'swim', '—'), num('บิน', cu, 'fly', '—'), num('Darkvision', cu, 'darkvision', '—'), num('Blindsight', cu, 'blindsight', '—')),
+      h('h4', 'Saving Throws'), h('div.cu-grid', ABIL.map(a => num(ABIL_SHORT[a], cu.saves, a))),
+      h('h4', 'อาวุธ (ของวิเศษ +1 / +2 ใส่ทั้งโจมตีและดาเมจ)'), x.attacks.map(a => { cu.attack[a.id] = cu.attack[a.id] || {}; return h('div.cu-atk', h('b', a.name), num('โจมตี', cu.attack[a.id], 'hit'), num('ดาเมจ', cu.attack[a.id], 'dmg')); }),
+      h('details.orig', h('summary', 'สกิล 18 อย่าง'), h('div.cu-grid', x.skills.map(z => num(z.name, cu.skills, z.name)))),
+      h('h4', 'ดาเมจที่ทนได้ (Defenses)'), defList,
+      h('div.row.cu-def', tSel, kSel, h('button.btn.small', { onclick: () => { cu.defenses.push({ type: tSel.value, kind: kSel.value }); save(); redraw(); fillDef(); } }, '+ เพิ่ม')),
+      h('h4', 'ภาษา / ความชำนาญเพิ่ม'),
+      txt('langs', 'ภาษาเพิ่ม (คั่นด้วยจุลภาค)', 'เช่น Elvish, Draconic'),
+      txt('profs', 'ความชำนาญอื่น ๆ (เครื่องมือ อาวุธ ฯลฯ)', "เช่น Thieves' Tools, Longbow")));
+  }
+
   function hpFormula(x) {
     let dice = 0;
     for (const li of levelInfo(c)) { const d = li.cls?.hitDie; if (d) dice += li.i === 0 ? d : li.e.hp || hitDieAvg(d); }
@@ -258,15 +320,28 @@ export function renderSheet(root, c, tab, nav) {
   }
   function condSheet() {
     const list = h('div.chips');
-    const fill = () => list.replaceChildren(...CONDITIONS.map(k => {
-      const on = P.conditions.includes(k);
-      return h('button.chip' + (on ? '.on.bad' : ''), { onclick: () => {
-        if (on) P.conditions = P.conditions.filter(z => z !== k); else { P.conditions.push(k); const t = D.th.misc?.conditions?.[k]; if (t) toast(`${k}: ${t}`); }
-        done(); fill();
-      } }, k);
-    }));
+    const exBox = h('div.exh');
+    const fill = () => {
+      list.replaceChildren(...CONDITIONS.filter(k => k !== 'Exhaustion').map(k => {
+        const on = P.conditions.includes(k);
+        return h('button.chip' + (on ? '.on.bad' : ''), { onclick: () => {
+          if (on) P.conditions = P.conditions.filter(z => z !== k);
+          else {
+            P.conditions.push(k); const t = D.th.misc?.conditions?.[k]; if (t) toast(`${k}: ${t}`);
+            if (INCAP.includes(k)) dropConc(`ติด ${k}`);
+          }
+          done(); fill();
+        } }, k);
+      }));
+      const e = P.exh || 0;
+      exBox.replaceChildren(h('div.exh-row', h('b', 'Exhaustion'),
+        h('button.icon-btn', { 'aria-label': 'ลด', disabled: !e, onclick: () => { P.exh = Math.max(0, e - 1); done(); fill(); } }, '−'),
+        h('b.exh-n', String(e)),
+        h('button.icon-btn', { 'aria-label': 'เพิ่ม', disabled: e >= 6, onclick: () => { P.exh = Math.min(6, e + 1); done(); fill(); if (P.exh >= 6) toast('💀 Exhaustion ระดับ 6 = ตัวละครตาย'); } }, '+')),
+        h('p.muted.small', e ? `ทอย d20 ทุกอย่างลดลง ${2 * e} · Speed ลด ${5 * e} ฟุต — เว็บหักให้ในสูตรแล้ว · พักยาวลดได้ 1 ระดับ${e >= 6 ? ' · ⚠ ระดับ 6 = ตาย' : ''}` : 'ความเหนื่อยล้า 1–6 ระดับ: ทุกระดับทอย d20 ลดลง 2 และ Speed ลด 5 ฟุต · ถึงระดับ 6 = ตาย'));
+    };
     fill();
-    sheet('Conditions (สถานะที่ติดอยู่)', h('div', h('p.muted.small', 'แตะเพื่อใส่หรือเอาออก — DM จะบอกเวลาเราติดสถานะอะไร'), list,
+    sheet('Conditions (สถานะที่ติดอยู่)', h('div', h('p.muted.small', 'แตะเพื่อใส่หรือเอาออก — DM จะบอกเวลาเราติดสถานะอะไร'), list, exBox,
       h('p.muted.small', 'อยากรู้ว่าแต่ละอันมีผลยังไง ดูได้ที่หน้า "ศัพท์" หรือแตะชื่อสถานะใต้กล่อง CONDITIONS')));
   }
 
@@ -308,9 +383,9 @@ export function renderSheet(root, c, tab, nav) {
       } }]);
   }
   async function longRest(x) {
-    if (!(await confirmSheet('พักยาว 8 ชั่วโมง?', 'HP เต็ม · Hit Dice คืนหมด · Spell Slot และความสามารถทุกอย่างคืนหมด'))) return;
+    if (!(await confirmSheet('พักยาว 8 ชั่วโมง?', `HP เต็ม · Hit Dice คืนหมด · Spell Slot และความสามารถทุกอย่างคืนหมด${P.exh ? ` · Exhaustion ลดเหลือ ${P.exh - 1}` : ''}`))) return;
     P.hp = x.hpMax; P.temp = 0; P.hdUsed = 0; P.hdu = {}; P.slots = {}; P.res = {}; P.death = { s: 0, f: 0 };
-    P.conditions = P.conditions.filter(k => k !== 'Exhaustion'); P.turn = null;
+    P.exh = Math.max(0, (P.exh || 0) - 1); P.conc = null; P.turn = null;
     done(); toast('พักยาวแล้ว พร้อมลุยต่อ!');
   }
 
