@@ -6,6 +6,8 @@ import {
   ABIL, ABIL_SHORT, SKILLS, MAX_LEVEL, MC_PROF, compute, levelInfo, ensureLevels, featChoices, featAsiRule, meetsPrimary, hitDieAvg, subOf,
 } from '../rules.js';
 import { classFeatureCard, original } from './parts.js';
+import { missing } from '../rules.js';
+import { thFeature } from '../data.js';
 
 
 /** สรุปสั้นของเลเวลหนึ่ง เช่น "Fighter 4 · HP +8 · ASI STR+2" */
@@ -154,4 +156,61 @@ export function openLevelUp(c, onDone) {
       toast(`ยินดีด้วย! เลเวล ${c.level} แล้ว (HP +${gain})`);
     } },
   ]);
+}
+
+// ---------- ดูก่อนเลเวลอัป (เฟส 4E) ----------
+/** กล่องพับ "เลเวลหน้าจะได้อะไร" — เลือกคลาสที่จะอัปได้ (Multiclass) */
+export function previewNext(c, onLevelUp) {
+  ensureLevels(c);
+  if (c.level >= MAX_LEVEL) return null;
+  const x0 = compute(c);
+  const last = c.levels[c.levels.length - 1]?.c || c.classId;
+  const body = h('div.preview');
+  const draw = cid => {
+    const t = structuredClone(c);
+    ensureLevels(t);
+    t.levels.push({ c: cid });
+    t.level = t.levels.length;
+    const x1 = compute(t), cls = D.cls[cid], n = x1.CLs[cid] || 1, li = levelInfo(t)[t.levels.length - 1];
+    const key = f => `${f.src}:${f.id}`;
+    const had = new Set([...(x0.feats || []).map(key), ...x0.mcFeats.flatMap(mc => mc.feats.map(f => mc.cls.id + key(f)))]);
+    const isMain = cid === t.classId;
+    const fresh = isMain ? x1.feats.filter(f => !had.has(key(f))) : (x1.mcFeats.find(mc => mc.cls.id === cid)?.feats || []).filter(f => !had.has(cid + key(f)));
+    const newFeats = fresh.filter(f => !/^(ability-score-improvement|epic-boon)$/.test(f.id));
+    const L = [];
+    const hp = x1.hpMax - x0.hpMax;
+    L.push(h('li', h('b', 'HP สูงสุด '), `${x0.hpMax} → ${x1.hpMax} (+${hp})`, h('small', ` · ทอย d${cls.hitDie} + CON หรือเอาค่าเฉลี่ย ${hitDieAvg(cls.hitDie)}`)));
+    if (x1.pb !== x0.pb) L.push(h('li', h('b', 'Proficiency Bonus '), `${sign(x0.pb)} → ${sign(x1.pb)} (สกิล เซฟ โจมตีที่ชำนาญขึ้นหมด)`));
+    if (x1.atkPer !== x0.atkPer) L.push(h('li', h('b', 'Extra Attack '), `โจมตีได้ ${x1.atkPer} ครั้งต่อ Attack action`));
+    // สลอต
+    const slotSum = x => { const o = {}; for (const b of x.casting) for (const [lv, k] of Object.entries(b.slots || {})) { const kk = (b.pact ? 'Pact ' : '') + 'Lv ' + lv; o[kk] = Math.max(o[kk] || 0, k); } return o; };
+    const s0 = slotSum(x0), s1 = slotSum(x1);
+    const sd = Object.keys(s1).filter(k => s1[k] !== (s0[k] || 0)).map(k => `${k} ${s0[k] || 0}→${s1[k]}`);
+    if (sd.length) L.push(h('li', h('b', 'Spell Slot '), sd.join(' · ')));
+    const cast = x => x.casting.find(b => b.cid === cid);
+    const b0 = cast(x0), b1 = cast(x1);
+    if (b1 && (b1.cantripMax !== (b0?.cantripMax || 0) || b1.preparedMax !== (b0?.preparedMax || 0)))
+      L.push(h('li', h('b', 'เวท '), [b1.cantripMax !== (b0?.cantripMax || 0) ? `Cantrip ${b0?.cantripMax || 0}→${b1.cantripMax}` : null, b1.preparedMax !== (b0?.preparedMax || 0) ? `เตรียมได้ ${b0?.preparedMax || 0}→${b1.preparedMax}` : null].filter(Boolean).join(' · ')));
+    // ทรัพยากร
+    const rd = x1.res.map(r => { const o = x0.res.find(z => z.id === r.id); return !o ? `${r.name} ใหม่ (${r.max})` : o.max !== r.max ? `${r.name} ${o.max}→${r.max}` : null; }).filter(Boolean);
+    if (rd.length) L.push(h('li', h('b', 'ใช้ได้กี่ครั้ง '), rd.join(' · ')));
+    if (li.asi) L.push(h('li', h('b', 'Ability Score Improvement '), 'เพิ่มค่าพลัง +2 (หรือ +1 สองค่า) หรือเลือก Feat'));
+    if (li.boon) L.push(h('li', h('b', 'Epic Boon '), 'เลือก Epic Boon 1 อัน'));
+    const m0 = new Set(missing(c)), need = missing(t).filter(z => !m0.has(z));
+    body.replaceChildren(...[
+      h('p.small', h('b', `${cls.name} ${n}`), ` · เลเวลตัวละคร ${t.level}`, !isMain && !x0.CLs[cid] ? h('span.badge', 'Multiclass') : null),
+      !isMain && !x0.CLs[cid] && !meetsPrimary(cls, x0.score) ? h('p.tip', `⚠ จะ Multiclass เป็น ${cls.name} ต้องมี ${cls.core['Primary Ability']} อย่างน้อย 13`) : null,
+      h('ul.preview-list', L),
+      newFeats.length ? [h('h4', 'ฟีเจอร์ใหม่'), h('ul.preview-list', newFeats.map(f => {
+        const th = f.pack ? f.th : thFeature(cid, f.id, f.src === 'sub');
+        return h('li', h('b', f.name), th?.s ? ' — ' + th.s : '');
+      }))] : h('p.muted.small', 'เลเวลนี้ไม่มีฟีเจอร์ใหม่'),
+      need.length ? [h('h4', 'ต้องเลือกตอนอัป'), h('ul.preview-list', need.map(z => h('li', z)))] : null,
+      onLevelUp ? h('button.btn.primary', { onclick: () => onLevelUp() }, `⬆️ เลเวลอัปเลย`) : null].flat().filter(Boolean));
+  };
+  const sel = h('select', { onchange: e => draw(e.target.value) },
+    Object.values(D.cls).map(k => h('option', { value: k.id, selected: k.id === last }, `${k.name}${x0.CLs[k.id] ? ` ${x0.CLs[k.id]} → ${x0.CLs[k.id] + 1}` : ' (คลาสใหม่)'}`)));
+  draw(last);
+  return h('details.orig.preview-box', h('summary', `👀 เลเวลหน้า (Lv ${c.level + 1}) จะได้อะไร`),
+    h('label.fld', h('small', 'ถ้าอัปเป็นคลาส'), sel), body);
 }

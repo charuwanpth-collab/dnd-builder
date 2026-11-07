@@ -708,3 +708,35 @@ button.sh-ico { border: 1px solid var(--line); cursor: pointer; display: flex; a
 .sb-abil b { display: block; }
 .sb-abil span { font-size: .75rem; color: var(--dim); }
 .statblock .box { cursor: default; }
+
+/* ---------- เฟส 4E ---------- */
+.fx-box { display: grid; gap: 4px; margin-top: 6px; }
+.fx { font-size: .85rem; padding: 6px 8px; border-radius: 8px; background: var(--card2); border-left: 3px solid var(--line); }
+.fx small { color: var(--muted, #aaa); }
+.fx.adv { border-left-color: #4caf7a; }
+.fx.dis { border-left-color: var(--red); }
+.fx.fail { border-left-color: var(--red); background: color-mix(in srgb, var(--red) 15%, var(--card2)); }
+.fxm { font-style: normal; font-size: .7em; margin-left: 3px; vertical-align: super; }
+.fxm.adv { color: #4caf7a; } .fxm.dis, .fxm.fail { color: var(--red); } .fxm.both { color: var(--muted, #aaa); }
+ul.cond-fx { margin: 4px 0 8px; padding-left: 18px; font-size: .85rem; }
+ul.cond-fx li { margin: 2px 0; }
+.fx-row { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 2px; scrollbar-width: none; }
+.fx-row::-webkit-scrollbar { display: none; }
+.fx-chip { flex: none; border: 1px solid var(--line); background: var(--card2); color: var(--text); border-radius: 999px; padding: 3px 10px; font-size: .8rem; white-space: nowrap; }
+.fx-chip b { color: var(--gold2); }
+.fx-chip.end { border-color: var(--red); }
+.fx-chip.add { color: var(--muted); border-style: dashed; }
+.fx-add .fld, .fx-add label.fld { display: grid; gap: 4px; margin: 8px 0; }
+.fx-add .fld span { font-size: .85rem; color: var(--muted); }
+.nt { display: grid; gap: 10px; }
+.nt-item { background: var(--card2); border-radius: 10px; padding: 10px; display: grid; gap: 6px; border-left: 3px solid var(--gold); }
+.nt-item.done { opacity: .75; border-left-color: var(--line); }
+.hotbar { display: flex; gap: 6px; overflow-x: auto; padding: 6px 0 4px; scrollbar-width: none; }
+.hotbar::-webkit-scrollbar { display: none; }
+.hb { flex: none; display: flex; align-items: center; gap: 4px; border: 1px solid var(--gold); background: var(--card); color: var(--text); border-radius: 8px; padding: 5px 10px; font-size: .82rem; white-space: nowrap; }
+.hb i { font-style: normal; }
+.hb.off { opacity: .45; border-color: var(--line); }
+.preview-box { margin: 8px 0 12px; }
+.preview { display: grid; gap: 6px; }
+ul.preview-list { margin: 0; padding-left: 18px; font-size: .9rem; }
+ul.preview-list li { margin: 3px 0; }

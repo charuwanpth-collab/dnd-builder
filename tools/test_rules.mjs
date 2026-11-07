@@ -138,3 +138,17 @@ console.log('\n== 4D Exhaustion / ปรับค่าเอง / Defenses');
   ok(x.defenses.some(d => d.type === 'Poison') && x.defenses.filter(d => d.src === 'Rage').length === 3 && x.defenses.some(d => d.kind === 'imm'), '4D Dwarf Poison + Rage BPS + Fire imm');
   ok(x.speeds.climb === 20, '4D ปีน 20');
 }
+
+console.log('\n== 4E ป้าย Advantage/Disadvantage จาก Condition / เอฟเฟกต์');
+{
+  const ok = (cond, label) => console.log(`  ${cond ? '✓' : '✗'} ${label}`);
+  const { flagSum, roundsOf } = await import('../js/fx.js');
+  const c = Object.assign(R.newCharacter(), { classId: 'fighter', speciesId: 'human', bgId: 'soldier', level: 3 });
+  c.play = { conditions: ['Poisoned', 'Restrained'], fx: [{ key: 'bless', name: 'Bless', left: 10 }, { key: 'rage', name: 'Rage', left: 100 }] };
+  const x = R.compute(c);
+  ok(flagSum(x.rf('atk', 'str')) === 'dis' && flagSum(x.rf('check', 'wis')) === 'dis', '4E Poisoned → โจมตี/Check Disadvantage');
+  ok(flagSum(x.rf('save', 'dex')) === 'dis' && x.rf('save', 'wis').some(f => f.t === 'plus'), '4E Restrained → เซฟ DEX Dis · Bless +1d4');
+  ok(flagSum(x.rf('check', 'str')) === 'both' && flagSum(x.rf('init', 'dex')) === 'both', '4E Rage STR Adv + Poisoned = หักล้าง · Init (DEX Check) Poisoned + Remarkable Athlete');
+  c.play.conditions = ['Stunned']; ok(flagSum(R.compute(c).rf('save', 'str')) === 'fail', '4E Stunned → เซฟ STR ล้มเหลว');
+  ok(roundsOf('Concentration, up to 1 minute') === 10 && roundsOf('1 hour') === 0 && roundsOf('1 round') === 1, '4E นับรอบจาก Duration');
+}

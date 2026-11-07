@@ -1,7 +1,8 @@
 // การ์ดอธิบาย "ตัวเลขนี้มาจากไหน" — ใช้เต๋าจริง เว็บแค่บอกสูตร
 import { D } from '../data.js';
 import { h, sheet } from '../util.js';
-import { ABIL_SHORT } from '../rules.js';
+import { ABIL_SHORT, col } from '../rules.js';
+import { flagSum } from '../fx.js';
 import { fullTh } from './parts.js';
 
 const pm = n => (n < 0 ? '− ' : '+ ') + Math.abs(n);
@@ -17,11 +18,33 @@ export function dmgRange(s) {
 /** ดาเมจสูตร + ช่วงตัวเล็ก */
 export const dmgText = s => [s, dmgRange(s) ? h('small.rng', ` (${dmgRange(s)})`) : null];
 
-/** กล่องสูตร: label: d20 + 5 แล้วแตกรายการ STR +3 · Prof +2 */
-export function formula(label, total, parts = [], die = 'd20') {
+/** กล่องสูตร: label: d20 + 5 แล้วแตกรายการ STR +3 · Prof +2 · flags = ป้าย Advantage/Disadvantage จาก x.rf() */
+export function formula(label, total, parts = [], flags = [], die = 'd20') {
+  const extra = (flags || []).filter(f => f.t === 'plus' || f.t === 'minus').map(f => ` ${f.t === 'plus' ? '+' : '−'} ${f.add}`).join('');
   return h('div.formula',
-    h('div.f-main', h('span', label), h('b', `${die} ${pm(total)}`)),
-    parts.length ? h('div.f-parts', parts.map(([l, n]) => h('span', l, ' ', h('b', (n < 0 ? '−' : '+') + Math.abs(n))))) : null);
+    h('div.f-main', h('span', label), h('b', `${flagSum(flags) === 'fail' ? '—' : `${die} ${pm(total)}${extra}`}`)),
+    parts.length ? h('div.f-parts', parts.map(([l, n]) => h('span', l, ' ', h('b', (n < 0 ? '−' : '+') + Math.abs(n))))) : null,
+    fxNode(flags));
+}
+
+/** ป้ายบอกผล Condition/เอฟเฟกต์ใต้สูตร */
+export function fxNode(flags) {
+  if (!flags?.length) return null;
+  const why = t => [...new Set(flags.filter(f => f.t === t).map(f => f.why))].join(', ');
+  const k = flagSum(flags), rows = [];
+  if (k === 'fail') rows.push(h('div.fx.fail', '⛔ ล้มเหลวอัตโนมัติ — ไม่ต้องทอยเลย', h('small', ` (${why('fail')})`)));
+  else if (k === 'both') rows.push(h('div.fx', '⚖️ มีทั้ง Advantage และ Disadvantage → หักล้างกัน ทอย d20 ลูกเดียวตามปกติ', h('small', ` (▲ ${why('adv')} · ▼ ${why('dis')})`)));
+  else if (k === 'adv') rows.push(h('div.fx.adv', '▲ Advantage — ทอย d20 สองลูก เอาลูกที่สูงกว่า', h('small', ` (${why('adv')})`)));
+  else if (k === 'dis') rows.push(h('div.fx.dis', '▼ Disadvantage — ทอย d20 สองลูก เอาลูกที่ต่ำกว่า', h('small', ` (${why('dis')})`)));
+  for (const f of flags) if (f.t === 'plus' || f.t === 'minus') rows.push(h('div.fx' + (f.t === 'plus' ? '.adv' : '.dis'), `${f.t === 'plus' ? '+' : '−'} ทอย ${f.add} ${f.t === 'plus' ? 'บวกเพิ่ม' : 'แล้วลบออก'}`, h('small', ` (${f.why})`)));
+  return rows.length ? h('div.fx-box', rows) : null;
+}
+/** เครื่องหมายเล็ก ๆ ข้างตัวเลขบนใบ: ▲ / ▼ / ⛔ / ⚖ */
+export function fxMark(flags) {
+  const k = flagSum(flags);
+  const plus = (flags || []).some(f => f.t === 'plus'), minus = (flags || []).some(f => f.t === 'minus');
+  const sym = { adv: '▲', dis: '▼', fail: '⛔', both: '⚖' }[k] || (plus && !minus ? '+' : minus && !plus ? '−' : '');
+  return sym ? h('i.fxm.' + (k || (plus ? 'adv' : 'dis')), { title: flags.map(f => f.why).join(', ') }, sym) : null;
 }
 
 /** เปิด bottom sheet อธิบาย */
@@ -36,7 +59,7 @@ export function attackBody(a, x) {
     ...D.weaponProps.filter(p => new RegExp(`\\b${p.name}\\b`, 'i').test(a.props || '')).map(p => p.id)];
   const mod = x.m[a.ab] || 0;
   return [
-    formula('ทอยโจมตี', a.hit, a.hitParts || []),
+    formula('ทอยโจมตี', a.hit, a.hitParts || [], x.rf?.('atk', a.ab)),
     h('div.formula',
       h('div.f-main', h('span', 'ดาเมจ'), h('b', ...dmgText(a.dmg))),
       h('div.f-parts', /\d+d\d+/.test(a.dmg) ? [h('span', 'ลูกเต๋าอาวุธ'), h('span', `${ABIL_SHORT[a.ab]} `, h('b', (mod < 0 ? '−' : '+') + Math.abs(mod)))] : h('span', `1 + ${ABIL_SHORT[a.ab]} (ไม่มีลูกเต๋า)`))),
@@ -72,7 +95,7 @@ export function spellMath(s, b, x) {
   if (/spell attack/i.test(t)) {
     const parts = [['Proficiency', x.pb], [ab, mod]], rest = b.atk - x.pb - mod;
     if (rest) parts.push(['อื่น ๆ', rest]);
-    out.push(formula('ทอยโจมตีด้วยเวท', b.atk, parts));
+    out.push(formula('ทอยโจมตีด้วยเวท', b.atk, parts, x.rf?.('atk', b.ab)));
   }
   const sv = t.match(/(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) saving throw/);
   if (sv) out.push(h('div.formula', h('div.f-main', h('span', `เป้าหมายทอยเซฟ ${AB_FULL[sv[1]]}`), h('b', `DC ${b.dc}`)), h('div.f-parts', h('span', 'บอก DM ว่า DC เท่านี้ — DM เป็นคนทอยให้เป้าหมาย'))));
@@ -107,4 +130,46 @@ export function spellMath(s, b, x) {
     if (up && s.level > 0) out.push(h('p.small.up-note', '⬆️ ใช้สลอตเลเวลสูงขึ้นแล้วเวทนี้แรงขึ้นได้ — อ่านหัวข้อ "Using a Higher-Level Spell Slot" ในแปลเต็มด้านล่าง'));
   }
   return out.length ? out : null;
+}
+
+// ---------- ลูกเต๋าของฟีเจอร์ (เฟส 4E) ----------
+const dieBlock = (label, str, notes) => h('div.formula', h('div.f-main', h('span', label), h('b', ...dmgText(str))),
+  notes ? h('div.f-parts', [].concat(notes).filter(Boolean).map(n => h('span', n))) : null);
+const valBlock = (label, val, notes) => h('div.formula', h('div.f-main', h('span', label), h('b', String(val))),
+  notes ? h('div.f-parts', [].concat(notes).filter(Boolean).map(n => h('span', n))) : null);
+const plus = n => (n < 0 ? String(n) : '+' + n);
+
+/** สูตรลูกเต๋า/ตัวเลขของฟีเจอร์ด้วยค่าของเรา — name = ชื่อฟีเจอร์ EN, clsId = คลาสเจ้าของ (species ไม่ต้องใส่) */
+export function featureMath(name, x, clsId) {
+  const n = clsId ? x.CLs?.[clsId] || 0 : 0, cls = clsId && D.cls[clsId];
+  const lv = k => (cls && n ? col(cls, k, n) : null);
+  const M = ab => x.m[ab] || 0, out = [];
+  const dc = ab => 8 + M(ab) + x.pb;
+  switch (name) {
+    case 'Sneak Attack': { const d = lv('Sneak Attack'); if (d) out.push(dieBlock('ดาเมจเพิ่ม (Sneak Attack)', d, ['1 ครั้งต่อเทิร์น บวกเข้ากับดาเมจอาวุธ', 'ใช้อาวุธ Finesse หรืออาวุธยิงไกล', 'ต้องมี Advantage หรือมีเพื่อนยืนติดเป้า (และเราต้องไม่มี Disadvantage)'])); break; }
+    case 'Rage': { const d = lv('Damage'); if (d) out.push(valBlock('ดาเมจเพิ่มตอน Rage', d, 'บวกทุกครั้งที่ตีโดนด้วยการโจมตีที่ใช้ STR')); break; }
+    case 'Brutal Strike': case 'Improved Brutal Strike': out.push(dieBlock('ดาเมจเพิ่ม (Brutal Strike)', n >= 17 ? '2d10' : '1d10', 'ยอมสละ Advantage จาก Reckless Attack 1 ครั้ง → ตีโดนแล้วบวกดาเมจนี้ + ผลพิเศษ')); break;
+    case 'Bardic Inspiration': { const d = lv('Bardic Die'); if (d) out.push(dieBlock('เพื่อนทอยเพิ่ม', '1' + d.toLowerCase(), ['เพื่อนเก็บไว้ได้ 1 ชั่วโมง', 'ใช้บวกตอนทอย D20 Test ไม่ผ่าน (ทอยแล้วค่อยตัดสินใจได้)'])); break; }
+    case 'Martial Arts': { const d = lv('Martial Arts'), k = Math.max(M('str'), M('dex')); if (d) out.push(dieBlock('ดาเมจมือเปล่า / อาวุธ Monk', d + plus(k), [`ลูกเต๋า Martial Arts ${d}`, `ใช้ STR หรือ DEX ที่สูงกว่า ${plus(k)}`])); break; }
+    case 'Uncanny Metabolism': { const d = lv('Martial Arts'); if (d) out.push(dieBlock('ฟื้น HP', d + plus(n), 'ตอนทอย Initiative ได้ Focus Point คืนหมด + ฟื้น HP เท่านี้')); break; }
+    case 'Deflect Attacks': out.push(dieBlock('ลดดาเมจที่โดน', `1d10${plus(M('dex') + n)}`, ['1d10 + DEX + เลเวล Monk', `ลดจนเหลือ 0 → ใช้ Focus Point 1 แต้มสะท้อนกลับได้ (ดาเมจ 2 ลูกเต๋า Martial Arts + DEX, เป้าเซฟ DEX DC ${dc('wis')})`])); break;
+    case "Monk's Focus": out.push(valBlock('DC เซฟของท่า Focus', `DC ${dc('wis')}`, '8 + WIS + Proficiency')); break;
+    case 'Stunning Strike': out.push(valBlock('เป้าทอยเซฟ CON', `DC ${dc('wis')}`, ['8 + WIS + Proficiency', 'ไม่ผ่าน = Stunned ถึงต้นเทิร์นหน้าของเรา · ผ่าน = Speed ครึ่ง + โดนตีมี Advantage'])); break;
+    case 'Second Wind': out.push(dieBlock('ฟื้น HP', `1d10${plus(n)}`, '1d10 + เลเวล Fighter')); break;
+    case 'Tactical Mind': out.push(dieBlock('บวกเพิ่มตอน Check ไม่ผ่าน', '1d10', 'ใช้ Second Wind 1 ครั้ง · ถ้าบวกแล้วยังไม่ผ่าน จะไม่เสียครั้งนั้น')); break;
+    case 'Indomitable': out.push(valBlock('ทอยเซฟใหม่ได้ + โบนัส', plus(n), 'บวกเลเวล Fighter เข้าไปตอนทอยใหม่ (ต้องใช้ผลใหม่)')); break;
+    case 'Lay On Hands': out.push(valBlock('แต้มรักษาทั้งหมด', `${5 * n} HP`, ['5 × เลเวล Paladin · คืนเต็มตอนพักยาว', 'ใช้ 5 แต้ม = รักษา Poisoned ได้'])); break;
+    case 'Channel Divinity':
+      if (clsId === 'cleric') { const k = n >= 18 ? 4 : n >= 13 ? 3 : n >= 7 ? 2 : 1, b = x.casting?.find(z => z.cid === 'cleric');
+        out.push(dieBlock('Divine Spark: ฟื้น HP หรือดาเมจ', `${k}d8${plus(M('wis'))}`, [`${k}d8 + WIS`, `ดาเมจ: เป้าเซฟ CON DC ${b?.dc ?? dc('wis')} (ผ่านครึ่ง) · Necrotic หรือ Radiant`])); }
+      break;
+    case 'Breath Weapon': { const k = x.L >= 17 ? 4 : x.L >= 11 ? 3 : x.L >= 5 ? 2 : 1; out.push(dieBlock('ดาเมจลมหายใจ', `${k}d10`, [`เป้าทอยเซฟ DEX DC ${dc('con')} (8 + CON + Proficiency)`, 'ไม่ผ่านโดนเต็ม · ผ่านโดนครึ่ง', 'ใช้แทนการโจมตี 1 ครั้งใน Attack action'])); break; }
+    case 'Giant Ancestry': out.push(h('div.formula', h('div.f-main', h('span', 'ลูกเต๋าของแต่ละสายเลือด')), h('div.f-parts',
+      h('span', 'Fire\'s Burn ', h('b', '1d10'), h('small.rng', ' (1–10) Fire')), h('span', 'Frost\'s Chill ', h('b', '1d6'), h('small.rng', ' (1–6) Cold')),
+      h('span', 'Storm\'s Thunder ', h('b', '1d8'), h('small.rng', ' (1–8) Thunder')), h('span', 'Stone\'s Endurance ลดดาเมจ ', h('b', `1d12${plus(M('con'))}`), h('small.rng', ` (${dmgRange(`1d12${plus(M('con'))}`)})`)),
+      h('span', `Hill's Tumble: ตีโดนแล้วทำเป้าขนาด Large ลงไปล้ม (Prone)`)))); break;
+    case 'Adrenaline Rush': out.push(valBlock('Temp HP ที่ได้', x.pb, 'เท่ากับ Proficiency Bonus')); break;
+    case 'Arcane Recovery': out.push(valBlock('คืนสลอตรวมได้ไม่เกิน', `${Math.ceil(n / 2)} เลเวล`, 'ครึ่งหนึ่งของเลเวล Wizard (ปัดขึ้น) · สลอตแต่ละอันต้องไม่เกิน Lv 5')); break;
+  }
+  return out;
 }

@@ -1,4 +1,5 @@
 // กฎและการคำนวณค่าตัวละคร (D&D 2024 / SRD 5.2.1) — ทุกอย่างคำนวณจากข้อมูลตัวละครดิบ
+import { rollFlags } from './fx.js';
 import { D } from './data.js';
 import { featIdOf, normName, stubSub } from './packs.js';
 
@@ -749,13 +750,16 @@ export function compute(c) {
   if (!sp) warn.push('ยังไม่ได้เลือก Species');
   if (!bg) warn.push('ยังไม่ได้เลือก Background');
 
-  return {
+  const out = {
     cls, sub, sp, bg, L, CL, CLs, masteryIds: [...masteries], classLine: classLine(c), hitDice, atkPer, mcFeats, levelFeats, aura,
     pb, score, m, skills, saves, ac, acNote, hpMax, speed, init, initParts, perception, darkvision, truesight: featIds.includes('boon-of-truesight') ? 60 : 0,
     attacks, casting, feats, res, featIds, originFeats: originFeats.filter(Boolean), langs: [...langs],
     training: [...training], weaponRule: rule, warn,
     exh, defenses, condImm, saveNotes, speeds, speedNotes, blindsight, customProfs: String(cu.profs || '').trim(),
   };
+  // ป้าย Advantage / Disadvantage บนสูตร (เฟส 4E) — อ่าน c.play ตอนเรียก จึงตรงกับสถานะล่าสุดเสมอ
+  out.rf = (kind, ab, skill) => rollFlags(c.play, out, kind, ab, skill);
+  return out;
 }
 
 /** รายการตัวเลือกที่ผู้เล่นยังไม่ได้เลือก (ใช้ทั้งในวิซาร์ดและใบตัวละคร) */
