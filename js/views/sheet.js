@@ -44,7 +44,8 @@ export function renderSheet(root, c, tab, nav) {
     if (P.hp == null || P.hp > x.hpMax) P.hp = x.hpMax;
     const y = window.scrollY;
     const miss = missing(c);
-    const tabsEl = h('nav.tabs', { role: 'tablist' }, TABS.map(([id, en, th]) => h('button.tab' + (cur === id ? '.on' : ''), {
+    if (!tabsNow().some(t => t[0] === cur)) cur = 'actions';
+    const tabsEl = h('nav.tabs', { role: 'tablist' }, tabsNow().map(([id, en, th]) => h('button.tab' + (cur === id ? '.on' : ''), {
       role: 'tab', 'aria-selected': cur === id ? 'true' : 'false', onclick: () => go(id),
     }, h('b', en), h('small', th))));
     const body = h('section.sh-body', ({ actions, spells, inventory, features, background, notes, extras })[cur](x));
@@ -52,7 +53,7 @@ export function renderSheet(root, c, tab, nav) {
     root.replaceChildren(...[
       header(x),
       h('div.sticky-stats', mini(x), T.turnBar(c, x, P, save, redraw), T.hotbar(c, x, P, save, redraw)),
-      miss.length ? h('button.miss-bar', { onclick: () => nav(`#/edit/${c.id}/class`) }, `⚠ ยังเลือกไม่ครบ ${miss.length} อย่าง — แตะเพื่อไปเลือกให้ครบ`) : null,
+      miss.length && !combat() ? h('button.miss-bar', { onclick: () => nav(`#/edit/${c.id}/class`) }, `⚠ ยังเลือกไม่ครบ ${miss.length} อย่าง — แตะเพื่อไปเลือกให้ครบ`) : null,
       top(x), tabsEl, body].filter(Boolean));
     window.scrollTo(0, y);
     const topbarH = document.querySelector('.topbar')?.offsetHeight || 53;
@@ -84,12 +85,20 @@ export function renderSheet(root, c, tab, nav) {
       if (!ok) return;
       const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
       if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.8) return;
-      const i = TABS.findIndex(z => z[0] === cur) + (dx < 0 ? 1 : -1);
-      if (TABS[i]) go(TABS[i][0]);
+      const T2 = tabsNow(), i = T2.findIndex(z => z[0] === cur) + (dx < 0 ? 1 : -1);
+      if (T2[i]) go(T2[i][0]);
     }, { passive: true });
   }
 
   // ---------- หัว ----------
+  // โหมดสู้ (เฟส 5): เหลือแต่ของที่ใช้ตอนต่อสู้ — จำแยกตามตัวละครใน c.settings.view
+  const combat = () => c.settings?.view === 'combat';
+  const tabsNow = () => (combat() ? TABS.filter(([id]) => id === 'actions' || (id === 'spells' && curX?.casting.length) || (id === 'extras' && (c.extras?.length || curX?.CLs.druid >= 2))) : TABS);
+  function toggleView() {
+    c.settings = { ...(c.settings || {}), view: combat() ? null : 'combat' };
+    save(); redraw(); window.scrollTo(0, 0);
+    toast(combat() ? '⚔️ โหมดสู้: เหลือแต่ของที่ใช้ตอนต่อสู้ · กด 📄 เพื่อกลับใบเต็ม' : '📄 กลับมาใบตัวละครเต็มแล้ว');
+  }
   function header(x) {
     const subtitle = [x.sp ? x.sp.name + (c.speciesOpt?.lineage ? ` (${c.speciesOpt.lineage})` : '') : null, x.classLine || '?', x.CL >= 3 && x.sub ? x.sub.name : null, x.bg?.name].filter(Boolean).join(' · ');
     return h('header.sh-head',
@@ -97,6 +106,7 @@ export function renderSheet(root, c, tab, nav) {
       h('div.sh-title', h('h1', c.name || 'Character ไร้ชื่อ'), h('p', subtitle)),
       h('button.rest-btn', { onclick: () => shortRest(x), 'aria-label': 'พักสั้น' }, h('span', { html: iconSvg('short') }), h('small', 'พักสั้น')),
       h('button.rest-btn', { onclick: () => longRest(x), 'aria-label': 'พักยาว' }, h('span', { html: iconSvg('long') }), h('small', 'พักยาว')),
+      h('button.icon-btn.view-btn' + (combat() ? '.on' : ''), { onclick: toggleView, 'aria-label': combat() ? 'กลับใบเต็ม' : 'โหมดสู้', title: combat() ? 'กลับใบเต็ม' : 'โหมดสู้' }, combat() ? '📄' : '⚔️'),
       h('a.icon-btn.help-btn', { href: `#/help/${c.id}`, 'aria-label': 'เล่นยังไง' }, '❓'),
       h('button.icon-btn', { 'aria-label': 'เมนู', onclick: menu }, '⋯'));
   }
@@ -136,6 +146,7 @@ export function renderSheet(root, c, tab, nav) {
       h('button.menu-item', { onclick: () => { close(); openLevelUp(c, () => { S.save(c); redraw(); }); } }, `⬆️ เลเวลอัป (→ Lv ${c.level + 1})`),
       c.level > 1 ? h('button.menu-item', { onclick: async () => { close(); await levelDown(); } }, `↩️ ย้อนเลเวล (กลับเป็น Lv ${c.level - 1})`) : null,
       h('button.menu-item', { onclick: () => { close(); nav(`#/edit/${c.id}/basic`); } }, '✏️ แก้ไขตัวละคร'),
+      h('button.menu-item', { onclick: () => { close(); nav(`#/card/${c.id}`); } }, '🪪 การ์ดสรุปตัวละคร (แชร์เป็นรูป / ลิงก์)'),
       h('button.menu-item', { onclick: async () => { close(); await share(); } }, '🔗 แชร์ลิงก์ตัวละคร'),
       h('button.menu-item', { onclick: () => { close(); S.exportFile([c]); toast('ดาวน์โหลดไฟล์สำรองแล้ว'); } }, '💾 ดาวน์โหลดไฟล์สำรอง'),
       h('button.menu-item', { onclick: () => { close(); window.print(); } }, '🖨️ ปริ้น / เซฟเป็น PDF'),
@@ -174,8 +185,9 @@ export function renderSheet(root, c, tab, nav) {
     const DEF_TH = { res: 'Resistance (โดนครึ่งเดียว)', imm: 'Immunity (ไม่โดนเลย)', vul: 'Vulnerability (โดน 2 เท่า)' };
     const defMain = x.defenses.filter(d => !d.when);
     const nCond = P.conditions.length + (P.exh ? 1 : 0);
-    return h('section.sh-top',
-      h('div.abil6', ABIL.map(a => h('button.ab6', { onclick: () => abilInfo(a, x) },
+    const cm = combat();
+    return h('section.sh-top' + (cm ? '.combat' : ''),
+      cm ? null : h('div.abil6', ABIL.map(a => h('button.ab6', { onclick: () => abilInfo(a, x) },
         h('small', ABIL_EN[a].toUpperCase()), h('b', sign(x.m[a])), h('span.oval', String(x.score[a]))))),
       h('div.box3',
         box('PROFICIENCY', 'โบนัสชำนาญ', sign(x.pb), null, () => explain('Proficiency Bonus', [
@@ -219,28 +231,28 @@ export function renderSheet(root, c, tab, nav) {
         sv.prof ? h('p.muted.small', '● เราชำนาญเซฟนี้ จึงได้บวก Proficiency ด้วย') : null]) },
         h('span.dot' + (sv.prof ? '.prof' : '')), h('small', ABIL_SHORT[sv.ab]), h('b', sign(sv.bonus), fxMark(x.rf('save', sv.ab)))))),
       x.saveNotes.length ? h('ul.save-notes', x.saveNotes.map(n => h('li', n))) : null,
-      head('SENSES', 'ประสาทสัมผัส', infoBtn('passive')),
-      h('div.card.list.senses',
+      cm ? null : head('SENSES', 'ประสาทสัมผัส', infoBtn('passive')),
+      cm ? null : h('div.card.list.senses',
         senseRow(`Passive Perception`, 'WIS · สังเกตเห็นอะไรโดยไม่ต้องทอย', sk('Perception'), 'Perception'),
         senseRow(`Passive Insight`, 'WIS · จับได้ว่าใครโกหก', sk('Insight'), 'Insight'),
         senseRow(`Passive Investigation`, 'INT · หากับดัก ของซ่อน', sk('Investigation'), 'Investigation'),
         x.darkvision ? h('button.sense', { onclick: () => explain('Darkvision', [h('p.formula', `ระยะ ${x.darkvision} ฟุต`), ...helpBody('darkvision')]) }, h('div', h('b', 'Darkvision'), h('small', 'มองในที่มืดได้เหมือนแสงสลัว (เห็นเป็นขาวดำ)')), h('span.sv', `${x.darkvision} ft`)) : null,
         x.blindsight ? h('button.sense', { onclick: () => explain('Blindsight', [h('p.formula', `ระยะ ${x.blindsight} ฟุต`), ...helpBody('blindsight')]) }, h('div', h('b', 'Blindsight'), h('small', 'รับรู้รอบตัวได้โดยไม่ต้องใช้ตา')), h('span.sv', `${x.blindsight} ft`)) : null,
         x.truesight ? h('button.sense', { onclick: () => explain('Truesight', [h('p.formula', `ระยะ ${x.truesight} ฟุต`), ...helpBody('truesight')]) }, h('div', h('b', 'Truesight'), h('small', 'มองทะลุภาพลวง ความมืดเวท และร่างแปลง')), h('span.sv', `${x.truesight} ft`)) : null),
-      head('PROFICIENCIES & TRAINING', 'สิ่งที่เราชำนาญ'),
-      h('dl.kv.profs',
+      cm ? null : head('PROFICIENCIES & TRAINING', 'สิ่งที่เราชำนาญ'),
+      cm ? null : h('dl.kv.profs',
         h('dt', 'Armor'), h('dd', x.training.join(', ') || '—'),
         h('dt', 'Weapons'), h('dd', x.cls?.core['Weapon Proficiencies'] + (x.weaponRule === 'all' && !/Martial/.test(x.cls?.core['Weapon Proficiencies']) ? ' + Martial' : '') || '—'),
         h('dt', 'Tools'), h('dd', [x.cls?.core['Tool Proficiencies'], x.bg?.tool].filter(t => t && t !== 'None').join(', ').replace(/\s*\(see.*?\)/g, '') || '—'),
         h('dt', 'Languages'), h('dd', x.langs.join(', ')),
         x.customProfs ? [h('dt', 'อื่น ๆ'), h('dd', x.customProfs)] : null),
-      head('SKILLS', 'สกิล', infoBtn('pb')),
-      h('div.card.list.skills-tb',
+      cm ? null : head('SKILLS', 'สกิล', infoBtn('pb')),
+      cm ? null : h('div.card.list.skills-tb',
         h('div.sk-row.sk-head', h('small', 'PROF'), h('small', 'MOD'), h('small', 'SKILL'), h('small', 'BONUS')),
         x.skills.map(s => h('button.sk-row', { onclick: () => skillInfo(s, x) },
           h('span.dot' + (s.exp ? '.exp' : s.prof ? '.prof' : '')), h('small.sk-ab', ABIL_SHORT[s.ab]),
           h('div', h('b', s.name), h('small', D.th.misc?.skills?.[s.name] || '')), h('span.skill-bonus', sign(s.bonus), fxMark(x.rf('check', s.ab, s.name)))))),
-      h('p.muted.small', '● ชำนาญ (บวก Proficiency) · ◉ Expertise (บวก Proficiency 2 เท่า) · แตะแถวไหนก็ได้เพื่อดูสูตร'));
+      cm ? h('p.muted.small', '⚔️ โหมดสู้ — ค่าพลัง สกิล และแท็บอื่น ๆ ซ่อนไว้ กด 📄 ที่หัวใบเพื่อกลับใบเต็ม') : h('p.muted.small', '● ชำนาญ (บวก Proficiency) · ◉ Expertise (บวก Proficiency 2 เท่า) · แตะแถวไหนก็ได้เพื่อดูสูตร'));
   }
   // Passive ตอนมี Advantage +5 / Disadvantage −5 (กฎ 2024)
   function passAdj(x, n) {

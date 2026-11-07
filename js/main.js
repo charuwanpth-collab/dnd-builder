@@ -8,6 +8,7 @@ import { renderHome, renderImport, renderCredits } from './views/home.js';
 import { renderWizard } from './views/wizard.js';
 import { renderSheet } from './views/sheet.js';
 import { renderHelp } from './views/help.js';
+import { renderCard } from './views/card.js';
 import { renderGlossary, initGlossaryLinks } from './views/glossary.js';
 
 const app = $('#app');
@@ -29,6 +30,7 @@ function route() {
     return page === 'c' ? renderSheet(app, c, b, nav) : renderWizard(app, c, b, nav);
   }
   if (page === 'import' && a) return renderImport(app, parts.slice(1).join('/'), nav);
+  if ((page === 'card' || page === 'view') && a) return renderCard(app, page, page === 'view' ? parts.slice(1).join('/') : a, nav);
   if (page === 'credits') return renderCredits(app);
   if (page === 'glossary') return renderGlossary(app, a);
   if (page === 'help') return renderHelp(app, a, b);
