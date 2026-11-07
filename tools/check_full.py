@@ -19,7 +19,7 @@ def flat(d, pre=''):
     if isinstance(v, dict): out.update(flat(v, pre + k + '/'))
     else: out[pre + k] = v
   return out
-SPELL_MAX = 5   # สเปลที่แปลแล้วถึงเลเวลนี้ (เพิ่มทีละรอบ)
+SPELL_MAX = 9   # สเปลที่แปลแล้วถึงเลเวลนี้ (เพิ่มทีละรอบ)
 SP = L('data/srd/spells.json')
 want['spells'] = [s['id'] for s in SP if s['level'] <= SPELL_MAX]
 want['spells-short'] = want['spells']
