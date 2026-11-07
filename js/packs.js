@@ -68,7 +68,7 @@ export function applyPacks() {
     for (const s of it.subclasses || []) {
       if (!D.cls[s.classId]) continue;
       mark(s);
-      s.features = (s.features || []).map(f => ({ ...f, pack: p.name, subName: s.name })).sort((a, b) => a.level - b.level);
+      s.features = (s.features || []).map(f => ({ ...f, pack: p.name, subName: s.name, subIcon: s.icon })).sort((a, b) => a.level - b.level);
       (packSubs[s.classId] ||= []).push(s);
     }
     for (const b of it.backgrounds || []) {

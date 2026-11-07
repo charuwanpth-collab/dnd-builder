@@ -9,6 +9,7 @@ import {
 } from '../rules.js';
 import { featIdOf } from '../packs.js';
 import { levelEditor, levelSummary } from './levelup.js';
+import { iconButton } from '../icons.js';
 import { classFeatureCard, featureCard, choiceCard, chips, counter, spellRow, original, statBox, fullTh, stubSubBox } from './parts.js';
 
 const STEPS = [
@@ -79,6 +80,8 @@ export function renderWizard(root, c, stepId, nav) {
     return [
       intro('มาสร้าง Character กัน', 'ตั้งชื่อแล้วเลือกเลเวลเริ่มต้น ถ้าเพิ่งเริ่มเล่นครั้งแรก DM ส่วนใหญ่จะให้เริ่มที่เลเวล 1'),
       section('ชื่อตัวละคร', h('input.inp', { value: c.name, placeholder: 'เช่น Jerk', maxlength: 40, oninput: e => { c.name = e.target.value; changed(false); } })),
+      section('ไอคอนตัวละคร', h('div.row', iconButton(c.icon, c.classId || 'd20', v => { if (v) c.icon = v; else delete c.icon; changed(false); }, { label: 'เลือกไอคอน', title: 'ไอคอนตัวละคร' }),
+        h('p.muted.small', 'ไม่เลือกก็ได้ จะใช้ไอคอนคลาสแทน — มีให้เลือกกว่า 4,000 รูป'))),
       section('ชื่อผู้เล่น', h('input.inp', { value: c.player, placeholder: 'ไม่ใส่ก็ได้', maxlength: 40, oninput: e => { c.player = e.target.value; changed(false); } })),
       section('เลเวล',
         h('select.inp.lv-sel', { 'aria-label': 'เลเวล', onchange: async e => {
@@ -168,7 +171,7 @@ export function renderWizard(root, c, stepId, nav) {
       if (cls.id === 'ranger') opts.push({ id: 'druidic-warrior', name: 'Druidic Warrior', text: cls.features.find(f => f.name === 'Fighting Style').text });
       out.push(block('Fighting Style', 'สไตล์การต่อสู้ที่ถนัด (เปลี่ยนได้ตอนเลเวลอัป)',
         h('div.grid.grid-2', opts.map(o => choiceCard({
-          id: o.id, iconName: 'weapon', title: o.name, sub: packSub(D.feat[o.id]), desc: featTh(o.id)?.s, selected: ch.fightingStyle === o.id,
+          id: o.id, iconName: D.feat[o.id]?.icon || 'weapon', title: o.name, sub: packSub(D.feat[o.id]), desc: featTh(o.id)?.s, selected: ch.fightingStyle === o.id,
           onClick: () => { ch.fightingStyle = o.id; changed(); },
         })))));
     }
@@ -231,7 +234,7 @@ export function renderWizard(root, c, stepId, nav) {
       h('h3', `ซับคลาส: ${cur.name}`),
       h('p', L >= 3 ? 'ได้รับแล้วที่เลเวล 3' : 'จะได้ตอนเลเวล 3 (เลือกไว้ก่อนได้)'),
       h('div.grid.grid-2', [...subs, ...(subs.some(isCur) ? [] : [cur])].map(sb => choiceCard({
-        id: sb.id, iconName: cls.id, title: sb.name, sub: sb.stub ? '🟡 ต้องเติมข้อมูล' : sb.pack ? '📦 ' + sb.pack : 'SRD',
+        id: sb.id, iconName: sb.icon || cls.id, title: sb.name, sub: sb.stub ? '🟡 ต้องเติมข้อมูล' : sb.pack ? '📦 ' + sb.pack : 'SRD',
         desc: sb.stub ? null : sb.pack ? sb.th?.s : thc(cls.id).sub?.desc, selected: isCur(sb),
         onClick: () => { setSub(c, cls.id, sb); changed(); },
       }))),
@@ -270,7 +273,7 @@ export function renderWizard(root, c, stepId, nav) {
   function background() {
     const out = [intro('เลือก Background', 'อดีตของCharacter ก่อนออกผจญภัย ให้โบนัสค่าพลัง สกิล 2 อย่าง เครื่องมือ 1 อย่าง และ Origin Feat 1 อย่าง')];
     out.push(h('div.grid', D.backgrounds.map(bg => choiceCard({
-      id: bg.id, iconName: 'background', title: bg.name, sub: packSub(bg, bg.abilities.map(a => ABIL_SHORT[a]).join(' · ')),
+      id: bg.id, iconName: bg.icon || 'background', title: bg.name, sub: packSub(bg, bg.abilities.map(a => ABIL_SHORT[a]).join(' · ')),
       desc: D.th.backgrounds?.[bg.id]?.desc, selected: c.bgId === bg.id,
       onClick: () => { if (c.bgId !== bg.id) { c.bgId = bg.id; c.abilities.bonus = {}; c.abilities.plus2 = null; c.abilities.plus1 = null; c.equipment.bgOpt = 'A'; rebuildEquipment(c); } changed(); },
     }))));
@@ -295,7 +298,7 @@ export function renderWizard(root, c, stepId, nav) {
     const feat = D.feat[fid];
     out.push(section('ได้รับ',
       h('dl.kv', h('dt', 'Skills'), h('dd', bg.skills.join(', ')), h('dt', 'Tool'), h('dd', bg.tool.replace(/\s*\(see.*\)/, '')), h('dt', 'Origin Feat'), h('dd', bg.feat)),
-      feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: ['feats', fid], pack: feat.pack }) : null));
+      feat ? featureCard({ name: bg.feat, text: feat.text, th: featTh(fid), tag: 'Origin Feat', full: ['feats', fid], pack: feat.pack, icon: feat.icon }) : null));
     if (fid === 'magic-initiate') out.push(miAbility());
     if (bg.id === 'soldier') out.push(section('Gaming Set', chips(['Dice Set', 'Dragonchess Set', 'Playing Card Set', 'Three-Dragon Ante Set'], c.choices.gamingSet ? [c.choices.gamingSet] : [], 1, v => { c.choices.gamingSet = v[0]; changed(); })));
     return out;
@@ -329,7 +332,7 @@ export function renderWizard(root, c, stepId, nav) {
       out.push(section('Skillful', h('p.muted', 'เลือกสกิลอะไรก็ได้ 1 อย่าง'), chips(SKILLS.map(s => s[0]), so.skill ? [so.skill] : [], 1, v => { so.skill = v[0]; changed(); })));
       const origin = D.feats.filter(f => f.category === 'Origin');
       out.push(section('Versatile: Origin Feat', h('div.grid.grid-2', origin.map(f => choiceCard({
-        id: f.id, iconName: 'feat', title: f.name, sub: packSub(f), desc: featTh(f.id)?.s, selected: so.feat === f.id,
+        id: f.id, iconName: f.icon || 'feat', title: f.name, sub: packSub(f), desc: featTh(f.id)?.s, selected: so.feat === f.id,
         onClick: () => { so.feat = f.id; changed(); },
       })))));
       if (so.feat === 'magic-initiate' && !D.bg[c.bgId]?.feat.startsWith('Magic Initiate')) {

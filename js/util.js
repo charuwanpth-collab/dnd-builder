@@ -31,8 +31,9 @@ export function h(tag, attrs, ...kids) {
   return el;
 }
 
+/** name = ชื่อไอคอนในชุดหลัก หรือ {n, d} จากคลังเต็ม (js/icons.js) */
 export function iconSvg(name, cls = '') {
-  const body = D.icons?.[name];
+  const body = name && typeof name === 'object' ? (name.d && !/["<>]/.test(name.d) ? `<path fill="currentColor" d="${name.d}"/>` : null) : D.icons?.[name];
   if (!body) return '';
   return `<svg class="ico ${cls}" viewBox="0 0 512 512" aria-hidden="true">${body}</svg>`;
 }

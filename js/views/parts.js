@@ -32,11 +32,11 @@ export function fullTh(g, id) {
 }
 
 /** การ์ดฟีเจอร์ — th = {t, s, tip, full?}, full = [กลุ่ม, id] สำหรับคำแปลเต็ม, pack = ชื่อ Content Pack (ถ้ามาจากแพ็ก) */
-export function featureCard({ name, level, text, th, tag, full, pack }) {
+export function featureCard({ name, level, text, th, tag, full, pack, icon }) {
   const t = th?.t || 'passive';
   if (pack) return h('article.feat.from-pack.t-' + t,
     h('header',
-      h('span.feat-ico', { html: iconSvg(t === 'magic' ? 'action' : t) }),
+      h('span.feat-ico', { html: iconSvg(icon || (t === 'magic' ? 'action' : t)) }),
       h('div.feat-title', h('b', name), h('small', [level ? `Lv ${level}` : null, tag, TYPE_LABEL[t]].filter(Boolean).join(' · ')))),
     h('span.pack-badge', '📦 ' + pack),
     th?.s ? h('p.th', th.s) : null,
@@ -55,7 +55,7 @@ export function featureCard({ name, level, text, th, tag, full, pack }) {
 }
 
 export function classFeatureCard(cls, f, sub) {
-  if (f.pack) return featureCard({ name: f.name, level: f.level, text: f.text, th: f.th, tag: f.subName, pack: f.pack });
+  if (f.pack) return featureCard({ name: f.name, level: f.level, text: f.text, th: f.th, tag: f.subName, pack: f.pack, icon: f.icon || f.subIcon });
   return featureCard({ name: f.name, level: f.level, text: f.text, th: thFeature(cls.id, f.id, sub), tag: sub ? cls.subclass.name : null, full: ['classes', [cls.id, sub ? 'sub' : 'f', f.id]] });
 }
 
@@ -65,7 +65,7 @@ export function spellMeta(s) {
 
 export function spellDetail(s, actions = []) {
   sheet(s.name, h('div.spell-detail',
-    h('div.spell-head', h('span.school', { html: iconSvg(s.school) }), h('div', h('b', `${LEVEL_TH(s.level)} · ${s.school}`), h('small', `สำนัก${SCHOOL_TH[s.school] || ''}`))),
+    h('div.spell-head', h('span.school', { html: iconSvg(s.icon || s.school) }), h('div', h('b', `${LEVEL_TH(s.level)} · ${s.school}`), h('small', `สำนัก${SCHOOL_TH[s.school] || ''}`))),
     s.pack ? h('span.pack-badge', '📦 ' + s.pack) : null,
     D.th.spells?.[s.id] ? h('p.th', D.th.spells[s.id]) : null,
     s.pack ? (D.thFull?.spells?.[s.id] ? h('div.md', { html: md(D.thFull.spells[s.id]) }) : null) : fullTh('spells', s.id),
@@ -80,7 +80,7 @@ export function spellDetail(s, actions = []) {
 
 export function spellRow(s, { selected, disabled, onToggle, badge } = {}) {
   const row = h('div.spell-row' + (selected ? '.on' : '') + (disabled ? '.off' : ''),
-    h('span.school', { html: iconSvg(s.school) }),
+    h('span.school', { html: iconSvg(s.icon || s.school) }),
     h('div.spell-main', { onclick: () => spellDetail(s) },
       h('b', s.name, s.concentration ? h('i.tag', 'C') : null, s.ritual ? h('i.tag', 'R') : null),
       h('small', D.th.spells?.[s.id] || spellMeta(s))),

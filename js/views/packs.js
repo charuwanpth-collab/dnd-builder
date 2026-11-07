@@ -5,6 +5,7 @@ import { md } from '../md.js';
 import { ABIL, ABIL_SHORT, SKILLS } from '../rules.js';
 import { SCHOOL_TH, TYPE_LABEL as ACT_LABEL } from './parts.js';
 import * as P from '../packs.js';
+import { iconButton } from '../icons.js';
 
 const ACT = ['passive', 'action', 'bonus', 'reaction', 'magic'];
 const FEAT_CAT = ['Origin', 'General', 'Fighting Style', 'Epic Boon'];
@@ -111,7 +112,7 @@ function packView(root, p, nav) {
     P.TYPES.map(t => h('div.block.pack-sec',
       h('h3', h('span.sec-ico', { html: iconSvg(P.TYPE_ICON[t]) }), `${P.TYPE_LABEL[t]} (${p.items[t].length})`),
       p.items[t].length ? h('div.item-list', p.items[t].map(it => h('a.item-row', { href: `#/packs/${p.id}/${t}/${it.id}` },
-        h('b', it.name), h('small', itemMeta(t, it)), h('span.go', '›')))) : null,
+        h('b', it.icon ? h('span.item-ico', { html: iconSvg(it.icon) }) : null, it.name), h('small', itemMeta(t, it)), h('span.go', '›')))) : null,
       h('a.btn.small', { href: `#/packs/${p.id}/${t}/new` }, `+ เพิ่ม ${P.TYPE_LABEL[t]}`))),
     h('div.row.pack-actions',
       h('button.btn', { onclick: () => { P.exportPack(p); toast('ดาวน์โหลดไฟล์แพ็กแล้ว ส่งให้เพื่อนได้เลย'); } }, '⬇ ส่งออกไฟล์แพ็ก'),
@@ -193,7 +194,10 @@ function itemForm(root, p, type, iid, nav) {
   const it = orig ? clone(orig) : DEFAULTS[type]();
   if (!orig && type === 'subclasses' && PREFILL) { Object.assign(it, PREFILL); PREFILL = null; }
   const back = `#/packs/${p.id}`;
-  const body = h('div.form', ({ subclasses: subForm, backgrounds: bgForm, feats: featForm, spells: spellForm })[type](it));
+  const icoFallback = () => type === 'subclasses' ? it.classId || P.TYPE_ICON[type] : type === 'spells' ? it.school || 'spell' : P.TYPE_ICON[type];
+  const body = h('div.form',
+    field('ไอคอน (ไม่บังคับ)', iconButton(it.icon, icoFallback(), v => { if (v) it.icon = v; else delete it.icon; }, { label: 'เลือกไอคอน', title: 'ไอคอนของ ' + P.TYPE_LABEL[type] })),
+    ({ subclasses: subForm, backgrounds: bgForm, feats: featForm, spells: spellForm })[type](it));
 
   function save() {
     const err = validate(type, it);
