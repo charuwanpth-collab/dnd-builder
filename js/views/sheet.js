@@ -234,7 +234,7 @@ export function renderSheet(root, c, tab, nav) {
     }
     if (x.sp) {
       out.push(h('h2.sec', x.sp.name));
-      for (const t of x.sp.traits) out.push(featureCard({ name: t.name, text: t.text, th: D.th.species?.[x.sp.id]?.f?.[t.id] }));
+      for (const t of x.sp.traits) out.push(featureCard({ name: t.name, text: t.text, th: D.th.species?.[x.sp.id]?.f?.[t.id], full: ['species', [x.sp.id, t.id]] }));
     }
     return out;
   }

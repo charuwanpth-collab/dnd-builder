@@ -13,7 +13,7 @@ export function original(text) {
   return h('details.orig', h('summary', 'ต้นฉบับ (EN) — SRD 5.2.1'), h('div.md', { html: md(text) }));
 }
 
-/** กล่อง "แปลเต็ม (ไทย)" พับได้ — โหลดไฟล์กลุ่ม g ตอนเปิดครั้งแรก */
+/** กล่อง "แปลเต็ม (ไทย)" พับได้ — โหลดไฟล์กลุ่ม g ตอนเปิดครั้งแรก, id เป็น string หรือ path เช่น ['wizard','f','scholar'] */
 export function fullTh(g, id) {
   if (!g || !id) return null;
   const body = h('div.md', h('p.muted.small', 'กำลังโหลด…'));
@@ -23,7 +23,8 @@ export function fullTh(g, id) {
       if (done || !e.currentTarget.open) return;
       done = true;
       loadFull(g).then(d => {
-        body.innerHTML = d[id] ? md(d[id]) : '<p class="muted small">ยังไม่มีคำแปลเต็ม — ดูต้นฉบับด้านล่าง</p>';
+        const v = [].concat(id).reduce((o, k) => o?.[k], d);
+        body.innerHTML = typeof v === 'string' ? md(v) : '<p class="muted small">ยังไม่มีคำแปลเต็ม — ดูต้นฉบับด้านล่าง</p>';
       });
     },
   }, h('summary', 'แปลเต็ม (ไทย)'), body);
@@ -43,7 +44,7 @@ export function featureCard({ name, level, text, th, tag, full }) {
 }
 
 export function classFeatureCard(cls, f, sub) {
-  return featureCard({ name: f.name, level: f.level, text: f.text, th: thFeature(cls.id, f.id, sub), tag: sub ? cls.subclass.name : null });
+  return featureCard({ name: f.name, level: f.level, text: f.text, th: thFeature(cls.id, f.id, sub), tag: sub ? cls.subclass.name : null, full: ['classes', [cls.id, sub ? 'sub' : 'f', f.id]] });
 }
 
 export function spellMeta(s) {

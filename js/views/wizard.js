@@ -216,7 +216,7 @@ export function renderWizard(root, c, stepId, nav) {
         id: o, iconName: o === 'Protector' || o === 'Warden' ? 'shield' : 'spell', title: o,
         desc: thc(cls.id).orders?.[o], selected: c.choices[key] === o,
         onClick: () => { c.choices[key] = o; changed(); },
-      }))), original(f?.text));
+      }))), f ? fullTh('classes', [cls.id, 'f', f.id]) : null, original(f?.text));
   }
 
   function optionList(items, value, max, onChange) {
@@ -310,7 +310,7 @@ export function renderWizard(root, c, stepId, nav) {
     out.push(section('ภาษา', h('p.muted', `รู้ภาษา Common อยู่แล้ว เลือกเพิ่ม ${nLang} ภาษา${nLang > 2 ? ' (รวม 2 ภาษาจาก Deft Explorer ของ Ranger)' : ''}`),
       counter(c.languages.length, nLang), chips(LANGS, c.languages, nLang, v => { c.languages = v; changed(); })));
     out.push(h('h3', 'ความสามารถของเผ่า'));
-    out.push(sp.traits.map(t => featureCard({ name: t.name, text: t.text, th: ths(sp.id).f?.[t.id] })));
+    out.push(sp.traits.map(t => featureCard({ name: t.name, text: t.text, th: ths(sp.id).f?.[t.id], full: ['species', [sp.id, t.id]] })));
     return out;
   }
 

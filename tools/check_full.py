@@ -8,10 +8,21 @@ want = {
   'feats': [i['id'] for i in L('data/srd/feats.json')],
   'mastery': [i['id'] for i in L('data/srd/mastery.json') + L('data/srd/weaponProps.json')],
 }
+# classes/species เป็นแบบซ้อน → แปลงเป็นคีย์ 'a/b/c'
+MAX_LEVEL = 3
+want['classes'] = [f"{c}/f/{f['id']}" for c, x in cls.items() for f in x['features'] if int(f['level']) <= MAX_LEVEL] + \
+  [f"{c}/sub/{f['id']}" for c, x in cls.items() for f in x['subclass'].get('features', []) if int(f['level']) <= MAX_LEVEL]
+want['species'] = [f"{s['id']}/{t['id']}" for s in L('data/srd/species.json') for t in s['traits']]
+def flat(d, pre=''):
+  out = {}
+  for k, v in d.items():
+    if isinstance(v, dict): out.update(flat(v, pre + k + '/'))
+    else: out[pre + k] = v
+  return out
 bad = 0
 for g, ids in want.items():
   p = f'data/th/full/{g}.json'
-  have = L(p) if os.path.exists(p) else {}
+  have = flat(L(p)) if os.path.exists(p) else {}
   miss = [i for i in ids if not have.get(i)]; extra = [k for k in have if k not in ids]
   bad += len(miss) + len(extra)
   print(f'{g}: {len(ids) - len(miss)}/{len(ids)}', 'ขาด: ' + ', '.join(miss) if miss else '', 'เกิน: ' + ', '.join(extra) if extra else '')

@@ -36,8 +36,12 @@
   - `sw.js` → `hh-v2` + เพิ่มไฟล์ full ลงแคชออฟไลน์ (B/C ต้องเพิ่มชื่อกลุ่มในลิสต์นี้ด้วย)
   - เช็คความครบ: `python3 tools/check_full.py` (B/C ให้เพิ่มกลุ่มในสคริปต์นี้)
   - ข้อสังเกต SRD: Careful Spell ต้นฉบับถูกตัดท้ายประโยค (แปลเติมให้ครบ+หมายเหตุ), Vex มีหัวข้อ Improvised Weapons ติดมา (แปลเฉพาะ Vex)
-- ⏭️ **ถัดไป: B** (~160 อัน): ฟีเจอร์คลาส+ซับคลาส Lv1–3, trait ทุก species, background → `full/classes.json` (`{classId:{f:{},sub:{}}}`), `full/species.json`
-- C (141 อัน): สเปล Cantrip / Lv1 / Lv2 แยกทีละเลเวลต่อแชต → `full/spells.json`
+- ✅ **B เสร็จแล้ว (2026-11-07)** — 125 อัน: ฟีเจอร์คลาส+ซับคลาส Lv1–3 = 92 → `full/classes.json` (`{classId:{f:{},sub:{}}}`) · trait species 33 → `full/species.json` (`{speciesId:{traitId}}`)
+  - `fullTh(g, id)` รับ id เป็น path ได้ เช่น `['wizard','f','scholar']`; `classFeatureCard` ส่ง full อัตโนมัติ, Divine/Primal Order block, trait species ใน wizard+sheet
+  - Background: SRD ไม่มีข้อความบรรยาย (มีแค่ช่องข้อมูล) → ไม่มีอะไรต้องแปลเต็ม; Origin Feat ของ background ใช้ full/feats แล้ว
+  - ข้อสังเกต SRD ที่แก้ในคำแปล: Rage (bullet list เพี้ยน), Pact Magic (ชื่อเวทแนะนำหาย+ย่อหน้าขาด → เติม Charm Person/Hex), Wizard Subclass (ขาดท้าย), Breath Weapon/Relentless Endurance (ขึ้นบรรทัดเพี้ยน), ตาราง Fiendish Legacies ติดไปอยู่ใน Otherworldly Presence → ย้ายไปไว้ใน Fiendish Legacy
+  - `sw.js` → `hh-v3`
+- ⏭️ **ถัดไป: C** (141 อัน): สเปล Cantrip / Lv1 / Lv2 แยกทีละเลเวลต่อแชต → `full/spells.json`
 
 **ของแถม (เสนอแล้ว)**: หน้าอภิธานศัพท์ `#/glossary` + คำในคำอธิบายแตะดูความหมายได้ (Attunement, Advantage, Concentration, Proficiency, Saving Throw, Cover ฯลฯ) — ข้อมูลอยู่ใน SRD `08_Rules_Glossary`
 

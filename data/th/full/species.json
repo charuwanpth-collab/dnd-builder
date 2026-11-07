@@ -1,0 +1,53 @@
+{
+"dragonborn": {
+"draconic-ancestry": "สายเลือดของเราสืบมาจากมังกรบรรพบุรุษ เลือกชนิดมังกรจากตาราง Draconic Ancestors ตัวเลือกนี้มีผลต่อ trait Breath Weapon และ Damage Resistance รวมถึงรูปลักษณ์ของเราด้วย\n\n**Draconic Ancestors**\n\n| **มังกร** | **ชนิดดาเมจ** |\n| :--- | :--- |\n| Black (ดำ) | Acid |\n| Blue (น้ำเงิน) | Lightning |\n| Brass (ทองเหลือง) | Fire |\n| Bronze (สำริด) | Lightning |\n| Copper (ทองแดง) | Acid |\n| Gold (ทอง) | Fire |\n| Green (เขียว) | Poison |\n| Red (แดง) | Fire |\n| Silver (เงิน) | Cold |\n| White (ขาว) | Cold |",
+"breath-weapon": "เมื่อทำ Attack action ในเทิร์นของเรา แทนการโจมตี 1 ครั้งด้วยการพ่นพลังเวทออกมาได้ เป็นรูปกรวย (Cone) ยาว 15 ฟุต หรือเส้นตรง (Line) ยาว 30 ฟุต กว้าง 5 ฟุต (เลือกรูปทรงได้ทุกครั้ง) ครีเจอร์ทุกตัวในพื้นที่ต้องทอย DEX Saving Throw (DC = 8 + CON modifier + Proficiency Bonus ของเรา) ถ้าเซฟไม่ผ่าน โดนดาเมจ 1d10 เป็นชนิดตาม trait Draconic Ancestry ถ้าเซฟผ่าน โดนครึ่งเดียว ดาเมจเพิ่มขึ้น 1d10 เมื่อถึงเลเวลตัวละคร 5 (2d10), 11 (3d10) และ 17 (4d10)\n\nใช้ Breath Weapon ได้จำนวนครั้งเท่ากับ Proficiency Bonus ของเรา และได้คืนทั้งหมดเมื่อจบ Long Rest",
+"damage-resistance": "ได้ Resistance ต่อดาเมจชนิดที่กำหนดโดย trait Draconic Ancestry",
+"darkvision": "มี Darkvision ระยะ 60 ฟุต",
+"draconic-flight": "เมื่อถึงเลเวลตัวละคร 5 เราดึงเวทมนตร์มังกรมาบินได้ชั่วคราว ใช้ Bonus Action งอกปีกวิญญาณออกมาจากหลัง อยู่ได้ 10 นาที หรือจนกว่าจะหุบปีก (ไม่ต้องใช้ action) หรือติด Condition Incapacitated ระหว่างนั้นได้ Fly Speed เท่ากับ Speed ของเรา ปีกดูเหมือนทำจากพลังงานเดียวกับ Breath Weapon ใช้ trait นี้แล้วต้องรอจนจบ Long Rest ถึงจะใช้ได้อีก"
+},
+"dwarf": {
+"darkvision": "มี Darkvision ระยะ 120 ฟุต",
+"dwarven-resilience": "ได้ Resistance ต่อดาเมจ Poison และได้ Advantage ในการทอย Saving Throw เพื่อหลบหรือหลุดจาก Condition Poisoned",
+"dwarven-toughness": "HP สูงสุดเพิ่มขึ้น 1 และเพิ่มอีก 1 ทุกครั้งที่ขึ้นเลเวล",
+"stonecunning": "ใช้ Bonus Action เพื่อได้ Tremorsense ระยะ 60 ฟุตเป็นเวลา 10 นาที ต้องยืนอยู่บนหรือแตะพื้นผิวหินอยู่ถึงจะใช้ Tremorsense นี้ได้ จะเป็นหินธรรมชาติหรือหินที่ผ่านการแปรรูปก็ได้\n\nใช้ Bonus Action นี้ได้จำนวนครั้งเท่ากับ Proficiency Bonus ของเรา และได้คืนทั้งหมดเมื่อจบ Long Rest"
+},
+"elf": {
+"darkvision": "มี Darkvision ระยะ 60 ฟุต",
+"elven-lineage": "เราเป็นส่วนหนึ่งของสายเลือดที่ให้พลังเหนือธรรมชาติ เลือกสายเลือดจากตาราง Elven Lineages แล้วได้ประโยชน์เลเวล 1 ของสายเลือดนั้น\n\nเมื่อถึงเลเวลตัวละคร 3 และ 5 จะได้เรียนเวทเลเวลสูงขึ้นตามตาราง เตรียมเวทนั้นไว้เสมอ ร่ายได้ 1 ครั้งโดยไม่ใช้ Spell Slot และได้สิทธิ์ร่ายแบบนี้คืนเมื่อจบ Long Rest และยังร่ายด้วย Spell Slot เลเวลที่เหมาะสมที่มีได้ด้วย\n\n## Elven Lineages\n\n| สายเลือด | เลเวล 1 | เลเวล 3 | เลเวล 5 |\n| :--- | :--- | :--- | :--- |\n| Drow | ระยะ Darkvision เพิ่มเป็น 120 ฟุต และรู้ cantrip *Dancing Lights* | Faerie Fire | Darkness |\n| High Elf | รู้ cantrip *Prestidigitation* ทุกครั้งที่จบ Long Rest เปลี่ยน cantrip นี้เป็น cantrip อื่นจากรายการเวท Wizard ได้ | Detect Magic | Misty Step |\n| Wood Elf | Speed เพิ่มเป็น 35 ฟุต และรู้ cantrip *Druidcraft* | Longstrider | Pass without Trace |\n\nค่าพลังที่ใช้ร่ายเวทจาก trait นี้คือ INT, WIS หรือ CHA (เลือกตอนเลือกสายเลือด)",
+"fey-ancestry": "ได้ Advantage ในการทอย Saving Throw เพื่อหลบหรือหลุดจาก Condition Charmed",
+"keen-senses": "ได้ Proficiency ในสกิล Insight, Perception หรือ Survival (เลือก 1 อย่าง)",
+"trance": "ไม่ต้องนอน และเวทมนตร์ทำให้เราหลับไม่ได้ จบ Long Rest ได้ใน 4 ชั่วโมงถ้าใช้เวลานั้นทำสมาธิแบบภวังค์ ซึ่งระหว่างนั้นยังรู้สึกตัวอยู่"
+},
+"gnome": {
+"darkvision": "มี Darkvision ระยะ 60 ฟุต",
+"gnomish-cunning": "ได้ Advantage ในการทอย INT, WIS และ CHA Saving Throw",
+"gnomish-lineage": "เราเป็นส่วนหนึ่งของสายเลือดที่ให้พลังเหนือธรรมชาติ เลือก 1 ตัวเลือกต่อไปนี้ ไม่ว่าเลือกอันไหน ค่าพลังที่ใช้ร่ายเวทจาก trait นี้คือ INT, WIS หรือ CHA (เลือกตอนเลือกสายเลือด):\n\n**Forest Gnome.** รู้ cantrip *Minor Illusion* และเตรียมเวท *Speak with Animals* ไว้เสมอ ร่ายได้โดยไม่ใช้ Spell Slot จำนวนครั้งเท่ากับ Proficiency Bonus ของเรา และได้คืนทั้งหมดเมื่อจบ Long Rest และยังใช้ Spell Slot ที่มีร่ายเวทนี้ได้ด้วย\n\n**Rock Gnome.** รู้ cantrip *Mending* และ *Prestidigitation* นอกจากนี้ ใช้เวลา 10 นาทีร่าย *Prestidigitation* เพื่อสร้างอุปกรณ์กลไกขนาด Tiny (AC 5, 1 HP) ได้ เช่น ของเล่น ที่จุดไฟ หรือกล่องดนตรี ตอนสร้าง ให้กำหนดหน้าที่ของมันโดยเลือกผล 1 อย่างจาก *Prestidigitation* อุปกรณ์จะสร้างผลนั้นทุกครั้งที่เราหรือครีเจอร์อื่นใช้ Bonus Action แตะเพื่อเปิดใช้ ถ้าผลที่เลือกมีตัวเลือกย่อย ให้เลือก 1 ตัวเลือกย่อยตอนสร้าง\n\nตัวอย่าง: ถ้าเลือกผลจุดไฟ-ดับไฟของเวท ต้องกำหนดว่าอุปกรณ์จะจุดไฟหรือดับไฟ จะทำได้ทั้งสองอย่างไม่ได้ มีอุปกรณ์แบบนี้ได้พร้อมกันสูงสุด 3 ชิ้น แต่ละชิ้นจะพังลงเอง 8 ชั่วโมงหลังสร้าง หรือเมื่อเราแตะเพื่อถอดแยกมันด้วย Utilize action"
+},
+"goliath": {
+"giant-ancestry": "เราสืบเชื้อสายมาจากยักษ์ (Giant) เลือกประโยชน์ 1 อย่างต่อไปนี้ ซึ่งเป็นพรเหนือธรรมชาติจากบรรพบุรุษ ใช้ได้จำนวนครั้งเท่ากับ Proficiency Bonus ของเรา และได้คืนทั้งหมดเมื่อจบ Long Rest:\n\n**Cloud's Jaunt (Cloud Giant).** ใช้ Bonus Action เทเลพอร์ตด้วยเวทได้ไกลสุด 30 ฟุต ไปยังช่องว่างที่มองเห็น\n\n**Fire's Burn (Fire Giant).** เมื่อทอยโจมตีโดนเป้าหมายและทำดาเมจใส่มัน ทำดาเมจ Fire เพิ่มใส่เป้าหมายนั้นอีก 1d10 ได้\n\n**Frost's Chill (Frost Giant).** เมื่อทอยโจมตีโดนเป้าหมายและทำดาเมจใส่มัน ทำดาเมจ Cold เพิ่มใส่เป้าหมายนั้นอีก 1d6 และลด Speed ของมันลง 10 ฟุตจนถึงต้นเทิร์นถัดไปของเราได้\n\n**Hill's Tumble (Hill Giant).** เมื่อทอยโจมตีโดนครีเจอร์ขนาด Large หรือเล็กกว่าและทำดาเมจใส่มัน ทำให้เป้าหมายติด Condition Prone ได้\n\n**Stone's Endurance (Stone Giant).** เมื่อโดนดาเมจ ใช้ Reaction ทอย 1d12 บวก CON modifier ของเรา แล้วลดดาเมจลงเท่ากับผลรวมนั้นได้\n\n**Storm's Thunder (Storm Giant).** เมื่อโดนดาเมจจากครีเจอร์ที่อยู่ในระยะ 60 ฟุต ใช้ Reaction ทำดาเมจ Thunder 1d8 ใส่ครีเจอร์นั้นได้",
+"large-form": "ตั้งแต่เลเวลตัวละคร 5 ใช้ Bonus Action เปลี่ยนขนาดตัวเป็น Large ได้ ถ้าอยู่ในพื้นที่กว้างพอ การแปลงร่างนี้อยู่ได้ 10 นาที หรือจนกว่าเราจะหยุดเอง (ไม่ต้องใช้ action) ระหว่างนั้นได้ Advantage ในการทอยเช็ค STR และ Speed เพิ่มขึ้น 10 ฟุต ใช้ trait นี้แล้วต้องรอจนจบ Long Rest ถึงจะใช้ได้อีก",
+"powerful-build": "ได้ Advantage ในการทอยเช็คค่าพลังเพื่อหลุดจาก Condition Grappled และเวลาคิดน้ำหนักที่แบกได้ (carrying capacity) ให้นับว่าตัวใหญ่ขึ้น 1 ขนาด"
+},
+"halfling": {
+"brave": "ได้ Advantage ในการทอย Saving Throw เพื่อหลบหรือหลุดจาก Condition Frightened",
+"halfling-nimbleness": "เดินผ่านช่องของครีเจอร์ที่ตัวใหญ่กว่าเรา 1 ขนาดขึ้นไปได้ แต่หยุดอยู่ในช่องเดียวกับมันไม่ได้",
+"luck": "เมื่อทอย d20 ของ D20 Test ออก 1 ทอยลูกเต๋านั้นใหม่ได้ และต้องใช้ผลที่ทอยใหม่",
+"naturally-stealthy": "ทำ Hide action ได้ แม้จะมีแค่ครีเจอร์ที่ตัวใหญ่กว่าเราอย่างน้อย 1 ขนาดบังอยู่ก็ตาม"
+},
+"human": {
+"resourceful": "ได้ Heroic Inspiration ทุกครั้งที่จบ Long Rest",
+"skillful": "ได้ Proficiency ในสกิล 1 อย่างตามที่เลือก",
+"versatile": "ได้ Origin Feat 1 อันตามที่เลือก (ดูหมวด Feats) แนะนำ Skilled"
+},
+"orc": {
+"adrenaline-rush": "ทำ Dash action ด้วย Bonus Action ได้ และเมื่อทำแบบนั้น จะได้ Temporary Hit Points เท่ากับ Proficiency Bonus ของเรา\n\nใช้ trait นี้ได้จำนวนครั้งเท่ากับ Proficiency Bonus ของเรา และได้คืนทั้งหมดเมื่อจบ Short Rest หรือ Long Rest",
+"darkvision": "มี Darkvision ระยะ 120 ฟุต",
+"relentless-endurance": "เมื่อถูกลด HP เหลือ 0 แต่ไม่ได้ตายทันที เลือกให้เหลือ 1 HP แทนได้ ใช้ trait นี้แล้วต้องรอจนจบ Long Rest ถึงจะใช้ได้อีก"
+},
+"tiefling": {
+"darkvision": "มี Darkvision ระยะ 60 ฟุต",
+"fiendish-legacy": "เราได้รับมรดกที่ให้พลังเหนือธรรมชาติ เลือกมรดกจากตาราง Fiendish Legacies แล้วได้ประโยชน์เลเวล 1 ของมรดกนั้น\n\nเมื่อถึงเลเวลตัวละคร 3 และ 5 จะได้เรียนเวทเลเวลสูงขึ้นตามตาราง เตรียมเวทนั้นไว้เสมอ ร่ายได้ 1 ครั้งโดยไม่ใช้ Spell Slot และได้สิทธิ์ร่ายแบบนี้คืนเมื่อจบ Long Rest และยังร่ายด้วย Spell Slot เลเวลที่เหมาะสมที่มีได้ด้วย\n\nค่าพลังที่ใช้ร่ายเวทจาก trait นี้คือ INT, WIS หรือ CHA (เลือกตอนเลือกมรดก)\n\n## Fiendish Legacies\n\n| มรดก | เลเวล 1 | เลเวล 3 | เลเวล 5 |\n| :--- | :--- | :--- | :--- |\n| Abyssal | ได้ Resistance ต่อดาเมจ Poison และรู้ cantrip *Poison Spray* | Ray of Sickness | Hold Person |\n| Chthonic | ได้ Resistance ต่อดาเมจ Necrotic และรู้ cantrip *Chill Touch* | False Life | Ray of Enfeeblement |\n| Infernal | ได้ Resistance ต่อดาเมจ Fire และรู้ cantrip *Fire Bolt* | Hellish Rebuke | Darkness |",
+"otherworldly-presence": "รู้ cantrip *Thaumaturgy* เมื่อร่ายด้วย trait นี้ ใช้ค่าพลังร่ายเวทตัวเดียวกับที่ใช้ใน trait Fiendish Legacy"
+}
+}
